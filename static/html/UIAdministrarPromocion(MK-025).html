@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrar Promociones</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        a{
+            text-decoration:none;
+            color:inherit;
+        }
+
+        .side-bar {
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .main-content {
+            margin-left: 200px;
+            margin: 0 auto;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+        <div class="side-bar">
+            <h2 class="name">QuickContentMedia</h2>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-tags"></i>
+                <a href="/promociones"><span>Administrar Promociones</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-plus"></i>
+                <a href="/contenidos"><span>Administrar Contenido</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-layer-group"></i>
+                <a href="/categorias"><span>Administrar Categoría</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-users"></i>
+                <a href="/clientes"><span>Administrar Clientes</span></a>
+            </div>
+        </div>
+        <!-- Sección de Administrar Promociones -->
+        <div class="main-content" id="promocionesSection">
+            <h2 class="small-title">Promociones</h2>
+            <div class="content-header">
+                <button type="button" class="button-full" id="small-btn" onclick="openModal('agregarPromocionModal')">Agregar Promoción</button>
+                <div class="search-container">
+                    <input type="text" id="search-promocion" class="search-input" placeholder="Buscar promoción...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Porcentaje</th>
+                            <th>Contenido Incluido</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promocionesTableBody">
+                        <!-- Contenido tabla -->
+                    </tbody>
+                    <div class="pagination" id="promocionesPagination"></div>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Agregar Promoción -->
+        <div id="agregarPromocionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('agregarPromocionModal')">&times;</span>
+                <h2 class="small-title">Agregar Promoción</h2>
+                <form id="agregarPromocionForm">
+                    <div class="modal-grid">
+                        <div class="left-grid">
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" name="nombre" placeholder="Nombre de la promoción" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="number" step="0.01" name="porcentaje" placeholder="Porcentaje de descuento" min="1" max="100" required>
+                            </div>
+                        </div>
+                        <div class="right-grid">
+                            <div class="input-group">
+                                <i class="fas fa-calendar edit-icon"></i>
+                                <input type="date" name="fecha_inicio" placeholder="Fecha de inicio" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-calendar edit-icon"></i>
+                                <input type="date" name="fecha_fin" placeholder="Fecha de fin" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-plus edit-icon"></i>
+                                <input type="text" id="codigoContenido" placeholder="Código del contenido">
+                                <button type="button" class="button-full-gray" onclick="agregarContenidoAPromocion()">Agregar</button>
+                            </div>
+                            <div class="table">
+                                <table id="tablaContenidosPromocion">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Código</th>
+                                            <th>Formato</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="contenidosPromocionBody">
+                                        <!-- Contenidos agregados a la promoción -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="button-full">Confirmar Promoción</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Editar Promoción -->
+        <div id="editarPromocionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('editarPromocionModal')">&times;</span>
+                <h2 class="small-title">Editar Promoción</h2>
+                <form id="editarPromocionForm">
+                    <input type="hidden" id="editPromocionId" name="promocion_id">
+                    <div class="modal-grid">
+                        <div class="left-grid">
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" id="editNombrePromocion" name="nombre" placeholder="Nombre de la promoción" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="number" step="0.01" id="editPorcentaje" name="porcentaje" placeholder="Porcentaje de descuento" min="1" max="100" required>
+                            </div>
+                        </div>
+                        <div class="right-grid">
+                            <div class="input-group">
+                                <i class="fas fa-calendar edit-icon"></i>
+                                <input type="date" id="editFechaInicio" name="fecha_inicio" placeholder="Fecha de inicio" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-calendar edit-icon"></i>
+                                <input type="date" id="editFechaFin" name="fecha_fin" placeholder="Fecha de fin" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-plus edit-icon"></i>
+                                <input type="text" id="editCodigoContenido" placeholder="Código del contenido">
+                                <button type="button" class="button-full-gray" onclick="agregarContenidoAEdicion()">Agregar</button>
+                            </div>
+                            <div class="table">
+                                <table id="editTablaContenidosPromocion">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Código</th>
+                                            <th>Formato</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="editContenidosPromocionBody">
+                                        <!-- Contenidos agregados a la promoción -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="button-full">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Eliminar Promoción -->
+        <div id="eliminarPromocionModal" class="modal">
+            <form class="form" id="eliminarPromocionForm">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal('eliminarPromocionModal')">&times;</span>
+                    <h2 class="form-title">¿Está seguro de que deseas eliminar esta promoción?</h2>
+                    <input type="hidden" id="promocionIdEliminar" name="promocion_id">
+                    <p class="form-subtitle">Esta acción es permanente y no se puede deshacer.</p>
+                    <button type="submit" class="button-full deletebtn">Eliminar Promoción</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Ver Contenidos de Promoción -->
+        <div id="verContenidosPromocionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('verContenidosPromocionModal')">&times;</span>
+                <h2 class="small-title">Contenidos incluidos en la promoción</h2>
+                <div class="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Formato</th>
+                                <th>Precio Original</th>
+                                <th>Precio con Descuento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contenidosPromocionModalBody">
+                            <!-- Contenidos de la promoción -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Funciones JavaScript relacionadas -->
+        <script>
+            // Función para paginar tabla
+            function paginarTabla(tablaSelector, paginationSelector) {
+                const tabla = document.querySelector(tablaSelector);
+                const tbody = tabla.querySelector('tbody');
+                const rows = tbody.querySelectorAll('tr');
+                const pagination = document.querySelector(paginationSelector);
+
+                if (!rows.length) {
+                    pagination.innerHTML = '';
+                    return;
+                }
+
+                const itemsPerPage = 10;
+                const totalPages = Math.ceil(rows.length / itemsPerPage);
+
+                // Crear botones de paginación
+                pagination.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.onclick = () => mostrarPagina(i);
+                    pagination.appendChild(button);
+                }
+
+                function mostrarPagina(pageNumber) {
+                    const start = (pageNumber - 1) * itemsPerPage;
+                    const end = start + itemsPerPage;
+
+                    rows.forEach((row, index) => {
+                        row.style.display = (index >= start && index < end) ? '' : 'none';
+                    });
+
+                    // Resaltar el botón de la página actual
+                    const buttons = pagination.querySelectorAll('button');
+                    buttons.forEach(button => {
+                        button.className = '';
+                        if (parseInt(button.textContent) === pageNumber) {
+                            button.className = 'active';
+                        }
+                    });
+                }
+
+                // Mostrar la primera página
+                mostrarPagina(1);
+            }
+
+            // Función para cargar promociones
+            function cargarPromociones() {
+                fetch('/obtener_promociones', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error al obtener promociones: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            const tbody = document.getElementById("promocionesTableBody");
+                            tbody.innerHTML = '';
+
+                            data.promociones.forEach(promocion => {
+                                const tr = document.createElement("tr");
+                                tr.innerHTML =
+                                    `<td><strong>${promocion.nombre}</strong></td>
+                                    <td>${formatearFecha(promocion.fecha_inicio)}</td>
+                                    <td>${formatearFecha(promocion.fecha_fin)}</td>
+                                    <td>${promocion.porcentaje}%</td>
+                                    <td>
+                                        <button type="button" class="button-icon" onclick="verContenidosPromocion('${promocion.id}')">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="button-full-gray small-btn" onclick="openEditarPromocionModal('${promocion.id}')">Editar</button>
+                                        <button type="button" class="button-full-gray small-btn deletebtn" onclick="prepararEliminarPromocion('${promocion.id}')">Eliminar</button>
+                                    </td>`;
+                                tbody.appendChild(tr);
+                            });
+
+                            // Agregar estilo para el botón activo de paginación
+                            const pagination = document.getElementById('promocionesPagination');
+                            pagination.innerHTML += `
+                                <style>
+                                    .pagination button {
+                                        margin: 2px;
+                                        padding: 5px 10px;
+                                        border: 1px solid #ddd;
+                                        border-radius: 4px;
+                                        cursor: pointer;
+                                    }
+                                    .pagination button.active {
+                                        background-color: #007bff;
+                                        color: white;
+                                        border-color: #007bff;
+                                    }
+                                    .pagination button:hover:not(.active) {
+                                        background-color: #e9ecef;
+                                    }
+                                </style>
+                            `;
+
+                            paginarTabla('.table', '#promocionesPagination');
+                        } else {
+                            console.error('Error en la respuesta:', data);
+                            alert(data.error || 'Error al cargar las promociones');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al conectar con el servidor: ' + error.message);
+                    });
+            }
+
+            // Función para formatear fecha (solo fecha, sin hora)
+            function formatearFecha(fechaString) {
+                if (!fechaString) return '';
+                
+                // Crear la fecha ajustando por la zona horaria
+                // Añadimos 'T00:00:00' para evitar problemas de zona horaria
+                const fecha = new Date(fechaString + 'T00:00:00');
+                
+                // Si la fecha no es válida, devolver un valor por defecto
+                if (isNaN(fecha.getTime())) return 'Fecha inválida';
+                
+                // Obtener los componentes de la fecha local
+                // Usamos getUTCDate() para evitar problemas de zona horaria
+                const dia = fecha.getUTCDate().toString().padStart(2, '0');
+                const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+                const anio = fecha.getUTCFullYear();
+                
+                return `${dia}/${mes}/${anio}`;
+            }
+
+            // Función para formatear fecha al formato YYYY-MM-DD (sin hora)
+            function formatearFechaParaInput(fechaString) {
+                if (!fechaString) return '';
+
+                // Si ya está en el formato YYYY-MM-DD, devolverlo tal cual
+                if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
+                    return fechaString;
+                }
+
+
+                try {
+                    // Intentar crear una fecha a partir del string
+                    const fecha = new Date(fechaString);
+                    if (isNaN(fecha.getTime())) {
+                        console.error('Fecha inválida:', fechaString);
+                        return '';
+                    }
+
+                    // Formatear como YYYY-MM-DD
+                    const year = fecha.getFullYear();
+                    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+                    const day = fecha.getDate().toString().padStart(2, '0');
+                    
+                    return `${year}-${month}-${day}`;
+                } catch (e) {
+                    console.error('Error al formatear fecha:', e);
+                    return '';
+                }
+            }
+
+            // Función para abrir modal de edición con datos de la promoción
+            function openEditarPromocionModal(promocionId) {
+                console.log('Abriendo modal de edición para promoción ID:', promocionId);
+
+                fetch(`/obtener_promocion?id=${promocionId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Datos recibidos:', data);
+
+                        if (data.success && data.promocion) {
+                            const promocion = data.promocion;
+
+                            console.log('Datos de la promoción:', promocion);
+
+                            // Llenar campos del formulario
+                            document.getElementById("editPromocionId").value = promocion.id || '';
+                            document.getElementById("editNombrePromocion").value = promocion.nombre || '';
+                            document.getElementById("editPorcentaje").value = promocion.porcentaje || '';
+
+                            // Formatear y establecer fechas
+                            document.getElementById("editFechaInicio").value = formatearFechaParaInput(promocion.fecha_inicio);
+                            document.getElementById("editFechaFin").value = formatearFechaParaInput(promocion.fecha_fin);
+
+                            console.log('Fechas:', {
+                                inicio: promocion.fecha_inicio,
+                                fin: promocion.fecha_fin,
+                                inicioFormateada: document.getElementById("editFechaInicio").value,
+                                finFormateada: document.getElementById("editFechaFin").value
+                            });
+
+                            // Cargar contenidos de la promoción
+                            const tbody = document.getElementById("editContenidosPromocionBody");
+                            tbody.innerHTML = '';
+
+                            // Verificar si hay contenidos y si es un array
+                            if (Array.isArray(promocion.contenidos) && promocion.contenidos.length > 0) {
+                                promocion.contenidos.forEach(contenido => {
+                                    if (contenido && contenido.id) { // Verificar que el contenido sea válido
+                                        const tr = document.createElement("tr");
+                                        tr.innerHTML =
+                                            `<td>${contenido.nombre || ''}</td>
+                                            <td>${contenido.codigo || ''}</td>
+                                            <td>${contenido.formato || ''}</td>
+                                            <td>
+                                                <button type="button" class="button-icon deletebtn" onclick="eliminarContenidoDeTabla(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                <input type="hidden" name="contenidos[]" value="${contenido.id}">
+                                            </td>`;
+                                        tbody.appendChild(tr);
+                                    }
+                                });
+                            }
+
+                            // Abrir el modal después de cargar todo
+                            openModal('editarPromocionModal');
+                        } else {
+                            const errorMsg = data.error || 'Error al cargar los datos de la promoción';
+                            console.error('Error en la respuesta:', errorMsg);
+                            alert(errorMsg);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al obtener la promoción:', error);
+                        alert('Error al conectar con el servidor. Por favor, intente nuevamente.');
+                    });
+            }
+
+            // Función para preparar modal de eliminar promoción
+            function prepararEliminarPromocion(promocionId) {
+                document.getElementById("promocionIdEliminar").value = promocionId;
+                openModal('eliminarPromocionModal');
+            }
+
+            // Función para ver contenidos de una promoción
+            function verContenidosPromocion(promocionId) {
+                fetch(`/api/promociones/${promocionId}/contenidos`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const tbody = document.getElementById("contenidosPromocionModalBody");
+                            tbody.innerHTML = '';
+
+                            data.contenidos.forEach(contenido => {
+                                const precioDescuento = contenido.precio * (1 - (data.promocion.porcentaje / 100));
+                                const tr = document.createElement("tr");
+                                tr.innerHTML =
+                                    `<td>${contenido.nombre}</td>
+                                    <td>${contenido.codigo}</td>
+                                    <td>${contenido.formato}</td>
+                                    <td>S/.${contenido.precio.toFixed(2)}</td>
+                                    <td>S/.${precioDescuento.toFixed(2)}</td>`;
+                                tbody.appendChild(tr);
+                            });
+
+                            openModal('verContenidosPromocionModal');
+                        } else {
+                            alert(data.error || 'Error al cargar los contenidos de la promoción');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al conectar con el servidor');
+                    });
+            }
+
+            // Función para agregar contenido a promoción nueva
+            function agregarContenidoAPromocion() {
+                const codigo = document.getElementById("codigoContenido").value.trim();
+                if (!codigo) return;
+
+                fetch(`/buscar_contenido_por_codigo?codigo=${codigo}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const contenido = data.contenido;
+                            const tbody = document.getElementById("contenidosPromocionBody");
+
+                            // Verificar si el contenido ya está agregado
+                            const existente = Array.from(tbody.querySelectorAll("tr")).some(tr =>
+                                tr.querySelector("td:nth-child(2)").textContent === contenido.codigo
+                            );
+
+                            if (existente) {
+                                alert("Este contenido ya está incluido en la promoción");
+                                return;
+                            }
+
+                            const tr = document.createElement("tr");
+                            tr.innerHTML =
+                                `<td>${contenido.nombre}</td>
+                                <td>${contenido.codigo}</td>
+                                <td>${contenido.formato}</td>
+                                <td>
+                                    <button type="button" class="button-icon deletebtn" onclick="eliminarContenidoDeTabla(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <input type="hidden" name="contenidos[]" value="${contenido.id}">
+                                </td>`;
+                            tbody.appendChild(tr);
+                            document.getElementById("codigoContenido").value = '';
+                        } else {
+                            alert(data.error || 'No se encontró contenido con ese código');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al conectar con el servidor');
+                    });
+            }
+
+            // Función para agregar contenido a promoción en edición
+            function agregarContenidoAEdicion() {
+                const codigo = document.getElementById("editCodigoContenido").value.trim();
+                if (!codigo) return;
+
+                fetch(`/buscar_contenido_por_codigo?codigo=${codigo}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const contenido = data.contenido;
+                            const tbody = document.getElementById("editContenidosPromocionBody");
+
+                            // Verificar si el contenido ya está agregado
+                            const existente = Array.from(tbody.querySelectorAll("tr")).some(tr =>
+                                tr.querySelector("td:nth-child(2)").textContent === contenido.codigo
+                            );
+
+                            if (existente) {
+                                alert("Este contenido ya está incluido en la promoción");
+                                return;
+                            }
+
+                            const tr = document.createElement("tr");
+                            tr.innerHTML =
+                                `<td>${contenido.nombre}</td>
+                                <td>${contenido.codigo}</td>
+                                <td>${contenido.formato}</td>
+                                <td>
+                                    <button type="button" class="button-icon deletebtn" onclick="eliminarContenidoDeTabla(this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <input type="hidden" name="contenidos[]" value="${contenido.id}">
+                                </td>`;
+                            tbody.appendChild(tr);
+                            document.getElementById("editCodigoContenido").value = '';
+                        } else {
+                            alert(data.error || 'No se encontró contenido con ese código');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al conectar con el servidor');
+                    });
+            }
+
+            // Función para eliminar contenido de la tabla
+            function eliminarContenidoDeTabla(button) {
+                const tr = button.closest("tr");
+                tr.remove();
+            }
+
+            // Búsqueda de promociones
+            const searchPromocionInput = document.getElementById('search-promocion');
+            searchPromocionInput.addEventListener('input', function() {
+                const filtro = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#promocionesTableBody tr');
+
+                rows.forEach(fila => {
+                    const nombrePromocion = fila.querySelector("td strong").textContent.toLowerCase();
+
+                    if (nombrePromocion.includes(filtro)) {
+                        fila.style.display = "";
+                    } else {
+                        fila.style.display = "none";
+                    }
+                });
+            });
+
+            // Manejo de formulario agregar promoción
+            document.getElementById("agregarPromocionForm").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                try {
+                    const response = await fetch('/agregar_promocion', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Promoción agregada correctamente');
+                        closeModal('agregarPromocionModal');
+                        cargarPromociones();
+                    } else {
+                        alert(data.error || 'Error al agregar la promoción');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                }
+            });
+
+            // Manejo de formulario editar promoción
+            document.getElementById("editarPromocionForm").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const promocionId = document.getElementById("editPromocionId").value;
+
+                try {
+                    const response = await fetch(`/api/promociones/${promocionId}/editar`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Promoción actualizada correctamente');
+                        closeModal('editarPromocionModal');
+                        cargarPromociones();
+                    } else {
+                        alert(data.error || 'Error al actualizar la promoción');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                }
+            });
+
+            // Manejo de formulario eliminar promoción
+            document.getElementById("eliminarPromocionForm").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                try {
+                    const response = await fetch('/eliminar_promocion', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Promoción eliminada correctamente');
+                        closeModal('eliminarPromocionModal');
+                        cargarPromociones();
+                    } else {
+                        alert(data.error || 'Error al eliminar la promoción');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                }
+            });
+
+            // Función para abrir modal
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = "block";
+                    // Agregar el overlay
+                    const overlay = document.createElement('div');
+                    overlay.className = 'modal-overlay';
+                    overlay.onclick = () => closeModal(modalId);
+                    document.body.appendChild(overlay);
+                    
+                    // Solo limpiar el formulario si no es el modal de edición
+                    if (!modalId.includes('editar')) {
+                        const form = modal.querySelector('form');
+                        if (form) {
+                            form.reset();
+                            // Limpiar la tabla de contenidos
+                            const tablaContenidos = modal.querySelector('#contenidosPromocionBody');
+                            if (tablaContenidos) {
+                                tablaContenidos.innerHTML = '';
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Función para cerrar modal
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = "none";
+                    // Remover el overlay
+                    const overlay = document.querySelector('.modal-overlay');
+                    if (overlay) {
+                        overlay.remove();
+                    }
+                }
+            }
+
+            // Cargar promociones al iniciar
+            document.addEventListener('DOMContentLoaded', function() {
+                cargarPromociones();
+            });
+        </script>
+</body>
+</html>

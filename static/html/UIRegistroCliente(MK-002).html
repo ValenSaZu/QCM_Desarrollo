@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <form class="form" id="registerForm">
+    <div class="header">
+        <h2 class="form-title">Sign Up</h2>
+    </div>
+
+    <div class="form-group-together">
+        <div class="form-group">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" id="nombre" class="form-input" placeholder="Placeholder" required>
+        </div>
+
+        <div class="form-group">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input type="text" id="apellido" class="form-input" placeholder="Placeholder">
+        </div>
+    </div>
+
+    <div class="form-group">
+      <label for="username" class="form-label">Username</label>
+      <input type="text" id="username" class="form-input" placeholder="Placeholder" required>
+    </div>
+
+    <div class="form-group">
+      <label for="password" class="form-label">Password</label>
+      <input type="password" id="password" class="form-input" placeholder="Placeholder" required>
+    </div>
+
+    <button type="submit" class="button-full">Registrarse</button>
+
+    <p class="form-footer">
+        <a href="/" class="form-link">Already have an account?</a>
+    </p>
+  </form>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const data = {
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value,
+        nombre: document.getElementById('nombre').value,
+        apellido: document.getElementById('apellido').value || ''
+      };
+
+      try {
+        const response = await fetch('/api/registro', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.text();
+        document.body.innerHTML = result;
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    });
+</script>
+</body>
+</html>

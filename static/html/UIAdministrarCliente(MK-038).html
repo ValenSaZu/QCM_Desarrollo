@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrar Clientes</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        a{
+            text-decoration:none;
+            color:inherit;
+        }
+        
+        .side-bar {
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        
+        .main-content {
+            margin-left: 200px;
+            margin: 0 auto;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+        <div class="side-bar">
+            <h2 class="name">QuickContentMedia</h2>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-tags"></i>
+                <a href="/promociones"><span>Administrar Promociones</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-plus"></i>
+                <a href="/contenidos"><span>Administrar Contenido</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-layer-group"></i>
+                <a href="/categorias"><span>Administrar Categoría</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-users"></i>
+                <a href="/clientes"><span>Administrar Clientes</span></a>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="content-header">
+                <h2 class="small-title">Clientes</h2>
+                <div class="search-container">
+                    <input type="text" id="search-client" class="search-input" placeholder="Buscar por nombre o username">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Username</th>
+                            <th>Saldo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientesTableBody">
+                        <!-- Los datos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ventana modal para Gestionar saldo -->
+    <div id="saldoModal" class="modal">
+        <form id="saldoForm">
+        <div class="modal-content">
+          <span id="closeModal" class="close">&times;</span>
+          <h2 class="small-title">Gestionar Saldo</h2>
+          <input type="hidden" id="clienteId">
+            <label for="nuevoSaldo" class="form-label">Nuevo Saldo:</label><br>
+            <input type="number" id="nuevoSaldo" class="form-input" name="nuevoSaldo" step="0.01" required><br>
+            <button type="submit" class="button-full">Confirmar</button>
+        </div>
+        </form>
+    </div>
+
+    <!-- Ventana modal para Historial de Descargas -->
+    <div id="historialModal" class="modal">
+        <div class="modal-content">
+        <span id="closeHistorial" class="close">&times;</span>
+        <h2 class="small-title">Historial de Descargas</h2>
+        <div class="table">
+            <table>
+            <thead>
+                <tr>
+                <th>Nombre Contenido</th>
+                <th>Código Contenido</th>
+                <th>Fecha</th>
+                <th>Precio</th>
+                    <th>Categoría</th>
+                </tr>
+            </thead>
+            <tbody id="historialTableBody">
+                <!-- Los datos se cargarán dinámicamente -->
+            </tbody>
+            </table>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let clientesData = [];
+        let clienteSeleccionado = null;
+
+        // Elementos del DOM
+        const modal = document.getElementById("saldoModal");
+        const historialModal = document.getElementById("historialModal");
+        const saldoForm = document.getElementById("saldoForm");
+        const nuevoSaldoInput = document.getElementById("nuevoSaldo");
+        const clienteIdInput = document.getElementById("clienteId");
+        const searchInput = document.getElementById("search-client");
+        const closeModal = document.getElementById("closeModal");
+        const closeHistorial = document.getElementById("closeHistorial");
+
+        // Cargar clientes al iniciar
+        document.addEventListener('DOMContentLoaded', cargarClientes);
+
+        // Función para cargar clientes desde la API
+        async function cargarClientes() {
+            try {
+                showLoader();
+                const response = await fetch('http://localhost:8000/api/clientes');
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || 'Error al cargar clientes');
+                }
+
+                clientesData = await response.json();
+                actualizarTablaClientes(clientesData);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Función para actualizar la tabla de clientes
+        function actualizarTablaClientes(clientes) {
+            const tbody = document.getElementById('clientesTableBody');
+            tbody.innerHTML = clientes.map(cliente => `
+                <tr>
+                    <td>${cliente.id_usuario.toString().padStart(3, '0')}</td>
+                    <td>${cliente.nombre}</td>
+                    <td>${cliente.apellido}</td>
+                    <td>${cliente.username}</td>
+                    <td>S/.${cliente.saldo.toFixed(2)}</td>
+                    <td>
+                        <button class="button-full-gray small-btn gestionar-saldo"
+                                data-id="${cliente.id_usuario}"
+                                data-saldo="${cliente.saldo}"
+                                ${cliente.excliente ? 'disabled title="Cliente excluido"' : ''}>
+                            Gestionar Saldo
+                        </button>
+                        <button class="button-full-gray small-btn ver-historial"
+                                data-id="${cliente.id_usuario}">
+                            Ver historial
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Agregar event listeners a los botones
+            document.querySelectorAll('.gestionar-saldo:not([disabled])').forEach(btn => {
+                btn.addEventListener('click', abrirModalSaldo);
+            });
+
+            document.querySelectorAll('.ver-historial').forEach(btn => {
+                btn.addEventListener('click', abrirModalHistorial);
+            });
+        }
+
+        // Función para abrir modal de saldo
+        function abrirModalSaldo(e) {
+            const clienteId = e.target.getAttribute('data-id');
+            const saldoActual = parseFloat(e.target.getAttribute('data-saldo'));
+
+            clienteSeleccionado = clientesData.find(c => c.id_usuario == clienteId);
+            clienteIdInput.value = clienteId;
+            nuevoSaldoInput.value = saldoActual;
+            modal.style.display = "flex";
+        }
+
+        // Función para abrir modal de historial
+        async function abrirModalHistorial(e) {
+            const clienteId = e.target.getAttribute('data-id');
+            const url = `/api/clientes/${clienteId}/historial`;
+
+            try {
+                showLoader();
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(errorData?.error || 'Error al cargar historial');
+                }
+
+                const historial = await response.json();
+                actualizarTablaHistorial(Array.isArray(historial) ? historial : []);
+                historialModal.style.display = "flex";
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                actualizarTablaHistorial([]);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Función para actualizar tabla de historial
+        function actualizarTablaHistorial(historial) {
+            const tbody = document.getElementById('historialTableBody');
+            tbody.innerHTML = historial.length > 0
+                ? historial.map(item => `
+                    <tr>
+                        <td>${item.nombre_contenido || 'Sin nombre'}</td>
+                        <td>${item.id_contenido?.toString().padStart(3, '0') || 'N/A'}</td>
+                        <td>${item.fecha_descarga ? new Date(item.fecha_descarga).toLocaleDateString() : 'N/A'}</td>
+                        <td>S/.${item.precio?.toFixed(2) || '0.00'}</td>
+                        <td>${item.categoria || 'Sin categoría'}</td>
+                    </tr>
+                `).join('')
+                : `<tr><td colspan="5" class="no-data">No hay registros de descargas</td></tr>`;
+        }
+
+        // Evento para enviar formulario de saldo
+        saldoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                showLoader();
+                const response = await fetch(`/api/clientes/${clienteIdInput.value}/saldo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nuevo_saldo: parseFloat(nuevoSaldoInput.value)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error al actualizar saldo');
+                }
+
+                const resultado = await response.json();
+                showSuccess(resultado.message);
+                modal.style.display = "none";
+                await cargarClientes();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // Evento para búsqueda
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.trim().toLowerCase();
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (term.length >= 3 || term.length === 0) {
+                    buscarClientes(term);
+                }
+            }, 300);
+        });
+
+        // Función para buscar clientes
+        async function buscarClientes(termino) {
+            try {
+                showLoader();
+                const response = await fetch(`/api/clientes/buscar`, {
+                    headers: {
+                        'Search-Term': termino
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Error en búsqueda');
+                }
+
+                const resultados = await response.json();
+                actualizarTablaClientes(resultados);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error en búsqueda: ' + error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Funciones de utilidad
+        function showLoader() {
+            // Implementar lógica para mostrar spinner/loader
+            console.log("Loading...");
+        }
+
+        function hideLoader() {
+            // Implementar lógica para ocultar spinner/loader
+            console.log("Loading complete");
+        }
+
+        function showError(message) {
+            alert("Error: " + message);
+        }
+
+        function showSuccess(message) {
+            alert("Éxito: " + message);
+        }
+
+        // Cerrar modales
+        closeModal.onclick = () => modal.style.display = "none";
+        closeHistorial.onclick = () => historialModal.style.display = "none";
+
+        window.onclick = (event) => {
+            if (event.target == modal) modal.style.display = "none";
+            if (event.target == historialModal) historialModal.style.display = "none";
+        };
+    </script>
+</body>
+</html>

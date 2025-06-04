@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrar Categorías</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        a{
+            text-decoration:none;
+            color:inherit;
+        }
+
+        .side-bar {
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .main-content {
+            margin-left: 200px;
+            margin: 0 auto;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 1.2em;
+            margin-left: 5px;
+        }
+
+        .expand-btn:hover {
+            color: #333;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="side-bar">
+        <h2 class="name">QuickContentMedia</h2>
+        <div class="side-bar-options">
+            <i class="fa-solid fa-tags"></i>
+            <a href="/promociones"><span>Administrar Promociones</span></a>
+        </div>
+        <div class="side-bar-options">
+            <i class="fa-solid fa-plus"></i>
+            <a href="/contenidos"><span>Administrar Contenido</span></a>
+        </div>
+        <div class="side-bar-options">
+            <i class="fa-solid fa-layer-group"></i>
+            <a href="/categorias"><span>Administrar Categoría</span></a>
+        </div>
+        <div class="side-bar-options">
+            <i class="fa-solid fa-users"></i>
+            <a href="/clientes"><span>Administrar Clientes</span></a>
+        </div>
+    </div>
+    <div class="main-content">
+        <h2 class="small-title">Categorías</h2>
+        <div class="content-header">
+            <div id="small-btn">
+                <button id="addCategoryBtn" class="button-full">Agregar Categoría Principal</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-category" class="search-input" placeholder="Buscar categoría">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+
+        <div class="table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Subcategorías</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                    <!-- Los datos se cargarán dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar categoría -->
+    <div id="categoryModal" class="modal">
+        <form id="categoryForm">
+            <div class="modal-content">
+                <span id="closeCategoryModal" class="close">&times;</span>
+                <h2 class="small-title" id="modalTitle">Agregar Categoría</h2>
+                <input type="hidden" id="categoryId">
+                <input type="hidden" id="parentId">
+                <label for="categoryName" class="form-label">Nombre de la categoría:</label><br>
+                <input type="text" id="categoryName" class="form-input" name="categoryName" required><br>
+                <button type="submit" class="button-full">Guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Modal para subcategorías -->
+    <div id="subcategoriesModal" class="modal">
+        <div class="modal-content">
+            <span id="closeSubcategoriesModal" class="close">&times;</span>
+            <h2 class="small-title" id="subcategoriesModalTitle">Subcategorías</h2>
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Subcategorías</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="subcategoriesTableBody">
+                        <!-- Los datos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funciones de utilidad
+        function showLoader() {
+            console.log('Mostrando loader...');
+            // Implementación básica - puedes personalizar esto según tus necesidades
+            const loader = document.createElement('div');
+            loader.id = 'global-loader';
+            loader.style.position = 'fixed';
+            loader.style.top = '0';
+            loader.style.left = '0';
+            loader.style.width = '100%';
+            loader.style.height = '100%';
+            loader.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            loader.style.display = 'flex';
+            loader.style.justifyContent = 'center';
+            loader.style.alignItems = 'center';
+            loader.style.zIndex = '1000';
+            loader.innerHTML = '<div style="background: white; padding: 20px; border-radius: 5px;">Cargando...</div>';
+            document.body.appendChild(loader);
+        }
+
+        function hideLoader() {
+            console.log('Ocultando loader...');
+            const loader = document.getElementById('global-loader');
+            if (loader) {
+                document.body.removeChild(loader);
+            }
+        }
+
+        function showError(message) {
+            console.error('Error:', message);
+            // Implementación básica - puedes personalizar esto según tus necesidades
+            alert('Error: ' + message);
+        }
+
+        // Variables globales
+        let categoriesData = [];
+        let currentParentId = null;
+
+        // Elementos del DOM
+        const categoryModal = document.getElementById("categoryModal");
+        const subcategoriesModal = document.getElementById("subcategoriesModal");
+        const categoryForm = document.getElementById("categoryForm");
+        const categoryNameInput = document.getElementById("categoryName");
+        const categoryIdInput = document.getElementById("categoryId");
+        const parentIdInput = document.getElementById("parentId");
+        const searchInput = document.getElementById("search-category");
+        const closeCategoryModal = document.getElementById("closeCategoryModal");
+        const closeSubcategoriesModal = document.getElementById("closeSubcategoriesModal");
+        const addCategoryBtn = document.getElementById("addCategoryBtn");
+        const modalTitle = document.getElementById("modalTitle");
+        const subcategoriesModalTitle = document.getElementById("subcategoriesModalTitle");
+
+        // Función para cargar categorías desde la API
+        async function cargarCategorias() {
+            try {
+                console.log('Iniciando carga de categorías...');
+                showLoader();
+                const response = await fetch('/api/categorias');
+                console.log('Respuesta recibida:', response);
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    console.error('Error en la respuesta:', error);
+                    throw new Error(error?.error || 'Error al cargar categorías');
+                }
+
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+                categoriesData = data;
+                actualizarTablaCategorias(categoriesData);
+            } catch (error) {
+                console.error('Error en cargarCategorias:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Llamar a cargarCategorias cuando se cargue la página
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM completamente cargado, iniciando carga de categorías...');
+            cargarCategorias();
+        });
+
+        // Función para actualizar la tabla de categorías
+        function actualizarTablaCategorias(categorias, parentId = null) {
+            console.log('Actualizando tabla de categorías con parentId:', parentId, 'Datos:', categorias);
+            const tbody = parentId ?
+                document.getElementById('subcategoriesTableBody') :
+                document.getElementById('categoriesTableBody');
+            
+            if (!tbody) {
+                console.error('No se encontró el elemento tbody');
+                return;
+            }
+
+            const categoriasFiltradas = Array.isArray(categorias) ? 
+                categorias.filter(cat => cat.id_categoria_padre == parentId) : [];
+            console.log('Categorías filtradas:', categoriasFiltradas);
+
+            if (categoriasFiltradas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="no-data">No hay categorías</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = categoriasFiltradas.map(categoria => {
+                const subcategorias = categorias.filter(cat => cat.id_categoria_padre == categoria.id_categoria);
+                const hasSubcategories = subcategorias.length > 0;
+
+                return `
+                    <tr>
+                        <td>${categoria.nombre}</td>
+                        <td>
+                            ${subcategorias.slice(0, 3).map(sub => sub.nombre).join(', ')}
+                            ${subcategorias.length > 3 ? `... (+${subcategorias.length - 3} más)` : ''}
+                            ${hasSubcategories ?
+                                `<button class="expand-btn" data-id="${categoria.id_categoria}" title="Ver subcategorías">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>` :
+                                ''}
+                            <button class="button-full-gray small-btn add-subcategory"
+                                    data-id="${categoria.id_categoria}">
+                                Agregar subcategoría
+                            </button>
+                        </td>
+                        <td>
+                            <button class="button-full-gray small-btn rename-category"
+                                    data-id="${categoria.id_categoria}">
+                                Renombrar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Agregar event listeners a los botones
+            document.querySelectorAll('.expand-btn').forEach(btn => {
+                btn.addEventListener('click', abrirModalSubcategorias);
+            });
+
+            document.querySelectorAll('.add-subcategory').forEach(btn => {
+                btn.addEventListener('click', prepararAgregarSubcategoria);
+            });
+
+            document.querySelectorAll('.rename-category').forEach(btn => {
+                btn.addEventListener('click', prepararRenombrarCategoria);
+            });
+        }
+
+        // Función para abrir modal de subcategorías
+        function abrirModalSubcategorias(e) {
+            const categoriaId = e.currentTarget.getAttribute('data-id');
+            const categoria = categoriesData.find(c => c.id_categoria == categoriaId);
+
+            currentParentId = categoriaId;
+            subcategoriesModalTitle.textContent = `Subcategorías de ${categoria.nombre}`;
+            actualizarTablaCategorias(categoriesData, categoriaId);
+            subcategoriesModal.style.display = "flex";
+        }
+
+        // Función para preparar agregar subcategoría
+        function prepararAgregarSubcategoria(e) {
+            const parentId = e.currentTarget.getAttribute('data-id');
+            parentIdInput.value = parentId;
+            categoryIdInput.value = '';
+            categoryNameInput.value = '';
+            modalTitle.textContent = 'Agregar Subcategoría';
+            categoryModal.style.display = "flex";
+        }
+
+        // Función para preparar renombrar categoría
+        function prepararRenombrarCategoria(e) {
+            const categoriaId = e.currentTarget.getAttribute('data-id');
+            const categoria = categoriesData.find(c => c.id_categoria == categoriaId);
+
+            categoryIdInput.value = categoriaId;
+            parentIdInput.value = categoria.id_categoria_padre;
+            categoryNameInput.value = categoria.nombre;
+            modalTitle.textContent = 'Renombrar Categoría';
+            categoryModal.style.display = "flex";
+        }
+
+        // Evento para agregar categoría principal
+        addCategoryBtn.addEventListener('click', () => {
+            categoryIdInput.value = '';
+            parentIdInput.value = '';
+            categoryNameInput.value = '';
+            modalTitle.textContent = 'Agregar Categoría Principal';
+            categoryModal.style.display = "flex";
+        });
+
+        // Evento para enviar formulario de categoría
+        categoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                showLoader();
+                const method = categoryIdInput.value ? 'PUT' : 'POST';
+                const url = categoryIdInput.value ?
+                    `/api/categorias/${categoryIdInput.value}` :
+                    '/api/categorias';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: categoryNameInput.value,
+                        id_categoria_padre: parentIdInput.value || null
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error al guardar categoría');
+                }
+
+                const resultado = await response.json();
+                console.log('Resultado:', resultado);
+                showSuccess(resultado.message);
+                categoryModal.style.display = "none";
+                await cargarCategorias();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        // Evento para búsqueda
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.trim().toLowerCase();
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (term.length >= 3 || term.length === 0) {
+                    buscarCategorias(term);
+                }
+            }, 300);
+        });
+
+        // Función para buscar categorías
+        async function buscarCategorias(termino) {
+            try {
+                showLoader();
+                const response = await fetch(`/api/categorias/buscar`, {
+                    headers: {
+                        'Search-Term': termino
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Error en búsqueda');
+                }
+
+                const resultados = await response.json();
+                actualizarTablaCategorias(resultados);
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error en búsqueda: ' + error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Cerrar modales
+        closeCategoryModal.onclick = () => categoryModal.style.display = "none";
+        closeSubcategoriesModal.onclick = () => subcategoriesModal.style.display = "none";
+
+        window.onclick = (event) => {
+            if (event.target == categoryModal) categoryModal.style.display = "none";
+            if (event.target == subcategoriesModal) subcategoriesModal.style.display = "none";
+        };
+    </script>
+</body>
+</html>

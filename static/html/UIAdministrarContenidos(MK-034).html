@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrar Contenidos</title>
+    <link rel="stylesheet" href="/css/style.css">
+<style>
+        a{
+            text-decoration:none;
+            color:inherit;
+        }
+
+        .side-bar {
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+
+        .main-content {
+            margin-left: 200px;
+            margin: 0 auto;
+        }
+        
+        /* Estilos para las estrellas de valoración */
+        .rating {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0;
+        }
+        
+        .star {
+            color: #ddd;
+            font-size: 18px;
+            position: relative;
+            display: inline-block;
+            margin-right: 1px;
+        }
+        
+        .star.filled {
+            color: #ffd700; /* Color dorado para estrellas llenas */
+        }
+        
+        .star.half-filled::before {
+            content: '★';
+            position: absolute;
+            left: 0;
+            width: 50%;
+            overflow: hidden;
+            color: #ffd700;
+        }
+        
+        .rating-text {
+            margin-left: 5px;
+            font-size: 14px;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+        <div class="side-bar">
+            <h2 class="name">QuickContentMedia</h2>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-tags"></i>
+                <a href="/promociones"><span>Administrar Promociones</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-plus"></i>
+                <a href="/contenidos"><span>Administrar Contenido</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-layer-group"></i>
+                <a href="/categorias"><span>Administrar Categoría</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-users"></i>
+                <a href="/clientes"><span>Administrar Clientes</span></a>
+            </div>
+        </div>
+        <!-- Sección de Administrar Contenidos -->
+        <div class="main-content" id="contenidosSection">
+            <h2 class="small-title">Contenidos</h2>
+            <div class="content-header">
+                <button type="button" class="button-full" id="small-btn" onclick="openModal('agregarContenidoModal')">Agregar Contenido</button>
+                <div class="search-container">
+                    <input type="text" id="search-contenido" class="search-input" placeholder="Buscar contenido...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Contenidos</th>
+                            <th>Calificación</th>
+                            <th>Formato</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contenidosTableBody">
+                        <!-- Contenido tabla -->
+                    </tbody>
+                    <div class="pagination" id="contenidosPagination"></div>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Agregar Contenido -->
+        <div id="agregarContenidoModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('agregarContenidoModal')">&times;</span>
+                <h2 class="small-title">Agregar Contenido</h2>
+                <form id="agregarContenidoForm" action="/api/contenidos/agregar_contenido" method="POST" enctype="multipart/form-data">
+                    <div class="modal-grid">
+                        <div class="left-grid">
+                            <select id="tipoContenido" name="tipo_contenido" required>
+                                <option value="">Tipo de contenido</option>
+                                <option value="video">Video</option>
+                                <option value="imagen">Imagen</option>
+                                <option value="audio">Audio</option>
+                            </select>
+                            <div class="preview-area">
+                                <p class="preview-text">Vista previa del contenido</p>
+                            </div>
+                        </div>
+                        <div class="right-grid">
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" name="nombre" placeholder="Nombre del contenido" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" name="descripcion" placeholder="Descripción" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="hidden" id="categoriaId" name="categoria_id">
+                                <input type="text" id="categoriaNombre" placeholder="Categoría" readonly required>
+                                <button type="button" id="editarCategoriaBtn" class="button-full-gray" onclick="openModal('seleccionarCategoria')">Seleccionar</button>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" name="autor" placeholder="Autor" required>
+                            </div>
+                            <div class="file-info">
+                                <div class="file-box" id="file-size">Peso: -</div>
+                                <div class="file-box" id="file-extension">Extensión: -</div>
+                                <div class="file-box" id="file-mime">MIME-Type: -</div>
+                            </div>
+                            <div class="input-group price-section">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="number" step="0.01" name="precio" placeholder="Precio" class="price-input" required>
+                                <input type="file" id="uploadFile" name="archivo" style="display: none;" required>
+                                <label for="uploadFile" class="upload-icon">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </label>
+                                <span id="file-name"></span>
+                            </div>
+                            <button type="submit" class="button-full">Agregar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Editar Contenido -->
+        <div id="editarContenidoModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('editarContenidoModal')">&times;</span>
+                <h2 class="small-title">Editar Contenido</h2>
+                <form id="editarContenidoForm" action="/editar_contenido" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" id="editContenidoId" name="contenido_id">
+                    <div class="modal-grid">
+                        <div class="left-grid">
+                            <div class="preview-area" id="previewEditar">
+                                <p class="preview-text">Vista previa del contenido</p>
+                            </div>
+                            <input type="file" id="editFileInput" name="archivo">
+                        </div>
+                        <div class="right-grid">
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" id="editNombre" name="nombre" placeholder="Nombre del contenido" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" id="editDescripcion" name="descripcion" placeholder="Descripción" required>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="hidden" id="editCategoriaId" name="categoria_id">
+                                <input type="text" id="editCategoriaNombre" placeholder="Categoría" readonly required>
+                                <button type="button" id="agregarCategoriaBtn" class="button-full-gray" onclick="openModal('seleccionarCategoria')">Seleccionar</button>
+                            </div>
+                            <div class="input-group">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="text" id="editAutor" name="autor" placeholder="Autor" required>
+                            </div>
+                            <div class="file-info">
+                                <div class="file-box" id="editPeso">Peso: -</div>
+                                <div class="file-box" id="editExtension">Extensión: -</div>
+                                <div class="file-box" id="editMime">MIME-Type: -</div>
+                            </div>
+                            <div class="input-group price-section">
+                                <i class="fas fa-pen edit-icon"></i>
+                                <input type="number" step="0.01" id="editPrecio" name="precio" placeholder="Precio" class="price-input" required>
+                            </div>
+                            <button type="submit" class="button-full">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Eliminar Contenido -->
+        <div id="eliminarContenidoModal" class="modal">
+            <form class="form" action="/eliminar_contenido" method="POST">
+                <div class="modal-content">
+                    <span class="close" onclick="closeModal('eliminarContenidoModal')">&times;</span>
+                    <h2 class="form-title">¿Está seguro de que deseas eliminar este contenido?</h2>
+                    <input type="hidden" id="contenidoIdEliminar" name="contenido_id">
+                    <p class="form-subtitle">Esta acción es permanente y no se puede deshacer.</p>
+                    <button type="submit" class="button-full deletebtn">Eliminar Contenido</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Seleccionar Categoría -->
+        <div id="seleccionarCategoria" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('seleccionarCategoria')">&times;</span>
+                <h2 class="small-title">Buscar Categoría</h2>
+                <div>
+                    <input type="text" id="searchCategoria" class="search-input" placeholder="Buscar categoría...">
+                </div>
+                <div class="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriaTableBody">
+                            <!-- Contenido tabla -->
+                        </tbody>
+                        <div class="pagination" id="categoriaPagination"></div>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Funciones JavaScript relacionadas -->
+        <script>
+            // Variable global para controlar de qué modal viene la selección de categoría
+            let returnToModal = null;
+            
+            // Handle form submission
+            document.getElementById('agregarContenidoForm').addEventListener('submit', async function(e) {
+                e.preventDefault(); // Prevent default form submission
+                
+                // Get form elements
+                const form = this;
+                const categoriaIdInput = document.getElementById('categoriaId');
+                const categoriaId = categoriaIdInput ? categoriaIdInput.value.trim() : '';
+                const submitButton = form.querySelector('button[type="submit"]');
+                
+                // Validate category selection
+                if (!categoriaId) {
+                    alert('Por favor seleccione una categoría');
+                    const categoriaBtn = document.getElementById('editarCategoriaBtn');
+                    if (categoriaBtn) categoriaBtn.focus();
+                    return;
+                }
+                
+                // Disable submit button to prevent double submission
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                
+                try {
+                    // Create new FormData and manually append all fields
+                    const formData = new FormData();
+                    
+                    // Add all form fields manually
+                    formData.append('tipo_contenido', form.tipo_contenido.value);
+                    formData.append('nombre', form.nombre.value);
+                    formData.append('descripcion', form.descripcion.value);
+                    formData.append('categoria_id', categoriaId);
+                    formData.append('autor', form.autor.value);
+                    formData.append('precio', form.precio.value);
+                    
+                    // Add file if present
+                    const fileInput = document.getElementById('uploadFile');
+                    if (fileInput.files.length > 0) {
+                        formData.append('archivo', fileInput.files[0]);
+                    }
+                    
+                    // Debug: Log form data before submission
+                    console.log('=== Datos del formulario ===');
+                    console.log('categoriaId:', categoriaId);
+                    console.log('Contenido de formData:');
+                    for (let [key, value] of formData.entries()) {
+                        if (key === 'archivo') {
+                            console.log(`${key}:`, value.name, `(${value.size} bytes)`);
+                        } else {
+                            console.log(`${key}:`, value);
+                        }
+                    }
+                    
+                    // Submit the form
+                    console.log('Enviando datos al servidor...');
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    console.log('Respuesta recibida:', response.status, response.statusText);
+                    const result = await response.json();
+                    console.log('Datos de respuesta:', result);
+                    
+                    if (response.ok) {
+                        alert('Contenido agregado exitosamente');
+                        form.reset();
+                        document.getElementById('categoriaId').value = '';
+                        document.getElementById('categoriaNombre').value = '';
+                        closeModal('agregarContenidoModal');
+                        await cargarContenidos(); // Wait for content to reload
+                    } else {
+                        throw new Error(result.error || 'Error al agregar el contenido');
+                    }
+                } catch (error) {
+                    console.error('Error al enviar el formulario:', error);
+                    alert(error.message || 'Error al procesar la solicitud');
+                } finally {
+                    // Re-enable submit button
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                }
+            });
+
+            // Remove any duplicate form submission handlers
+            const form = document.getElementById("agregarContenidoForm");
+            const newForm = form.cloneNode(true);
+            form.parentNode.replaceChild(newForm, form);
+
+            // Initialize form event listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('Formulario de agregar contenido inicializado');
+                // Cargar los contenidos al iniciar la página
+                cargarContenidos();
+                // Cargar las categorías para los selectores
+                cargarCategorias();
+            });
+
+            // Función para cargar contenidos
+            async function cargarContenidos() {
+                try {
+                    console.log('Cargando contenidos...');
+                    const response = await fetch('/api/contenidos');
+                    
+                    if (!response.ok) {
+                        throw new Error(`Error HTTP: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Datos recibidos:', data);
+                    
+                    if (data.success && data.data) {
+                        const tbody = document.getElementById("contenidosTableBody");
+                        tbody.innerHTML = '';
+
+                        data.data.forEach(contenido => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td><strong>${contenido.nombre || 'Sin nombre'}</strong><br><small>Autor: ${contenido.autor || 'Sin autor'}</small></td>
+                                <td>
+                                    ${contenido.calificacion ? `
+                                        <div class="rating" title="${contenido.calificacion.toFixed(1)}/5.0">
+                                            ${Array(5).fill().map((_, i) => `
+                                                <span class="star ${i < Math.floor(contenido.calificacion) ? 'filled' : ''} 
+                                                    ${i === Math.floor(contenido.calificacion) && contenido.calificacion % 1 >= 0.5 ? 'half-filled' : ''}">
+                                                    ★
+                                                </span>
+                                            `).join('')}
+                                            <span class="rating-text">${contenido.calificacion.toFixed(1)}</span>
+                                        </div>
+                                    ` : 'Sin calificaciones'}
+                                </td>
+                                <td>${contenido.tipo_archivo || 'Sin formato'}</td>
+                                <td>${contenido.categoria || contenido.categoria_id || 'Sin categoría'}</td>
+                                <td>S/.${contenido.precio ? contenido.precio.toFixed(2) : '0.00'}</td>
+                                <td>
+                                    <button type="button" class="button-full-gray small-btn" onclick="openEditarModal(this, '${contenido.id}')" ${!contenido.id ? 'disabled' : ''}>Editar</button>
+                                    <button type="button" class="button-full-gray small-btn deletebtn" onclick="prepararEliminarContenido('${contenido.id}')" ${!contenido.id ? 'disabled' : ''}>Eliminar</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+
+                        if (typeof paginarTabla === 'function') {
+                            paginarTabla('contenidosSection .table', 'contenidosPagination');
+                        }
+                    } else {
+                        console.error('Error en la respuesta del servidor:', data);
+                        alert(data.error || 'Error al cargar los contenidos');
+                    }
+                } catch (error) {
+                    console.error('Error al cargar los contenidos:', error);
+                    alert('Error al cargar los contenidos. Por favor, intente nuevamente.');
+                }
+            }
+
+            // Función para abrir modal de edición con datos del contenido
+            function openEditarModal(button, contenidoId) {
+                fetch(`/api/contenido?id=${contenidoId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            const contenido = data.contenido;
+                            console.log('Datos del contenido:', contenido);
+
+                            document.getElementById("editContenidoId").value = contenido.id_contenido;
+                            document.getElementById("editNombre").value = contenido.nombre || '';
+                            document.getElementById("editDescripcion").value = contenido.descripcion || '';
+                            document.getElementById("editAutor").value = contenido.autor || '';
+                            document.getElementById("editPrecio").value = contenido.precio || '0.00';
+                            document.getElementById("editCategoriaId").value = contenido.id_categoria || '';
+                            document.getElementById("editCategoriaNombre").value = contenido.categoria || 'Sin categoría';
+
+                            // Actualizar vista previa si hay un archivo
+                            const previewEditar = document.getElementById("previewEditar");
+                            previewEditar.innerHTML = '';
+
+                            if (contenido.tiene_archivo) {
+                                previewEditar.innerHTML = '<p class="preview-text">El contenido tiene un archivo adjunto.</p>';
+                            } else {
+                                previewEditar.innerHTML = '<p class="preview-text">No hay archivo adjunto.</p>';
+                            }
+
+                            openModal('editarContenidoModal');
+                        } else {
+                            throw new Error(data.error || 'Error al cargar el contenido');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar el contenido:', error);
+                        alert('Error al cargar el contenido: ' + error.message);
+                    });
+            }
+
+            // Función para preparar modal de eliminar contenido
+            function prepararEliminarContenido(contenidoId) {
+                if (confirm('¿Está seguro de que desea eliminar este contenido? Esta acción no se puede deshacer.')) {
+                    eliminarContenido(contenidoId);
+                }
+            }
+
+            // Función para eliminar contenido
+            async function eliminarContenido(contenidoId) {
+                if (!contenidoId) {
+                    console.error('ID de contenido no proporcionado');
+                    alert('Error: No se proporcionó un ID de contenido válido');
+                    return;
+                }
+                
+                try {
+                    console.log('Enviando solicitud para eliminar contenido ID:', contenidoId);
+                    
+                    // Crear los parámetros de la URL
+                    const params = new URLSearchParams();
+                    params.append('contenido_id', contenidoId);
+                    
+                    const response = await fetch('/api/contenidos/eliminar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                            'Accept': 'application/json'
+                        },
+                        body: params.toString()
+                    });
+
+                    console.log('Respuesta del servidor:', response.status, response.statusText);
+                    
+                    // Intentar obtener el cuerpo de la respuesta como JSON
+                    let data;
+                    try {
+                        data = await response.json();
+                        console.log('Datos de respuesta:', data);
+                    } catch (jsonError) {
+                        console.error('Error al analizar la respuesta JSON:', jsonError);
+                        throw new Error('Error al procesar la respuesta del servidor');
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || `Error HTTP: ${response.status}`);
+                    }
+
+                    if (data.success) {
+                        alert(data.message || 'Contenido eliminado correctamente');
+                        cargarContenidos(); // Recargar la lista de contenidos
+                    } else {
+                        throw new Error(data.error || 'Error al eliminar el contenido');
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar contenido:', error);
+                    alert('Error al eliminar el contenido: ' + (error.message || 'Error desconocido'));
+                }
+            }
+
+            // Manejo de archivo subido en agregar contenido
+            const uploadFileInput = document.getElementById('uploadFile');
+            const fileNameSpan = document.getElementById('file-name');
+            const fileSizeBox = document.getElementById('file-size');
+            const fileExtensionBox = document.getElementById('file-extension');
+            const fileMimeBox = document.getElementById('file-mime');
+            const previewArea = document.querySelector("#agregarContenidoModal .preview-area");
+
+            uploadFileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+
+                fileNameSpan.textContent = file.name;
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                fileSizeBox.textContent = `Peso: ${fileSizeMB} MB`;
+                const extension = file.name.split('.').pop().toLowerCase();
+                fileExtensionBox.textContent = `Extensión: .${extension}`;
+                fileMimeBox.textContent = `MIME-Type: ${file.type}`;
+
+                // Actualizar tipo de contenido basado en el archivo
+                const tipoContenidoSelect = document.getElementById('tipoContenido');
+                if (file.type.startsWith('image/')) {
+                    tipoContenidoSelect.value = 'imagen';
+                } else if (file.type.startsWith('video/')) {
+                    tipoContenidoSelect.value = 'video';
+                } else if (file.type.startsWith('audio/')) {
+                    tipoContenidoSelect.value = 'audio';
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewArea.innerHTML = '';
+
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        img.style.width = "100%";
+                        img.style.height = "100%";
+                        img.style.objectFit = "cover";
+                        previewArea.appendChild(img);
+                    } else if (file.type.startsWith('video/')) {
+                        const video = document.createElement("video");
+                        video.src = e.target.result;
+                        video.controls = true;
+                        video.style.width = "100%";
+                        video.style.height = "100%";
+                        previewArea.appendChild(video);
+                    } else if (file.type.startsWith('audio/')) {
+                        const audio = document.createElement("audio");
+                        audio.src = e.target.result;
+                        audio.controls = true;
+                        audio.style.width = "100%";
+                        audio.style.height = "30px";
+                        previewArea.appendChild(audio);
+                    } else {
+                        previewArea.innerHTML = '<p class="preview-text">No se puede mostrar vista previa.</p>';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Manejo de archivo subido en editar contenido
+            const editFileInput = document.getElementById('editFileInput');
+            editFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const previewEditar = document.getElementById("previewEditar");
+                previewEditar.innerHTML = '';
+                const fileURL = URL.createObjectURL(file);
+
+                if (file.type.startsWith("image/")) {
+                    const img = document.createElement("img");
+                    img.src = fileURL;
+                    img.alt = file.name;
+                    img.style.width = "100%";
+                    img.style.height = "100%";
+                    img.style.objectFit = "cover";
+                    previewEditar.appendChild(img);
+                } else if (file.type.startsWith("video/")) {
+                    const video = document.createElement("video");
+                    video.src = fileURL;
+                    video.controls = true;
+                    video.style.width = "100%";
+                    video.style.height = "100%";
+                    previewEditar.appendChild(video);
+                } else if (file.type.startsWith("audio/")) {
+                    const audio = document.createElement("audio");
+                    audio.src = fileURL;
+                    audio.controls = true;
+                    audio.style.width = "100%";
+                    audio.style.height = "100%";
+                    previewEditar.appendChild(audio);
+                } else {
+                    previewEditar.innerHTML = '<p class="preview-text">No se puede mostrar vista previa de este tipo de archivo</p>';
+                }
+
+                document.getElementById("editPeso").textContent = `Peso: ${(file.size / 1024).toFixed(2)} KB`;
+                document.getElementById("editExtension").textContent = `Extensión: .${file.name.split('.').pop()}`;
+                document.getElementById("editMime").textContent = `MIME-Type: ${file.type}`;
+            });
+
+            // Búsqueda de contenidos
+            const searchContenidoInput = document.getElementById('search-contenido');
+            searchContenidoInput.addEventListener('input', function() {
+                const filtro = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#contenidosTableBody tr');
+
+                rows.forEach(fila => {
+                    const nombreContenido = fila.querySelector("td strong").textContent.toLowerCase();
+                    const autorContenido = fila.querySelector("td small").textContent.toLowerCase();
+
+                    if (nombreContenido.includes(filtro) || autorContenido.includes(filtro)) {
+                        fila.style.display = "";
+                    } else {
+                        fila.style.display = "none";
+                    }
+                });
+            });
+
+            // Manejo de formulario agregar contenido
+            document.getElementById("agregarContenidoForm").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+                
+                try {
+                    // Mostrar estado de carga
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Procesando...';
+                    
+                    console.log('Enviando datos al servidor...');
+                    const response = await fetch('/api/contenidos/agregar_contenido', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    console.log('Respuesta recibida:', response.status, response.statusText);
+                    
+                    if (!response.ok) {
+                        let errorMessage = 'Error del servidor';
+                        try {
+                            const errorData = await response.json();
+                            errorMessage = errorData.error || errorData.message || 'Error desconocido';
+                        } catch (e) {
+                            console.error('Error al procesar respuesta de error:', e);
+                        }
+                        throw new Error(errorMessage);
+                    }
+
+                    const data = await response.json();
+                    console.log('Datos de respuesta:', data);
+                    
+                    if (data.success) {
+                        alert('Contenido agregado correctamente');
+                        closeModal('agregarContenidoModal');
+                        cargarContenidos();
+                    } else {
+                        throw new Error(data.message || 'Error al agregar contenido');
+                    }
+                } catch (error) {
+                    console.error('Error completo:', error);
+                    let errorMessage = 'Error al procesar la solicitud';
+                    
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        errorMessage = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    }
+                    
+                    alert(`Error: ${errorMessage}`);
+                } finally {
+                    // Restaurar estado del botón
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
+            });
+
+            // Manejo de formulario editar contenido
+            document.getElementById("editarContenidoForm").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+                
+                try {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Actualizando...';
+
+                    // Crear FormData para enviar los datos
+                    const formDataToSend = new FormData();
+                    formDataToSend.append('contenido_id', formData.get('contenido_id'));
+                    formDataToSend.append('nombre', formData.get('nombre'));
+                    formDataToSend.append('descripcion', formData.get('descripcion'));
+                    formDataToSend.append('autor', formData.get('autor'));
+                    formDataToSend.append('precio', formData.get('precio'));
+                    formDataToSend.append('categoria_id', formData.get('categoria_id'));
+
+                    // Agregar el archivo si existe
+                    const archivoInput = document.getElementById('editFileInput');
+                    if (archivoInput.files.length > 0) {
+                        formDataToSend.append('archivo', archivoInput.files[0]);
+                    }
+
+                    const response = await fetch('/api/contenidos/editar', {
+                        method: 'POST',
+                        body: formDataToSend
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert('Contenido actualizado correctamente');
+                        closeModal('editarContenidoModal');
+                        cargarContenidos();
+                    } else {
+                        throw new Error(data.error || 'Error al actualizar el contenido');
+                    }
+                } catch (error) {
+                    console.error('Error al actualizar el contenido:', error);
+                    alert('Error al actualizar el contenido: ' + (error.message || 'Error desconocido'));
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
+            });
+
+            // Manejo de formulario eliminar contenido
+            document.getElementById("eliminarContenidoModal").querySelector("form").addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+
+                try {
+                    const response = await fetch('/api/contenidos/eliminar', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json'
+                        },
+                        body: `contenido_id=${encodeURIComponent(contenidoIdInput.value)}`
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Error HTTP: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        alert(data.message || 'Contenido eliminado correctamente');
+                        closeModal('eliminarContenidoModal');
+                        cargarContenidos();
+                    } else {
+                        throw new Error(data.error || 'Error al eliminar el contenido');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al conectar con el servidor');
+                }
+            });
+
+            // Función para seleccionar categoría
+            function seleccionarCategoria(id, nombre) {
+                try {
+                    // Asegurarse de que el ID sea un número
+                    const categoriaId = Number(id);
+                    console.log('seleccionarCategoria llamado con:', { categoriaId, nombre, returnToModal });
+                    
+                    if (returnToModal === "agregarContenidoModal") {
+                        const categoriaIdInput = document.getElementById("categoriaId");
+                        const categoriaNombreInput = document.getElementById("categoriaNombre");
+                        
+                        if (!categoriaIdInput || !categoriaNombreInput) {
+                            throw new Error('No se encontraron los elementos de entrada de categoría');
+                        }
+                        
+                        console.log('Antes de establecer valores - categoriaId:', categoriaIdInput.value);
+                        console.log('Antes de establecer valores - categoriaNombre:', categoriaNombreInput.value);
+                        
+                        // Establecer los valores
+                        categoriaIdInput.value = categoriaId;
+                        categoriaNombreInput.value = nombre;
+                        
+                        console.log('Después de establecer valores - categoriaId:', categoriaIdInput.value);
+                        console.log('Después de establecer valores - categoriaNombre:', categoriaNombreInput.value);
+                        
+                        // Verificar que los valores se establecieron correctamente
+                        setTimeout(() => {
+                            const verifyId = document.getElementById("categoriaId").value;
+                            const verifyName = document.getElementById("categoriaNombre").value;
+                            console.log('Verificación después de establecer valores - categoriaId:', verifyId);
+                            console.log('Verificación después de establecer valores - categoriaNombre:', verifyName);
+                            
+                            if (!verifyId) {
+                                console.error('Error: No se pudo establecer el ID de la categoría');
+                            }
+                        }, 100);
+                    } else if (returnToModal === "editarContenidoModal") {
+                        document.getElementById("editCategoriaId").value = categoriaId;
+                        document.getElementById("editCategoriaNombre").value = nombre;
+                    } else {
+                        console.error('returnToModal no está definido o no es válido:', returnToModal);
+                    }
+                } catch (error) {
+                    console.error('Error en seleccionarCategoria:', error);
+                    alert('Error al seleccionar la categoría: ' + error.message);
+                } finally {
+                    closeModal('seleccionarCategoria');
+                }
+            }
+
+
+            // Mostrar modal para seleccionar categoría (para agregar contenido)
+            document.getElementById("editarCategoriaBtn").addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Abriendo selector de categoría desde agregar contenido');
+                returnToModal = "agregarContenidoModal";
+                openModal('seleccionarCategoria');
+                cargarCategorias();
+            });
+
+            // Mostrar modal para seleccionar categoría (para editar contenido)
+            document.getElementById("agregarCategoriaBtn").addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Abriendo selector de categoría desde editar contenido');
+                returnToModal = "editarContenidoModal";
+                openModal('seleccionarCategoria');
+                cargarCategorias();
+            });
+
+            // Función para abrir modal
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                modal.style.display = "block";
+                
+                // Si es el modal de selección de categorías, cargar las categorías
+                if (modalId === 'seleccionarCategoria') {
+                    cargarCategorias();
+                }
+            }
+
+            // Función para cerrar modal
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.style.display = "none";
+                    document.body.style.overflow = "";
+                }
+            }
+
+            // Cerrar modal al hacer clic fuera
+            window.onclick = function(event) {
+                const modals = document.getElementsByClassName("modal");
+                for (let i = 0; i < modals.length; i++) {
+                    if (event.target == modals[i]) {
+                        modals[i].style.display = "none";
+                        document.body.style.overflow = "";
+                    }
+                }
+            }
+
+            // Función para cargar las categorías
+            function cargarCategorias() {
+                fetch('/api/contenidos/categorias')
+                    .then(response => response.json())
+                    .then(data => {
+                        const tbody = document.getElementById('categoriaTableBody');
+                        tbody.innerHTML = '';
+
+                        data.forEach(categoria => {
+                            const row = document.createElement('tr');
+                            // Create a safe version of the name by escaping quotes
+                            const safeNombre = String(categoria.nombre).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                            
+                            row.innerHTML = `
+                                <td>${categoria.nombre}</td>
+                                <td>
+                                    <button type="button" class="button-full-gray" 
+                                        onclick="seleccionarCategoria(${categoria.id_categoria}, '${safeNombre}')">
+                                        Seleccionar
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar categorías:', error);
+                        alert('Error al cargar las categorías');
+                    });
+            }
+        </script>
+</body>
+</html>
