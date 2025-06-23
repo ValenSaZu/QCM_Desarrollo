@@ -2,25 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Administrar Contenidos</title>
+    <title>Administrar Contenidos - QuickContentMedia</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-        a{
-            text-decoration:none;
-            color:inherit;
-        }
-
-        .side-bar {
-            position: fixed;
-            left: 0;
-            top: 0;
-        }
-
-        .main-content {
-            margin-left: 200px;
-            margin: 0 auto;
-        }
-        
         /* Estilos para las estrellas de valoración */
         .rating {
             display: inline-flex;
@@ -56,31 +41,34 @@
             font-weight: bold;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="app-container">
         <div class="side-bar">
-            <h2 class="name">QuickContentMedia</h2>
+            <div class="name">QCM</div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-tags"></i>
-                <a href="/promociones"><span>Administrar Promociones</span></a>
+                <a href="/admin"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-plus"></i>
-                <a href="/contenidos"><span>Administrar Contenido</span></a>
+                <a href="/admin/promociones"><i class="fa-solid fa-tags"></i><span>Administrar Promociones</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/admin/contenidos"><i class="fa-solid fa-plus"></i><span>Administrar Contenido</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-layer-group"></i>
-                <a href="/categorias"><span>Administrar Categoría</span></a>
+                <a href="/admin/categorias"><i class="fa-solid fa-layer-group"></i><span>Administrar Categoría</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-users"></i>
-                <a href="/clientes"><span>Administrar Clientes</span></a>
+                <a href="/admin/clientes"><i class="fa-solid fa-users"></i><span>Administrar Clientes</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
             </div>
         </div>
         <!-- Sección de Administrar Contenidos -->
         <div class="main-content" id="contenidosSection">
+            <div class="content-wrapper">
             <h2 class="small-title">Contenidos</h2>
             <div class="content-header">
                 <button type="button" class="button-full" id="small-btn" onclick="openModal('agregarContenidoModal')">Agregar Contenido</button>
@@ -107,6 +95,7 @@
                     </tbody>
                     <div class="pagination" id="contenidosPagination"></div>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -344,20 +333,6 @@
                 }
             });
 
-            // Remove any duplicate form submission handlers
-            const form = document.getElementById("agregarContenidoForm");
-            const newForm = form.cloneNode(true);
-            form.parentNode.replaceChild(newForm, form);
-
-            // Initialize form event listeners
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('Formulario de agregar contenido inicializado');
-                // Cargar los contenidos al iniciar la página
-                cargarContenidos();
-                // Cargar las categorías para los selectores
-                cargarCategorias();
-            });
-
             // Función para cargar contenidos
             async function cargarContenidos() {
                 try {
@@ -392,12 +367,12 @@
                                         </div>
                                     ` : 'Sin calificaciones'}
                                 </td>
-                                <td>${contenido.tipo_archivo || 'Sin formato'}</td>
+                                <td>${contenido.formato || 'Sin formato'}</td>
                                 <td>${contenido.categoria || contenido.categoria_id || 'Sin categoría'}</td>
                                 <td>S/.${contenido.precio ? contenido.precio.toFixed(2) : '0.00'}</td>
                                 <td>
-                                    <button type="button" class="button-full-gray small-btn" onclick="openEditarModal(this, '${contenido.id}')" ${!contenido.id ? 'disabled' : ''}>Editar</button>
-                                    <button type="button" class="button-full-gray small-btn deletebtn" onclick="prepararEliminarContenido('${contenido.id}')" ${!contenido.id ? 'disabled' : ''}>Eliminar</button>
+                                    <button type="button" class="button-full-gray small-btn" onclick="openEditarModal(this, '${contenido.id_contenido}')" ${!contenido.id_contenido ? 'disabled' : ''}>Editar</button>
+                                    <button type="button" class="button-full-gray small-btn deletebtn" onclick="prepararEliminarContenido('${contenido.id_contenido}')" ${!contenido.id_contenido ? 'disabled' : ''}>Eliminar</button>
                                 </td>
                             `;
                             tbody.appendChild(tr);
@@ -638,219 +613,17 @@
                 });
             });
 
-            // Manejo de formulario agregar contenido
-            document.getElementById("agregarContenidoForm").addEventListener("submit", async function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalButtonText = submitButton.textContent;
-                
-                try {
-                    // Mostrar estado de carga
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Procesando...';
-                    
-                    console.log('Enviando datos al servidor...');
-                    const response = await fetch('/api/contenidos/agregar_contenido', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    console.log('Respuesta recibida:', response.status, response.statusText);
-                    
-                    if (!response.ok) {
-                        let errorMessage = 'Error del servidor';
-                        try {
-                            const errorData = await response.json();
-                            errorMessage = errorData.error || errorData.message || 'Error desconocido';
-                        } catch (e) {
-                            console.error('Error al procesar respuesta de error:', e);
-                        }
-                        throw new Error(errorMessage);
-                    }
-
-                    const data = await response.json();
-                    console.log('Datos de respuesta:', data);
-                    
-                    if (data.success) {
-                        alert('Contenido agregado correctamente');
-                        closeModal('agregarContenidoModal');
-                        cargarContenidos();
-                    } else {
-                        throw new Error(data.message || 'Error al agregar contenido');
-                    }
-                } catch (error) {
-                    console.error('Error completo:', error);
-                    let errorMessage = 'Error al procesar la solicitud';
-                    
-                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                        errorMessage = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
-                    } else if (error.message) {
-                        errorMessage = error.message;
-                    }
-                    
-                    alert(`Error: ${errorMessage}`);
-                } finally {
-                    // Restaurar estado del botón
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalButtonText;
+            // Función para seleccionar una categoría y volver al modal anterior
+            function seleccionarCategoria(categoriaId, categoriaNombre) {
+                if (returnToModal === 'agregar') {
+                    document.getElementById('categoriaId').value = categoriaId;
+                    document.getElementById('categoriaNombre').value = categoriaNombre;
+                } else if (returnToModal === 'editar') {
+                    document.getElementById('editCategoriaId').value = categoriaId;
+                    document.getElementById('editCategoriaNombre').value = categoriaNombre;
                 }
-            });
-
-            // Manejo de formulario editar contenido
-            document.getElementById("editarContenidoForm").addEventListener("submit", async function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const submitButton = this.querySelector('button[type="submit"]');
-                const originalButtonText = submitButton.textContent;
-                
-                try {
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Actualizando...';
-
-                    // Crear FormData para enviar los datos
-                    const formDataToSend = new FormData();
-                    formDataToSend.append('contenido_id', formData.get('contenido_id'));
-                    formDataToSend.append('nombre', formData.get('nombre'));
-                    formDataToSend.append('descripcion', formData.get('descripcion'));
-                    formDataToSend.append('autor', formData.get('autor'));
-                    formDataToSend.append('precio', formData.get('precio'));
-                    formDataToSend.append('categoria_id', formData.get('categoria_id'));
-
-                    // Agregar el archivo si existe
-                    const archivoInput = document.getElementById('editFileInput');
-                    if (archivoInput.files.length > 0) {
-                        formDataToSend.append('archivo', archivoInput.files[0]);
-                    }
-
-                    const response = await fetch('/api/contenidos/editar', {
-                        method: 'POST',
-                        body: formDataToSend
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        alert('Contenido actualizado correctamente');
-                        closeModal('editarContenidoModal');
-                        cargarContenidos();
-                    } else {
-                        throw new Error(data.error || 'Error al actualizar el contenido');
-                    }
-                } catch (error) {
-                    console.error('Error al actualizar el contenido:', error);
-                    alert('Error al actualizar el contenido: ' + (error.message || 'Error desconocido'));
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.textContent = originalButtonText;
-                }
-            });
-
-            // Manejo de formulario eliminar contenido
-            document.getElementById("eliminarContenidoModal").querySelector("form").addEventListener("submit", async function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-
-                try {
-                    const response = await fetch('/api/contenidos/eliminar', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'Accept': 'application/json'
-                        },
-                        body: `contenido_id=${encodeURIComponent(contenidoIdInput.value)}`
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.error || `Error HTTP: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        alert(data.message || 'Contenido eliminado correctamente');
-                        closeModal('eliminarContenidoModal');
-                        cargarContenidos();
-                    } else {
-                        throw new Error(data.error || 'Error al eliminar el contenido');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error al conectar con el servidor');
-                }
-            });
-
-            // Función para seleccionar categoría
-            function seleccionarCategoria(id, nombre) {
-                try {
-                    // Asegurarse de que el ID sea un número
-                    const categoriaId = Number(id);
-                    console.log('seleccionarCategoria llamado con:', { categoriaId, nombre, returnToModal });
-                    
-                    if (returnToModal === "agregarContenidoModal") {
-                        const categoriaIdInput = document.getElementById("categoriaId");
-                        const categoriaNombreInput = document.getElementById("categoriaNombre");
-                        
-                        if (!categoriaIdInput || !categoriaNombreInput) {
-                            throw new Error('No se encontraron los elementos de entrada de categoría');
-                        }
-                        
-                        console.log('Antes de establecer valores - categoriaId:', categoriaIdInput.value);
-                        console.log('Antes de establecer valores - categoriaNombre:', categoriaNombreInput.value);
-                        
-                        // Establecer los valores
-                        categoriaIdInput.value = categoriaId;
-                        categoriaNombreInput.value = nombre;
-                        
-                        console.log('Después de establecer valores - categoriaId:', categoriaIdInput.value);
-                        console.log('Después de establecer valores - categoriaNombre:', categoriaNombreInput.value);
-                        
-                        // Verificar que los valores se establecieron correctamente
-                        setTimeout(() => {
-                            const verifyId = document.getElementById("categoriaId").value;
-                            const verifyName = document.getElementById("categoriaNombre").value;
-                            console.log('Verificación después de establecer valores - categoriaId:', verifyId);
-                            console.log('Verificación después de establecer valores - categoriaNombre:', verifyName);
-                            
-                            if (!verifyId) {
-                                console.error('Error: No se pudo establecer el ID de la categoría');
-                            }
-                        }, 100);
-                    } else if (returnToModal === "editarContenidoModal") {
-                        document.getElementById("editCategoriaId").value = categoriaId;
-                        document.getElementById("editCategoriaNombre").value = nombre;
-                    } else {
-                        console.error('returnToModal no está definido o no es válido:', returnToModal);
-                    }
-                } catch (error) {
-                    console.error('Error en seleccionarCategoria:', error);
-                    alert('Error al seleccionar la categoría: ' + error.message);
-                } finally {
                     closeModal('seleccionarCategoria');
-                }
             }
-
-
-            // Mostrar modal para seleccionar categoría (para agregar contenido)
-            document.getElementById("editarCategoriaBtn").addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Abriendo selector de categoría desde agregar contenido');
-                returnToModal = "agregarContenidoModal";
-                openModal('seleccionarCategoria');
-                cargarCategorias();
-            });
-
-            // Mostrar modal para seleccionar categoría (para editar contenido)
-            document.getElementById("agregarCategoriaBtn").addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Abriendo selector de categoría desde editar contenido');
-                returnToModal = "editarContenidoModal";
-                openModal('seleccionarCategoria');
-                cargarCategorias();
-            });
 
             // Función para abrir modal
             function openModal(modalId) {
@@ -887,20 +660,32 @@
             function cargarCategorias() {
                 fetch('/api/contenidos/categorias')
                     .then(response => response.json())
-                    .then(data => {
+                    .then(response => {
+                        // Verificar si la respuesta tiene el formato {success, data} o es un array directo
+                        const categorias = Array.isArray(response) ? response : 
+                                      (response.success ? response.data : []);
+                        
                         const tbody = document.getElementById('categoriaTableBody');
                         tbody.innerHTML = '';
 
-                        data.forEach(categoria => {
+                        if (!Array.isArray(categorias)) {
+                            console.error('Las categorías no son un array:', categorias);
+                            throw new Error('Formato de respuesta inesperado');
+                        }
+
+                        categorias.forEach(categoria => {
+                            if (!categoria) return; // Saltar elementos nulos o indefinidos
+                            
                             const row = document.createElement('tr');
                             // Create a safe version of the name by escaping quotes
-                            const safeNombre = String(categoria.nombre).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                            const safeNombre = String(categoria.nombre || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                            const categoriaId = categoria.id_categoria || 0;
                             
                             row.innerHTML = `
-                                <td>${categoria.nombre}</td>
+                                <td>${categoria.nombre || 'Sin nombre'}</td>
                                 <td>
                                     <button type="button" class="button-full-gray" 
-                                        onclick="seleccionarCategoria(${categoria.id_categoria}, '${safeNombre}')">
+                                        onclick="seleccionarCategoria(${categoriaId}, '${safeNombre}')">
                                         Seleccionar
                                     </button>
                                 </td>
@@ -913,6 +698,23 @@
                         alert('Error al cargar las categorías');
                     });
             }
+
+            // Inicializar la carga de contenidos y categorías
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log("Formulario de agregar contenido inicializado");
+                cargarContenidos();
+                cargarCategorias();
+
+                document.querySelector('#agregarContenidoForm .button-full-gray').onclick = () => {
+                    returnToModal = 'agregar';
+                    openModal('seleccionarCategoria');
+                };
+                document.querySelector('#editarContenidoForm .button-full-gray').onclick = () => {
+                    returnToModal = 'editar';
+                    openModal('seleccionarCategoria');
+                };
+            });
         </script>
+    </div>
 </body>
 </html>

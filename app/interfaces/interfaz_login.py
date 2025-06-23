@@ -48,3 +48,13 @@ class InterfazLogin:
         </body>
         </html>
         """
+
+    @staticmethod
+    def servir_pagina_login():
+        """Sirve la página de login"""
+        try:
+            with open('static/html/UIAccesoAlPortal(MK-001).html', 'r', encoding='utf-8') as file:
+                return file.read()
+        except Exception as e:
+            print(f"Error leyendo archivo de login: {e}")
+            return None

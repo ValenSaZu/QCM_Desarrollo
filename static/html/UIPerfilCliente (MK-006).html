@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - QCM</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        /* Estilos para el modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .qr-image-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-image {
+            max-width: 200px;
+            height: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        /* Estilos para las estrellas de calificación */
+        .rating-stars-historial {
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .rating-stars-historial .star-filled {
+            color: #FFD700;
+        }
+
+        .rating-stars-historial .star-empty {
+            color: #ddd;
+        }
+
+        .rating-text {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 2px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>QCM</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="UIInicioCliente(MK-012).html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="UIInicioCliente(MK-012).html#promociones" class="nav-link">
+                    <i class="fas fa-percentage"></i>
+                    <span>Promociones</span>
+                </a>
+                <a href="UIInicioCliente(MK-012).html#ranking" class="nav-link">
+                    <i class="fas fa-trophy"></i>
+                    <span>Ranking</span>
+                </a>
+                <a href="UICarrito(MK-015).html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Carrito</span>
+                </a>
+                <a href="UIMisContenidos(MK-005).html" class="nav-link">
+                    <i class="fas fa-download"></i>
+                    <span>Mis Contenidos</span>
+                </a>
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-user"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                <a href="#" class="nav-link" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            <h1>Mi Perfil</h1>
+            
+            <div class="perfil-container">
+                <div class="perfil-info">
+                    <div class="perfil-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="perfil-datos">
+                        <h2 id="nombre-usuario">Cargando...</h2>
+                        <p id="email-usuario">cargando@email.com</p>
+                        <p id="telefono-usuario">Cargando...</p>
+                    </div>
+                </div>
+                
+                <div class="perfil-stats">
+                    <div class="stat-card">
+                        <i class="fas fa-shopping-bag"></i>
+                        <h3>Compras Realizadas</h3>
+                        <p id="total-compras">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-download"></i>
+                        <h3>Descargas</h3>
+                        <p id="total-descargas">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star"></i>
+                        <h3>Valoraciones</h3>
+                        <p id="total-valoraciones">0</p>
+                    </div>
+                </div>
+                
+                <div class="perfil-secciones">
+                    <div class="seccion-tabs">
+                        <button class="tab-btn active" onclick="mostrarSeccion('datos')">Datos Personales</button>
+                        <button class="tab-btn" onclick="mostrarSeccion('seguridad')">Seguridad</button>
+                        <button class="tab-btn" onclick="mostrarSeccion('historial')">Historial</button>
+                    </div>
+                    
+                    <div id="datos-seccion" class="seccion-contenido active">
+                        <h3>Editar Datos Personales</h3>
+                        <form id="form-datos" class="perfil-form">
+                            <div class="form-group">
+                                <label>Nombre:</label>
+                                <input type="text" name="nombre" id="input-nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Apellido:</label>
+                                <input type="text" name="apellido" id="input-apellido" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email:</label>
+                                <input type="email" name="email" id="input-email" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono:</label>
+                                <input type="tel" name="telefono" id="input-telefono">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Actualizar Datos</button>
+                        </form>
+                    </div>
+                    
+                    <div id="seguridad-seccion" class="seccion-contenido">
+                        <h3>Cambiar Contraseña</h3>
+                        <form id="form-password" class="perfil-form">
+                            <div class="form-group">
+                                <label>Contraseña Actual:</label>
+                                <input type="password" name="password_actual" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nueva Contraseña:</label>
+                                <input type="password" name="password_nueva" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Confirmar Nueva Contraseña:</label>
+                                <input type="password" name="password_confirmar" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+                        </form>
+                    </div>
+                    
+                    <div id="historial-seccion" class="seccion-contenido">
+                        <h3>Historial de Actividad</h3>
+                        <div class="historial-filtros">
+                            <select id="filtro-actividad">
+                                <option value="todas">Todas las actividades</option>
+                                <option value="compras">Compras</option>
+                                <option value="descargas">Descargas</option>
+                                <option value="valoraciones">Valoraciones</option>
+                            </select>
+                        </div>
+                        <div class="historial-lista" id="historial-lista">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para recargar saldo -->
+     <div id="recargaModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="small-title">Recargar Saldo</h2>
+
+            <div class="qr-instructions">
+                <p>Escaneé el QR e ingrese la cantidad de dinero que necesita recargar y su username</p>
+
+                <div class="qr-image-container">
+                    <img src="/img/yape-qr.png" alt="QR de Yape" class="qr-image">
+                </div>
+
+                <p class="qr-note">Tiempo de espera es de 1 día máximo para recibir la cantidad de dinero pagado</p>
+                
+                <button id="confirmar-recarga" class="button-full">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para cambiar contraseña -->
+    <div id="contrasenaModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 class="small-title">Cambiar Contraseña</h2>
+            <div class="form-group">
+                <label for="contrasena-actual">Contraseña actual:</label>
+                <input type="password" id="contrasena-actual" class="form-input">
+            </div>
+            <div class="form-group">
+                <label for="nueva-contrasena">Nueva contraseña:</label>
+                <input type="password" id="nueva-contrasena" class="form-input" minlength="8">
+                <small class="password-hint">Mínimo 8 caracteres</small>
+                <div id="password-strength" class="password-strength"></div>
+            </div>
+            <div class="form-group">
+                <label for="confirmar-contrasena">Confirmar nueva contraseña:</label>
+                <input type="password" id="confirmar-contrasena" class="form-input">
+                <div id="password-match" class="password-match"></div>
+            </div>
+            <button id="confirmar-contrasena-btn" class="button-full">Actualizar</button>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarPerfil();
+            cargarEstadisticas();
+            cargarHistorial();
+            
+            document.getElementById('form-datos').addEventListener('submit', actualizarDatos);
+            document.getElementById('form-password').addEventListener('submit', cambiarPassword);
+            document.getElementById('filtro-actividad').addEventListener('change', filtrarHistorial);
+        });
+
+        function cargarPerfil() {
+            fetch('/api/perfil')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('nombre-usuario').textContent = `${data.nombre} ${data.apellido}`;
+                    document.getElementById('email-usuario').textContent = data.email;
+                    document.getElementById('telefono-usuario').textContent = data.telefono || 'No especificado';
+                    
+                    document.getElementById('input-nombre').value = data.nombre;
+                    document.getElementById('input-apellido').value = data.apellido;
+                    document.getElementById('input-email').value = data.email;
+                    document.getElementById('input-telefono').value = data.telefono || '';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function cargarEstadisticas() {
+            fetch('/api/perfil/estadisticas')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total-compras').textContent = data.total_compras;
+                    document.getElementById('total-descargas').textContent = data.total_descargas;
+                    document.getElementById('total-valoraciones').textContent = data.total_valoraciones;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function cargarHistorial() {
+            fetch('/api/perfil/historial')
+                .then(response => response.json())
+                .then(data => {
+                    mostrarHistorial(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function mostrarHistorial(actividades) {
+            const lista = document.getElementById('historial-lista');
+            lista.innerHTML = actividades.map(actividad => `
+                <div class="actividad-item">
+                    <div class="actividad-icono">
+                        <i class="fas fa-${obtenerIconoActividad(actividad.tipo)}"></i>
+                    </div>
+                    <div class="actividad-info">
+                        <h4>${actividad.titulo}</h4>
+                        <p>${actividad.descripcion}</p>
+                        <span class="actividad-fecha">${formatearFecha(actividad.fecha)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function obtenerIconoActividad(tipo) {
+            switch(tipo) {
+                case 'compra': return 'shopping-bag';
+                case 'descarga': return 'download';
+                case 'valoracion': return 'star';
+                default: return 'circle';
+            }
+        }
+
+        function formatearFecha(fecha) {
+            return new Date(fecha).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function mostrarSeccion(seccion) {
+            document.querySelectorAll('.seccion-contenido').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(seccion + '-seccion').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function actualizarDatos(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                nombre: formData.get('nombre'),
+                apellido: formData.get('apellido'),
+                email: formData.get('email'),
+                telefono: formData.get('telefono')
+            };
+            
+            fetch('/api/perfil/actualizar', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Datos actualizados exitosamente');
+                    cargarPerfil();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar los datos');
+            });
+        }
+
+        function cambiarPassword(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const passwordNueva = formData.get('password_nueva');
+            const passwordConfirmar = formData.get('password_confirmar');
+            
+            if (passwordNueva !== passwordConfirmar) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            const data = {
+                password_actual: formData.get('password_actual'),
+                password_nueva: passwordNueva
+            };
+            
+            fetch('/api/perfil/cambiar-password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Contraseña cambiada exitosamente');
+                    e.target.reset();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar la contraseña');
+            });
+        }
+
+        function filtrarHistorial() {
+            const filtro = document.getElementById('filtro-actividad').value;
+            fetch(`/api/perfil/historial?filtro=${filtro}`)
+                .then(response => response.json())
+                .then(data => {
+                    mostrarHistorial(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio - QCM</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>QCM</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" data-view="inicio">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="#" class="nav-link" data-view="promociones">
+                    <i class="fas fa-percentage"></i>
+                    <span>Promociones</span>
+                </a>
+                <a href="#" class="nav-link" data-view="ranking">
+                    <i class="fas fa-trophy"></i>
+                    <span>Ranking</span>
+                </a>
+                <a href="UICarrito(MK-015).html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Carrito</span>
+                </a>
+                <a href="UIMisContenidos(MK-005).html" class="nav-link">
+                    <i class="fas fa-download"></i>
+                    <span>Mis Contenidos</span>
+                </a>
+                <a href="UIPerfilCliente (MK-006).html" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                <a href="#" class="nav-link" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            <div id="inicio-view" class="view active">
+                <h1>Bienvenido a QCM</h1>
+                <p>Descubre contenido digital de calidad</p>
+                
+                <div class="search-section">
+                    <input type="text" id="search-input" placeholder="Buscar contenido..." class="search-input">
+                    <button onclick="buscarContenido()" class="btn btn-primary">Buscar</button>
+                </div>
+                
+                <div class="filters-section">
+                    <select id="categoria-filter" class="filter-select">
+                        <option value="">Todas las categorías</option>
+                    </select>
+                    <select id="formato-filter" class="filter-select">
+                        <option value="">Todos los formatos</option>
+                        <option value="imagen">Imágenes</option>
+                        <option value="video">Videos</option>
+                        <option value="audio">Audio</option>
+                        <option value="documento">Documentos</option>
+                    </select>
+                    <button onclick="aplicarFiltros()" class="btn">Filtrar</button>
+                </div>
+                
+                <div class="contenidos-grid" id="contenidos-grid">
+                </div>
+            </div>
+            
+            <div id="promociones-view" class="view">
+                <h2>Promociones Activas</h2>
+                <div class="promociones-grid" id="promociones-grid">
+                </div>
+            </div>
+            
+            <div id="ranking-view" class="view">
+                <h2>Ranking de Contenidos</h2>
+                <div class="ranking-list" id="ranking-list">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarContenidos();
+            cargarCategorias();
+            cargarPromociones();
+            cargarRanking();
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (this.getAttribute('data-view')) {
+                        e.preventDefault();
+                        mostrarVista(this.getAttribute('data-view'));
+                    }
+                });
+            });
+        });
+
+        function mostrarVista(vista) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            
+            document.getElementById(vista + '-view').classList.add('active');
+            document.querySelector(`[data-view="${vista}"]`).classList.add('active');
+        }
+
+        function cargarContenidos() {
+            fetch('/api/contenidos')
+                .then(response => response.json())
+                .then(data => {
+                    mostrarContenidos(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function mostrarContenidos(contenidos) {
+            const grid = document.getElementById('contenidos-grid');
+            grid.innerHTML = contenidos.map(contenido => `
+                <div class="contenido-card">
+                    <div class="contenido-preview">
+                        <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
+                    </div>
+                    <div class="contenido-info">
+                        <h3>${contenido.nombre}</h3>
+                        <p class="autor">Por: ${contenido.autor}</p>
+                        <p class="categoria">${contenido.categoria}</p>
+                        <div class="precio-section">
+                            ${contenido.precio_descuento ? 
+                                `<span class="precio-original">$${contenido.precio}</span>
+                                 <span class="precio-descuento">$${contenido.precio_descuento}</span>
+                                 <span class="descuento-badge">-${contenido.porcentaje_descuento}%</span>` :
+                                `<span class="precio">$${contenido.precio}</span>`
+                            }
+                        </div>
+                        <div class="rating">
+                            <span class="stars">${generarEstrellas(contenido.calificacion_promedio)}</span>
+                            <span class="rating-text">(${contenido.calificacion_promedio})</span>
+                        </div>
+                        <button onclick="agregarAlCarrito(${contenido.id_contenido})" class="btn btn-primary">
+                            <i class="fas fa-cart-plus"></i> Agregar al Carrito
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function obtenerIconoFormato(formato) {
+            if (!formato) return 'alt';
+            const formatoLower = formato.toLowerCase();
+            if (formatoLower.includes('mp4') || formatoLower.includes('avi') || formatoLower.includes('mov')) return 'video';
+            if (formatoLower.includes('mp3') || formatoLower.includes('wav') || formatoLower.includes('ogg')) return 'audio';
+            if (formatoLower.includes('jpg') || formatoLower.includes('png') || formatoLower.includes('gif')) return 'image';
+            if (formatoLower.includes('pdf') || formatoLower.includes('doc')) return 'pdf';
+            return 'alt';
+        }
+
+        function generarEstrellas(calificacion) {
+            const estrellasLlenas = Math.floor(calificacion / 2);
+            const estrellaMedia = calificacion % 2 >= 1;
+            const estrellasVacias = 5 - estrellasLlenas - (estrellaMedia ? 1 : 0);
+            
+            return '★'.repeat(estrellasLlenas) + 
+                   (estrellaMedia ? '☆' : '') + 
+                   '☆'.repeat(estrellasVacias);
+        }
+
+        function cargarCategorias() {
+            fetch('/api/categorias')
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('categoria-filter');
+                    data.forEach(categoria => {
+                        const option = document.createElement('option');
+                        option.value = categoria.id_categoria;
+                        option.textContent = categoria.nombre;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function cargarPromociones() {
+            fetch('/api/contenidos/promociones')
+                .then(response => response.json())
+                .then(data => {
+                    const grid = document.getElementById('promociones-grid');
+                    grid.innerHTML = data.map(contenido => `
+                        <div class="promocion-card">
+                            <div class="promocion-badge">-${contenido.descuento}%</div>
+                            <div class="contenido-preview">
+                                <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
+                            </div>
+                            <div class="contenido-info">
+                                <h3>${contenido.nombre}</h3>
+                                <p class="autor">Por: ${contenido.autor}</p>
+                                <p class="categoria">${contenido.categoria}</p>
+                                <div class="precio-section">
+                                    <span class="precio-original">$${contenido.precio}</span>
+                                    <span class="precio-descuento">$${Math.round(contenido.precio * (1 - contenido.descuento / 100) * 100) / 100}</span>
+                                </div>
+                                <div class="rating">
+                                    <span class="stars">${generarEstrellas(contenido.calificacion)}</span>
+                                    <span class="rating-text">(${contenido.calificacion})</span>
+                                </div>
+                                <button onclick="agregarAlCarrito(${contenido.id_contenido})" class="btn btn-primary">
+                                    <i class="fas fa-cart-plus"></i> Agregar al Carrito
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function cargarRanking() {
+            fetch('/api/ranking')
+                .then(response => response.json())
+                .then(data => {
+                    const lista = document.getElementById('ranking-list');
+                    lista.innerHTML = data.map((contenido, index) => `
+                        <div class="ranking-item">
+                            <div class="ranking-position">#${index + 1}</div>
+                            <div class="contenido-preview">
+                                <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
+                            </div>
+                            <div class="contenido-info">
+                                <h3>${contenido.nombre}</h3>
+                                <p class="autor">Por: ${contenido.autor}</p>
+                                <p class="categoria">${contenido.categoria}</p>
+                                <div class="rating">
+                                    <span class="stars">${generarEstrellas(contenido.calificacion_promedio)}</span>
+                                    <span class="rating-text">(${contenido.calificacion_promedio})</span>
+                                </div>
+                            </div>
+                            <div class="ranking-stats">
+                                <span class="ventas">${contenido.total_ventas} ventas</span>
+                                <span class="descargas">${contenido.total_descargas} descargas</span>
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function buscarContenido() {
+            const termino = document.getElementById('search-input').value;
+            if (termino.trim()) {
+                fetch(`/api/contenidos/buscar?q=${encodeURIComponent(termino)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        mostrarContenidos(data);
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                cargarContenidos();
+            }
+        }
+
+        function aplicarFiltros() {
+            const categoria = document.getElementById('categoria-filter').value;
+            const formato = document.getElementById('formato-filter').value;
+            
+            let url = '/api/contenidos';
+            const params = [];
+            
+            if (categoria) params.push(`categoria=${categoria}`);
+            if (formato) params.push(`formato=${formato}`);
+            
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    mostrarContenidos(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function agregarAlCarrito(idContenido) {
+            fetch('/api/carrito/agregar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_contenido: idContenido })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('Contenido agregado al carrito');
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al agregar al carrito');
+            });
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

@@ -3,27 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <title>SideBarAdministrador</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="side-bar">
             <h2 class="name">QuickContentMedia</h2>
             <div class="side-bar-options">
+                <a href="/admin"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
+            </div>
+            <div class="side-bar-options">
                 <i class="fa-solid fa-tags"></i>
-                <a href="/promociones"><span>Administrar Promociones</span></a>
+                <a href="/admin/promociones"><span>Administrar Promociones</span></a>
             </div>
             <div class="side-bar-options">
                 <i class="fa-solid fa-plus"></i>
-                <a href="/contenidos"><span>Administrar Contenido</span></a>
+                <a href="/admin/contenidos"><span>Administrar Contenido</span></a>
             </div>
             <div class="side-bar-options">
                 <i class="fa-solid fa-layer-group"></i>
-                <a href="/categorias"><span>Administrar Categoría</span></a>
+                <a href="/admin/categorias"><span>Administrar Categoría</span></a>
             </div>
             <div class="side-bar-options">
                 <i class="fa-solid fa-users"></i>
-                <a href="/clientes"><span>Administrar Clientes</span></a>
+                <a href="/admin/clientes"><span>Administrar Clientes</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
             </div>
     </div>
 </body>

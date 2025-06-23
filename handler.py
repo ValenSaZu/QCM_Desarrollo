@@ -1,674 +1,2454 @@
-from infrastructure.utils.router import route_get, route_post, route_put
+import json
+import os
+import uuid
+from datetime import datetime, timedelta
+from io import BytesIO
+from http.server import BaseHTTPRequestHandler
+from urllib.parse import parse_qs, unquote_plus, urlparse
+from infrastructure.utils.router import routes_get, routes_post, routes_put, routes_delete, sessions
+from infrastructure.utils.helpers import responder_html, responder_json
+
+from infrastructure.utils.router import route_get, route_post, route_put, route_delete, sessions, obtener_usuario_actual
 from app.controllers.controlador_usuarios import ControladorUsuarios
 from app.controllers.controlador_clientes import ControladorClientes
 from app.controllers.controlador_contenido import ControladorContenido
 from app.controllers.controlador_categoria import ControladorCategoria
 from app.controllers.controlador_promocion import ControladorPromocion
-from domain.entities.contenido import Contenido
+from app.controllers.controlador_ranking import ControladorRanking
+from app.controllers.controlador_carrito import ControladorCarrito
+from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
+from app.controllers.controlador_perfil import ControladorPerfil
+from app.controllers.controlador_ranking import ControladorRanking
+from urllib.parse import parse_qs
+
 from app.interfaces.interfaz_login import InterfazLogin
 from app.interfaces.interfaz_registro import InterfazRegistro
-from app.interfaces.interfaz_administrar_clientes import InterfazClientes
+from app.interfaces.interfaz_administrar_clientes import InterfazAdministrarClientes
 from app.interfaces.interfaz_administrar_contenidos import InterfazAdministrarContenidos
 from app.interfaces.interfaz_administrar_promocion import InterfazAdministrarPromocion
 from app.interfaces.interfaz_administrar_categorias import InterfazAdministrarCategorias
+from app.interfaces.interfaz_perfil_cliente import InterfazPerfilCliente
+from app.interfaces.interfaz_carrito import InterfazCarrito
+from app.interfaces.interfaz_inicio import InterfazInicio
+from app.interfaces.interfaz_mis_contenidos import InterfazMisContenidos
+from app.interfaces.interfaz_ranking import InterfazRanking
 
 controladorUsuarios = ControladorUsuarios()
 controladorClientes = ControladorClientes()
 controladorContenido = ControladorContenido()
 controladorCategoria = ControladorCategoria()
 controladorPromocion = ControladorPromocion()
+controladorCarrito = ControladorCarrito()
+controladorRanking = ControladorRanking()
+controladorContenidosAdquiridos = ControladorContenidosAdquiridos()
+controladorPerfil = ControladorPerfil()
+
 interfazLogin = InterfazLogin()
 interfazRegistro = InterfazRegistro()
-interfazClientes = InterfazClientes()
+interfazClientes = InterfazAdministrarClientes()
 interfazContenidos = InterfazAdministrarContenidos()
 interfazPromocion = InterfazAdministrarPromocion()
 interfazCategorias = InterfazAdministrarCategorias()
 
-from http.server import BaseHTTPRequestHandler
-from infrastructure.utils.router import routes_get, routes_post
-from infrastructure.utils.helpers import responder_html, responder_json
+# Interfaces del cliente
+interfazPerfilCliente = InterfazPerfilCliente()
+interfazCarrito = InterfazCarrito()
+interfazInicioCliente = InterfazInicio()
+interfazMisContenidos = InterfazMisContenidos()
+interfazRanking = InterfazRanking()
+
+# Variable global para manejar sesiones
+sesiones_activas = {}
 
 class MyHandler(BaseHTTPRequestHandler):
-    def end_headers(self):
+    def __init__(self, *args, **kwargs):
+        try:
+            from app.controllers.controlador_usuarios import ControladorUsuarios
+            from app.controllers.controlador_clientes import ControladorClientes
+            from app.controllers.controlador_perfil import ControladorPerfil
+            from app.controllers.controlador_carrito import ControladorCarrito
+            self.controlador_usuarios = ControladorUsuarios()
+            self.controlador_clientes = ControladorClientes()
+            self.controlador_perfil = ControladorPerfil()
+            self.controlador_carrito = ControladorCarrito()
+        except Exception as e:
+            print(f"Error importando controladores: {e}")
+            self.controlador_usuarios = None
+            self.controlador_clientes = None
+            self.controlador_perfil = None
+            self.controlador_carrito = None
+        super().__init__(*args, **kwargs)
+
+    def send_json_response(self, data, status_code=200):
+        origin = self.headers.get('Origin', '*')
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', origin)
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Credentials', 'true')
+        self.send_header('Vary', 'Origin')
+        if status_code == 200 and isinstance(data, dict):
+            data['success'] = data.get('success', True)
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode('utf-8'))
+        print(f"Respuesta enviada: {status_code} - {data}")
+
+    def servir_pagina_inicio(self):
+        from app.interfaces.interfaz_inicio import InterfazInicio
+        return InterfazInicio.servir_pagina_inicio()
+
+    def servir_pagina_login(self):
+        from app.interfaces.interfaz_login import InterfazLogin
+        return InterfazLogin.servir_pagina_login()
+
+    def servir_pagina_registro(self):
+        from app.interfaces.interfaz_registro import InterfazRegistro
+        return InterfazRegistro.servir_pagina_registro()
+
+    def servir_pagina_admin(self):
+        from app.interfaces.interfaz_inicio import InterfazInicio
+        return InterfazInicio.servir_pagina_admin()
+
+    def servir_pagina_cliente(self):
+        from app.interfaces.interfaz_inicio import InterfazInicio
+        return InterfazInicio.servir_pagina_cliente()
+
+    def servir_pagina_carrito(self):
+        from app.interfaces.interfaz_carrito import InterfazCarrito
+        return InterfazCarrito.servir_pagina_carrito()
+
+    def servir_pagina_perfil(self):
+        """Sirve la página de perfil del cliente con verificación de autenticación"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                print("Usuario no autenticado, redirigiendo a login")
+                self.redirect_to('/login')
+                return None
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+
+            if not session_data:
+                print("Sesión no válida, redirigiendo a login")
+                self.redirect_to('/login')
+                return None
+
+            # Verificar que sea un cliente
+            if session_data.get('tipo') != 'cliente':
+                print("Usuario no es cliente, redirigiendo")
+                self.redirect_to('/login')
+                return None
+
+            # Servir la página de perfil
+            from app.interfaces.interfaz_perfil_cliente import InterfazPerfilCliente
+            return InterfazPerfilCliente().mostrar_interfaz()
+            
+        except Exception as e:
+            print(f"Error sirviendo página de perfil: {e}")
+            self.redirect_to('/login')
+            return None
+
+    def servir_pagina_mis_contenidos(self):
+        from app.interfaces.interfaz_mis_contenidos import InterfazMisContenidos
+        return InterfazMisContenidos.servir_pagina_mis_contenidos()
+
+    def servir_pagina_promociones(self):
+        """Sirve la página de promociones para clientes"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                print("Usuario no autenticado, redirigiendo a login")
+                self.redirect_to('/login')
+                return None
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+
+            if not session_data:
+                print("Sesión no válida, redirigiendo a login")
+                self.redirect_to('/login')
+                return None
+
+            # Servir la página de promociones
+            with open('static/html/UIPromociones(MK-004).html', 'r', encoding='utf-8') as file:
+                return file.read()
+                
+        except Exception as e:
+            print(f"Error sirviendo página de promociones: {e}")
+            self.redirect_to('/login')
+            return None
+
+    def servir_pagina_ranking(self):
+        from app.interfaces.interfaz_ranking import InterfazRanking
+        return InterfazRanking.servir_pagina_ranking()
+
+    def servir_pagina_administrar_categorias(self):
+        from app.interfaces.interfaz_administrar_categorias import InterfazAdministrarCategorias
+        return InterfazAdministrarCategorias.servir_pagina_admin_categorias()
+
+    def servir_pagina_administrar_clientes(self):
+        from app.interfaces.interfaz_administrar_clientes import InterfazAdministrarClientes
+        return InterfazAdministrarClientes.servir_pagina_admin_clientes()
+
+    def servir_pagina_administrar_contenidos(self):
+        from app.interfaces.interfaz_administrar_contenidos import InterfazAdministrarContenidos
+        return InterfazAdministrarContenidos.servir_pagina_admin_contenidos()
+
+    def servir_pagina_administrar_promociones(self):
+        from app.interfaces.interfaz_administrar_promocion import InterfazAdministrarPromocion
+        return InterfazAdministrarPromocion.servir_pagina_admin_promociones()
+
+    def obtener_sesion_handler(self):
+        try:
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            if not session_data:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            return self.send_json_response({
+                "username": session_data.get('username', ''),
+                "nombre": session_data.get('nombre', ''),
+                "es_admin": session_data.get('es_admin', False)
+            })
+        except Exception as e:
+            print(f"Error al obtener la sesión: {str(e)}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_contenidos_handler(self):
+        try:
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            contenidos = controladorContenido.obtener_contenidos()
+            return self.send_json_response(contenidos)
+        except Exception as e:
+            print(f"Error en api_contenidos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_inicio_handler(self):
+        """Handler específico para la página de inicio que permite acceso a clientes autenticados"""
+        try:
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            # Permitir acceso a cualquier usuario autenticado (cliente o admin)
+            contenidos = controladorContenido.obtener_contenidos()
+            return self.send_json_response(contenidos)
+        except Exception as e:
+            print(f"Error en api_inicio_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_categorias_contenido_handler(self):
+        try:
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            categorias = controladorCategoria.obtener_todas_categorias()
+            return self.send_json_response(categorias)
+        except Exception as e:
+            print(f"Error en api_categorias_contenido_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_categorias_buscar_handler(self):
+        """Maneja la API para buscar categorías por término"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Obtener el término de búsqueda del header
+            termino = self.headers.get('Search-Term', '')
+            
+            if not termino:
+                # Si no hay término de búsqueda, devolver todas las categorías
+                categorias = controladorCategoria.obtener_todas_categorias()
+            else:
+                # Buscar categorías que coincidan con el término
+                categorias = controladorCategoria.buscar_categorias(termino)
+            
+            return self.send_json_response(categorias)
+
+        except Exception as e:
+            print(f"Error en api_categorias_buscar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def send_cors_headers(self):
+        """Envía headers CORS"""
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        super().end_headers()
-
-    def do_OPTIONS(self):
-        self.send_response(200)
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    
+    def send_error_response(self, status_code, message):
+        """Envía una respuesta de error"""
+        self.send_response(status_code)
+        self.send_header('Content-type', 'application/json')
         self.end_headers()
+        error_response = json.dumps({
+            'success': False,
+            'message': message
+        }, ensure_ascii=False)
+        self.wfile.write(error_response.encode('utf-8'))
 
     def do_GET(self):
-        if self.path.startswith('/css/') or self.path.startswith('/html/') or self.path.startswith('/js/'):
-            self.servir_archivo_estatico('static' + self.path)
-        else:
-            # Check exact matches first
-            if self.path in routes_get:
-                routes_get[self.path](self)
+        """Maneja requests GET"""
+        try:
+            # Obtener la ruta de la URL
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
+            
+            print(f"GET request para: {self.path}")
+            print(f"Path sin parámetros: {path}")
+            print(f"Parámetros de consulta: {parsed_url.query}")
+            
+            # Verificar si es un archivo estático
+            if path.startswith('/css/') or path.startswith('/js/') or path.startswith('/images/'):
+                self.servir_archivo_estatico(path)
+                return
+
+            # Definir rutas GET
+            routes = {
+                # Páginas principales
+                '/': self.servir_pagina_inicio,
+                '/login': self.servir_pagina_login,
+                '/registro': self.servir_pagina_registro,
+                '/logout': self.manejar_logout_get,
+                '/admin': self.servir_pagina_admin,
+                '/cliente': self.servir_pagina_cliente,
+                '/cliente/carrito': self.servir_pagina_carrito,
+                '/cliente/perfil': self.servir_pagina_perfil,
+                '/cliente/mis-contenidos': self.servir_pagina_mis_contenidos,
+                '/ofertas': self.servir_pagina_promociones,
+                '/admin/categorias': self.servir_pagina_administrar_categorias,
+                '/admin/clientes': self.servir_pagina_administrar_clientes,
+                '/admin/contenidos': self.servir_pagina_administrar_contenidos,
+                '/admin/promociones': self.servir_pagina_administrar_promociones,
+                # APIs de administración
+                '/api/contenidos': self.api_contenidos_handler,
+                '/api/inicio': self.api_inicio_handler,
+                '/api/sesion': self.obtener_sesion_handler,
+                '/api/obtener_promociones': self.api_obtener_promociones_handler,
+                '/api/promociones/contenidos': self.api_promociones_contenidos_handler,
+                '/api/contenidos/categorias': self.api_categorias_contenido_handler,
+                '/api/categorias/buscar': self.api_categorias_buscar_handler,
+                '/api/clientes': self.api_clientes_handler,
+                '/api/clientes/buscar': self.api_clientes_buscar_handler,
+                # APIs de cliente
+                '/api/carrito': self.api_carrito_handler,
+                '/api/mis-contenidos/obtener': self.api_mis_contenidos_handler,
+                '/api/usuario/perfil': self.api_usuario_perfil_handler,
+                '/api/usuario/historial': self.api_usuario_historial_handler,
+                '/api/usuario/historial-compras': self.api_usuario_historial_compras_handler,
+                '/api/regalos/recibidos': self.api_regalos_recibidos_handler,
+                '/api/descuentos/info': self.api_descuentos_info_handler,
+                '/api/notificaciones/regalos': self.api_notificaciones_regalos_handler,
+                '/api/usuario/buscar': self.api_usuario_buscar_handler,
+                # Rutas adicionales
+                '/cliente/ranking': self.servir_pagina_ranking
+            }
+            
+            # Verificar rutas dinámicas para contenido
+            import re
+            
+            # Ruta para descargar contenido: /api/mis-contenidos/descargar/{id}
+            download_match = re.match(r'/api/mis-contenidos/descargar/(\d+)', path)
+            if download_match:
+                content_id = int(download_match.group(1))
+                self.api_mis_contenidos_descargar_handler(content_id)
                 return
                 
-            # Check path with query parameters
-            path_without_query = self.path.split('?')[0]
-            if path_without_query in routes_get:
-                routes_get[path_without_query](self)
+            # Ruta para ver contenido: /api/contenido/{id}/ver
+            view_match = re.match(r'/api/contenido/(\d+)/ver', path)
+            if view_match:
+                content_id = int(view_match.group(1))
+                self.api_contenido_ver_handler(content_id)
                 return
                 
-            # Handle specific API routes
-            if self.path.startswith('/api/clientes/') and self.path.endswith('/historial'):
-                try:
-                    id_usuario = int(self.path.split('/')[3])
-                    obtener_historial_cliente(self, id_usuario)
-                except Exception as e:
-                    responder_json(self, {"error": str(e)}, 500)
-            elif self.path.startswith('/api/promociones/') and self.path.endswith('/contenidos'):
-                try:
-                    id_promocion = int(self.path.split('/')[3])
-                    obtener_contenidos_promocion(self, id_promocion)
-                except Exception as e:
-                    responder_json(self, {"error": str(e)}, 500)
+            # Ruta para miniatura: /api/contenido/{id}/miniatura
+            thumbnail_match = re.match(r'/api/contenido/(\d+)/miniatura', path)
+            if thumbnail_match:
+                content_id = int(thumbnail_match.group(1))
+                self.api_contenido_miniatura_handler(content_id)
+                return
+            
+            # Ruta para ranking: /api/ranking/{tipo}
+            ranking_match = re.match(r'/api/ranking/(\w+)', path)
+            if ranking_match:
+                tipo_ranking = ranking_match.group(1)
+                self.api_ranking_handler(tipo_ranking)
+                return
+            
+            # Ruta para obtener contenido específico: /api/contenido?id={id}
+            print(f"[DEBUG] Verificando ruta de contenido específico: path='{path}', query='{parsed_url.query}'")
+            if path == '/api/contenido' and parsed_url.query:
+                print(f"[DEBUG] Ruta de contenido específico detectada: {self.path}")
+                query_params = parse_qs(parsed_url.query)
+                contenido_id = query_params.get('id', [None])[0]
+                print(f"[DEBUG] Contenido ID extraído: {contenido_id}")
+                if contenido_id:
+                    print(f"[DEBUG] Llamando a api_contenido_por_id_handler con ID: {contenido_id}")
+                    self.api_contenido_por_id_handler(contenido_id)
+                    return
+                else:
+                    print(f"[DEBUG] No se encontró ID en los parámetros de consulta")
             else:
-                self.not_found()
+                print(f"[DEBUG] No es ruta de contenido específico: path='{path}', query='{parsed_url.query}'")
+            
+            # Ruta para actualizar saldo de cliente: /api/clientes/{id}/saldo
+            saldo_match = re.match(r'/api/clientes/(\d+)/saldo', path)
+            if saldo_match:
+                cliente_id = int(saldo_match.group(1))
+                self.api_clientes_saldo_handler(cliente_id)
+                return
+            
+            # Ruta para obtener historial de cliente: /api/clientes/{id}/historial
+            historial_match = re.match(r'/api/clientes/(\d+)/historial', path)
+            if historial_match:
+                cliente_id = int(historial_match.group(1))
+                self.api_clientes_historial_handler(cliente_id)
+                return
+            
+            # Ruta para obtener contenidos de una promoción: /api/promociones/{id}/contenidos
+            promo_contenidos_match = re.match(r'/api/promociones/(\d+)/contenidos', path)
+            if promo_contenidos_match:
+                promo_id = int(promo_contenidos_match.group(1))
+                self.api_promocion_contenidos_handler(promo_id)
+                return
+            
+            if path in routes:
+                print(f"Ejecutando función para ruta: {path}")
+                # Para rutas de API, manejar de manera diferente
+                if path.startswith('/api/'):
+                    routes[path]()
+                else:
+                    # Para rutas de páginas HTML
+                    contenido = routes[path]()
+                    if contenido:
+                        contenido_bytes = contenido.encode('utf-8')
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/html; charset=utf-8')
+                        self.send_header('Content-Length', str(len(contenido_bytes)))
+                        self.send_header('Cache-Control', 'no-cache')
+                        self.end_headers()
+                        self.wfile.write(contenido_bytes)
+                        self.wfile.flush()
+                        print(f"Respuesta enviada exitosamente. Bytes enviados: {len(contenido_bytes)}")
+                    else:
+                        self.send_error(500, "Error interno del servidor")
+            else:
+                # Intentar servir como archivo estático
+                print(f"Ruta no encontrada, intentando servir como archivo estático: {path}")
+                self.servir_archivo_estatico(path)
+                
+        except Exception as e:
+            print(f"Error en GET: {e}")
+            self.send_error(500, f"Error interno del servidor: {str(e)}")
 
     def do_POST(self):
-        if self.path.startswith('/api/clientes/') and self.path.endswith('/saldo'):
-            try:
-                id_usuario = int(self.path.split('/')[3])
-                datos = self.leer_json()
-                resultado = controladorClientes.actualizar_saldo_cliente(
-                    id_usuario,
-                    datos['nuevo_saldo']
-                )
-                responder_json(self, resultado)
-            except Exception as e:
-                responder_json(self, {"error": str(e)}, 500)
-        # Nueva condición para editar promoción
-        elif self.path.startswith('/api/promociones/') and self.path.endswith('/editar'):
-            try:
-                id_promocion = int(self.path.split('/')[3])
-                form_data = self.leer_form_data()
-                resultado = controladorPromocion.editar_promocion(id_promocion, form_data)
-                responder_json(self, resultado)
-            except Exception as e:
-                responder_json(self, {"success": False, "error": str(e)}, 500)
-        else:
-            handler_func = routes_post.get(self.path)
-            if handler_func:
-                handler_func(self)
-            else:
-                self.not_found()
-
-    def leer_json(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        import json
-        return json.loads(post_data)
-
-    def leer_form_data(self):
-        print("Reading form data...")  # Debug
-        content_type = self.headers.get('Content-Type')
-        if not content_type:
-            raise Exception("Content-Type header is required")
-
-        boundary = None
-        if 'boundary=' in content_type:
-            boundary = content_type.split('boundary=')[1]
-        if not boundary:
-            raise Exception("Invalid Content-Type header")
-
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length == 0:
-            raise Exception("Content-Length header is required")
-
-        body = self.rfile.read(content_length)
-        print(f"Read body of length: {len(body)}")  # Debug
-
-        parts = body.split(b'--' + boundary.encode())
-        print(f"Found {len(parts)} parts")  # Debug
-
-        form_data = {}
-
-        for part in parts:
-            if not part.strip():
-                continue
-
-            headers, _, content = part.partition(b'\r\n\r\n')
-            print(f"Processing part with headers: {headers.decode()}")  # Debug
-
-            headers = headers.decode()
-            header_lines = headers.split('\r\n')
-
-            content_disposition = None
-            content_type = None
-
-            for line in header_lines:
-                if line.lower().startswith('content-disposition:'):
-                    content_disposition = line
-                elif line.lower().startswith('content-type:'):
-                    content_type = line
-
-            if content_disposition:
-                name = None
-                filename = None
-
-                for param in content_disposition.split(';')[1:]:
-                    param = param.strip()
-                    if param.startswith('name='):
-                        name = param.split('=')[1].strip('"')
-                    elif param.startswith('filename='):
-                        filename = param.split('=')[1].strip('"')
-
-                if name:
-                    if filename:
-                        print(f"Found file upload: {filename}")  # Debug
-                        # Create a proper file-like object with the content
-                        class FileObject:
-                            def __init__(self, content, filename, content_type=None):
-                                self.content = content
-                                self.filename = filename
-                                self.content_type = content_type.split(':', 1)[1].strip() if content_type else None
-                                self.size = len(content)
-                                
-                            def read(self, size=-1):
-                                # Return the entire content regardless of size for simplicity
-                                return self.content
-                                
-                            def __len__(self):
-                                return self.size
-                                
-                        form_data[name] = FileObject(content, filename, content_type)
-                    else:
-                        print(f"Found form field: {name}={content.decode().strip()}")  # Debug
-                        form_data[name] = content.decode().strip()
-
-        print("Form data parsed successfully")  # Debug
-        return form_data
-
-    def servir_archivo_estatico(self, ruta_archivo):
+        """Maneja requests POST"""
         try:
-            if ruta_archivo.endswith('.css'):
-                content_type = 'text/css'
-            elif ruta_archivo.endswith('.js'):
-                content_type = 'application/javascript'
-            elif ruta_archivo.endswith('.html'):
-                content_type = 'text/html'
+            # Obtener la ruta de la URL
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
+            
+            print(f"POST request para: {path}")
+            
+            # Definir rutas POST
+            routes_post = {
+                '/api/login': self.autenticar_usuario,
+                '/api/registro': self.registrar_usuario,
+                '/api/logout': self.cerrar_sesion_handler,
+                '/api/carrito/agregar': self.api_carrito_agregar_handler,
+                '/api/carrito/comprar': self.api_carrito_comprar_handler,
+                '/api/usuario/cambiar-contrasena': self.api_usuario_cambiar_contrasena_handler,
+                '/api/usuario/eliminar-cuenta': self.api_usuario_eliminar_cuenta_handler,
+                '/api/mis-contenidos/calificar': self.api_mis_contenidos_calificar_handler,
+                '/api/contenidos/eliminar': self.api_contenidos_eliminar_handler,
+                '/api/contenidos/editar': self.api_contenidos_editar_handler,
+                '/api/regalos/enviar': self.api_regalos_enviar_handler,
+                '/api/descuentos/aplicar': self.api_descuentos_aplicar_handler,
+                '/api/regalos/abrir': self.api_regalos_abrir_handler,
+                '/api/notificaciones/marcar-leida': self.api_notificaciones_marcar_leida_handler,
+                '/api/categorias': self.api_categorias_crear_handler,
+                '/api/promociones': self.api_promocion_crear_handler,
+                '/api/promociones/eliminar': self.api_promocion_eliminar_handler,
+                '/api/promociones/crear': self.api_promocion_crear_handler,
+                '/api/contenidos/agregar_contenido': self.api_contenidos_agregar_handler
+            }
+            
+            # Verificar rutas dinámicas para clientes
+            import re
+            
+            # Ruta para actualizar saldo de cliente: /api/clientes/{id}/saldo
+            saldo_match = re.match(r'/api/clientes/(\d+)/saldo', path)
+            if saldo_match:
+                cliente_id = int(saldo_match.group(1))
+                self.api_clientes_saldo_handler(cliente_id)
+                return
+            
+            # Buscar la ruta en el diccionario
+            if path in routes_post:
+                routes_post[path]()
             else:
-                content_type = 'application/octet-stream'
+                self.send_error_response(404, "Endpoint no encontrado")
 
-            with open(ruta_archivo, 'rb') as f:
-                contenido = f.read()
+        except Exception as e:
+            print(f"Error en POST: {e}")
+            self.send_error_response(500, "Error interno del servidor")
+
+    def do_PUT(self):
+        """Maneja requests PUT"""
+        try:
+            # Obtener la ruta de la URL
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
+            
+            print(f"PUT request para: {path}")
+            
+            # Definir rutas PUT
+            routes_put = {
+                # Agregar rutas PUT según sea necesario
+            }
+            
+            # Verificar rutas dinámicas
+            import re
+            
+            # Ruta para actualizar categoría: /api/categorias/{id}
+            categoria_match = re.match(r'/api/categorias/(\d+)', path)
+            if categoria_match:
+                categoria_id = int(categoria_match.group(1))
+                self.api_categorias_actualizar_handler(categoria_id)
+                return
+            
+            # Ruta para actualizar promoción: /api/promociones/{id}
+            promocion_match = re.match(r'/api/promociones/(\d+)', path)
+            if promocion_match:
+                promocion_id = int(promocion_match.group(1))
+                self.api_promocion_actualizar_handler(promocion_id)
+                return
+            
+            # Buscar la ruta en el diccionario
+            if path in routes_put:
+                routes_put[path]()
+            else:
+                self.send_error_response(404, "Endpoint no encontrado")
+
+        except Exception as e:
+            print(f"Error en PUT: {e}")
+            self.send_error_response(500, "Error interno del servidor")
+
+    def api_categorias_actualizar_handler(self, categoria_id):
+        """Maneja la API para actualizar una categoría existente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                nombre = datos.get('nombre')
+                
+                if not nombre:
+                    return self.send_json_response({"error": "Nombre de categoría requerido"}, 400)
+                
+                # Llamar al controlador para actualizar categoría
+                resultado = controladorCategoria.actualizar_categoria(categoria_id, nombre)
+                return self.send_json_response({
+                    "success": True,
+                    "message": "Categoría actualizada exitosamente",
+                    "categoria": resultado
+                })
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_categorias_actualizar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def do_DELETE(self):
+        """Maneja requests DELETE"""
+        from urllib.parse import urlparse
+        import re
+
+        try:
+            parsed_url = urlparse(self.path)
+            path = parsed_url.path
+            print(f"DELETE request para: {path}")
+
+            # Routing para /api/carrito/{id}
+            match = re.match(r'/api/carrito/(\d+)', path)
+            if match:
+                item_id = int(match.group(1))
+                self.api_carrito_eliminar_handler(item_id)
+            else:
+                self.send_error_response(404, "Endpoint no encontrado")
+
+        except Exception as e:
+            print(f"Error en DELETE: {e}")
+            self.send_error_response(500, "Error interno del servidor")
+
+    def api_carrito_eliminar_handler(self, item_id):
+        """Maneja la API para eliminar un item del carrito"""
+        try:
+            # Autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Verificar que el controlador esté disponible
+            if not self.controlador_carrito:
+                return self.send_json_response({"error": "Controlador no disponible"}, 500)
+            
+            # Llamar al controlador para eliminar
+            resultado = self.controlador_carrito.eliminar_contenido(user_id, item_id)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_carrito_eliminar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def do_OPTIONS(self):
+        """Maneja requests OPTIONS para CORS"""
+        self.send_response(200)
+        self.send_cors_headers()
+        self.end_headers()
+    
+    def servir_archivo_estatico(self, path):
+        """Sirve archivos estáticos (CSS, JS, imágenes)"""
+        try:
+            # Remover el slash inicial
+            if path.startswith('/'):
+                path = path[1:]
+            
+            # Construir la ruta completa
+            ruta_completa = os.path.join('static', path)
+            print(f"Intentando servir archivo estático: {path}")
+            print(f"Ruta completa construida: {ruta_completa}")
+
+            # Verificar si el archivo existe
+            if not os.path.exists(ruta_completa):
+                print(f"Archivo no encontrado: {ruta_completa}")
+                self.send_error_response(404, "Archivo no encontrado")
+                return
+
+            # Determinar el tipo de contenido
+            content_type = 'text/plain'
+            if path.endswith('.css'):
+                content_type = 'text/css'
+            elif path.endswith('.js'):
+                content_type = 'text/javascript'
+            elif path.endswith('.png'):
+                content_type = 'image/png'
+            elif path.endswith('.jpg') or path.endswith('.jpeg'):
+                content_type = 'image/jpeg'
+            elif path.endswith('.gif'):
+                content_type = 'image/gif'
+            elif path.endswith('.html'):
+                content_type = 'text/html; charset=utf-8'
+
+            # Leer y enviar el archivo
+            with open(ruta_completa, 'rb') as file:
+                contenido = file.read()
+            
+            print(f"Archivo estático leído: {len(contenido)} bytes, tipo: {content_type}")
 
             self.send_response(200)
-            self.send_header('Content-Type', content_type)
+            self.send_header('Content-type', content_type)
+            self.send_header('Content-Length', str(len(contenido)))
+            self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(contenido)
+            print(f"Archivo estático enviado exitosamente")
 
-        except FileNotFoundError:
-            self.not_found()
-
-    def not_found(self):
-        self.send_response(404)
-        self.end_headers()
-        self.wfile.write(b'Not Found')
-
-@route_get('/')
-def mostrar_formulario_login(handler):
-    contenido = interfazLogin.mostrar_formulario()
-    responder_html(handler, contenido)
-
-@route_get('/registro')
-def mostrar_formulario_registro(handler):
-    contenido = interfazRegistro.mostrar_formulario()
-    responder_html(handler, contenido)
-
-@route_post('/api/login')
-def autenticar_usuario(handler):
-    try:
-        datos = handler.leer_json()
-        resultado = controladorUsuarios.autenticar_usuario(datos)
-        # Devolver éxito y redirigir al frontend
-        return responder_json(handler, {
-            "success": True,
-            "redirect": "/promociones"
-        })
-    except Exception as e:
-        return responder_json(handler, {
-            "success": False,
-            "error": str(e)
-        }, 400)
-
-@route_post('/api/registro')
-def registrar_usuario(handler):
-    try:
-        datos = handler.leer_json()
-        resultado = controladorUsuarios.registrar_usuario(datos)
-        html = interfazRegistro.mostrar_bienvenida({
-            "mensaje": resultado["mensaje"],
-            "usuario": {
-                "nombre": resultado["nombre"],
-                "apellido": resultado["apellido"]
-            }
-        })
-        responder_html(handler, html)
-    except Exception as e:
-        html = interfazRegistro.mostrar_error(str(e))
-        responder_html(handler, html)
-
-@route_get('/clientes')
-def mostrar_interfaz_clientes(handler):
-    contenido = interfazClientes.mostrar_interfaz()
-    responder_html(handler, contenido)
-
-@route_get('/api/clientes')
-def obtener_clientes(handler):
-    try:
-        clientes = controladorClientes.obtener_todos_clientes()
-        responder_json(handler, clientes)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, status_code=500)
-
-@route_get('/api/clientes/buscar')
-def buscar_clientes(handler):
-    try:
-        termino = handler.headers.get('Search-Term', '')
-        clientes = controladorClientes.buscar_clientes(termino)
-        responder_json(handler, clientes)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, 500)
-
-@route_get('/api/clientes/<int:id_usuario>/historial')
-def obtener_historial_cliente(handler, id_usuario):
-    try:
-        historial = controladorClientes.obtener_historial_cliente(id_usuario)
-        responder_json(handler, historial)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, 500)
-
-@route_post('/api/clientes/<int:id_usuario>/saldo')
-def actualizar_saldo_cliente(handler, id_usuario):
-    try:
-        datos = handler.leer_json()
-        resultado = controladorClientes.actualizar_saldo_cliente(
-            id_usuario,
-            datos['nuevo_saldo']
-        )
-        responder_json(handler, resultado)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, status_code=500)
-
-@route_get('/contenidos')
-def mostrar_interfaz_contenidos(handler):
-    contenido = interfazContenidos.mostrar_interfaz()
-    responder_html(handler, contenido)
-
-
-
-@route_post('/api/contenidos/agregar_contenido')
-def agregar_contenido(handler):
-    print("\n=== Inicio de agregar_contenido ===")
-    try:
-        print("Leyendo datos del formulario...")
-        form_data = handler.leer_form_data()
-        print(f"Datos del formulario recibidos: {list(form_data.keys())}")
-        print(f"Valor de categoria_id: {form_data.get('categoria_id', 'No encontrado')}")
-        
-        # Verificar que se proporcionó un archivo
-        if 'archivo' not in form_data:
-            print("Error: No se encontró el archivo en los datos del formulario")
-            return responder_json(handler, {"success": False, "error": "No se proporcionó ningún archivo"}, status_code=400)
-        
-        # Verificar que se proporcionó un ID de categoría
-        if 'categoria_id' not in form_data or not form_data['categoria_id']:
-            print("Error: No se proporcionó un ID de categoría")
-            return responder_json(handler, {"success": False, "error": "Debe seleccionar una categoría"}, status_code=400)
-            
-        print("Procesando archivo...")
-        try:
-            # Obtener el objeto de archivo de form_data
-            file_obj = form_data['archivo']
-            
-            # Leer el contenido del archivo
-            if hasattr(file_obj, 'read'):
-                file_content = file_obj.read()
-                file_name = getattr(file_obj, 'filename', 'archivo')
-                file_size = getattr(file_obj, 'size', len(file_content))
-            else:
-                file_content = b''
-                file_name = 'archivo'
-                file_size = 0
-            
-            print(f"Archivo leído: {file_name}, tamaño: {len(file_content)} bytes")
-                
-            # Crear la estructura de archivo procesado
-            form_data['archivo'] = {
-                'nombre': file_name,
-                'contenido': file_content,
-                'tamano': file_size
-            }
         except Exception as e:
-            print(f"Error al procesar el archivo: {str(e)}")
-            return responder_json(handler, {"success": False, "error": f"Error al procesar el archivo: {str(e)}"}, status_code=400)
-            
-        print("Procesando datos con el controlador...")
-        resultado = controladorContenido.manejar_agregar_contenido(form_data)
-        print(f"Resultado del controlador: {resultado}")
-        
-        return responder_json(handler, resultado)
-    except Exception as e:
-        print(f"Error en agregar_contenido: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return responder_json(handler, {"success": False, "error": str(e)}, status_code=500)
-
-@route_get('/api/contenidos')
-def obtener_contenidos(handler):
-    try:
-        print("Obteniendo lista de contenidos...")
-        contenidos = controladorContenido.obtener_contenidos()
-        print(f"Contenidos obtenidos: {len(contenidos)} items")
-        return responder_json(handler, {"success": True, "data": contenidos})
-    except Exception as e:
-        print(f"Error en obtener_contenidos: {str(e)}")
-        return responder_json(handler, {"success": False, "error": str(e)}, status_code=500)
-
-@route_get('/api/contenido')
-def obtener_contenido(handler):
-    try:
-        id_contenido = int(handler.path.split('=')[1])
-        print(f"Obteniendo contenido con ID: {id_contenido}")
-        contenido = controladorContenido.obtener_contenido(id_contenido)
-        if not contenido:
-            return responder_json(handler, {"success": False, "error": "Contenido no encontrado"}, status_code=404)
-        return responder_json(handler, {"success": True, "contenido": contenido})
-    except Exception as e:
-        print(f"Error al obtener contenido: {str(e)}")
-        return responder_json(handler, {"success": False, "error": str(e)}, status_code=500)
-
-@route_post('/api/contenidos/editar')
-def editar_contenido_handler(handler):
-    try:
-        # Leer los datos del formulario (esto incluye archivos si los hay)
-        form_data = handler.leer_form_data()
-        
-        # Verificar si se envió un archivo
-        file_item = form_data.get('archivo')
-        file_data = None
-        file_size = 0
-        
-        if file_item and hasattr(file_item, 'file'):
-            # Leer el contenido del archivo
-            file_data = file_item.file.read()
-            file_size = len(file_data)
-            # Agregar la información del archivo al form_data
-            form_data['archivo'] = file_data
-            form_data['tamano_archivo'] = file_size
-        
-        id_contenido = int(form_data.get('contenido_id'))
-        print(f"Editando contenido con ID: {id_contenido}")
-        
-        # Llamar al controlador con los datos del formulario
-        resultado = controladorContenido.manejar_editar_contenido(id_contenido, form_data)
-        
-        if resultado.get('success'):
-            return responder_json(handler, resultado)
-        else:
-            return responder_json(handler, resultado, status_code=400)
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Error al editar contenido: {str(e)}\n{error_details}")
-        return responder_json(handler, {"success": False, "error": str(e)}, status_code=500)
-
-@route_post('/api/contenidos/eliminar')
-def eliminar_contenido_handler(handler):
-    try:
-        # Leer el cuerpo de la petición directamente
-        content_length = int(handler.headers.get('Content-Length', 0))
-        post_data = handler.rfile.read(content_length).decode('utf-8')
-        
-        print(f"Datos recibidos: {post_data}")  # Debug
-        
-        # Parsear los datos del formulario codificados en URL
-        from urllib.parse import parse_qs
-        form_data = parse_qs(post_data)
-        
-        # Obtener el ID del contenido
-        id_contenido = form_data.get('contenido_id', [None])[0]
-        
-        if not id_contenido:
-            return responder_json(handler, {
-                "success": False, 
-                "error": "Se requiere el ID del contenido"
-            }, status_code=400)
-            
+            print(f"Error sirviendo archivo estático: {e}")
+            self.send_error_response(500, "Error interno del servidor")
+    
+    def autenticar_usuario(self):
+        """Autentica un usuario"""
         try:
-            id_contenido = int(id_contenido)
-        except (ValueError, TypeError):
-            return responder_json(handler, {
-                "success": False, 
-                "error": "ID de contenido no válido"
-            }, status_code=400)
-        
-        print(f"Eliminando contenido con ID: {id_contenido}")
-        
-        # Verificar si el contenido existe antes de intentar eliminarlo
-        contenido_existente = controladorContenido.obtener_contenido(id_contenido)
-        if not contenido_existente:
-            return responder_json(handler, {
-                "success": False,
-                "error": f"No se encontró el contenido con ID {id_contenido}"
-            }, status_code=404)
-        
-        # Intentar eliminar el contenido
-        resultado = controladorContenido.eliminar_contenido(id_contenido)
-        
-        if resultado.get('success'):
-            print(f"Contenido {id_contenido} eliminado exitosamente")
-            return responder_json(handler, {
-                "success": True,
-                "message": "Contenido eliminado correctamente"
-            })
-        else:
-            error_msg = resultado.get('error', 'Error desconocido al eliminar el contenido')
-            print(f"Error al eliminar contenido {id_contenido}: {error_msg}")
-            return responder_json(handler, {
-                "success": False,
-                "error": error_msg
-            }, status_code=400)
+            # Leer el contenido del request
+            content_length = int(self.headers.get('Content-Length', 0))
             
-    except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        error_msg = f"Error inesperado al eliminar contenido: {str(e)}"
-        print(f"{error_msg}\n{error_details}")
-        return responder_json(handler, {
-            "success": False,
-            "error": "Ocurrió un error al procesar la solicitud"
-        }, status_code=500)
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                username = datos.get('username', '')
+                password = datos.get('password', '')
 
-@route_get('/obtener_contenidos')
-def obtener_contenidos_legacy(handler):
-    try:
-        print("Obteniendo lista de contenidos (legacy endpoint)...")
-        contenidos = controladorContenido.obtener_contenidos()
-        print(f"Contenidos obtenidos (legacy): {len(contenidos)} items")
-        return responder_json(handler, {"success": True, "data": contenidos})
-    except Exception as e:
-        print(f"Error en obtener_contenidos_legacy: {str(e)}")
-        return responder_json(handler, {"success": False, "error": str(e)}, status_code=500)
+                # Verificar que el controlador esté disponible
+                if not self.controlador_usuarios:
+                    return self.send_json_response({"error": "Controlador no disponible"}, 500)
 
+                # Autenticar usuario
+                resultado = self.controlador_usuarios.autenticar_usuario({
+                    'username': username,
+                    'password': password
+                })
+                
+                if resultado.get('success'):
+                    user_id = resultado.get('user_id')
+                    nombre = resultado.get('nombre', '')
+                    
+                    # Determinar tipo de usuario
+                    tipo_usuario = self.determinar_tipo_usuario_por_id(user_id, username)
+                    
+                    # Generar session_id
+                    session_id = str(uuid.uuid4())
+                    
+                    # Crear datos de sesión
+                    session_data = {
+                        'user_id': user_id,
+                        'username': username,
+                        'nombre': nombre,
+                        'tipo': tipo_usuario,
+                        'es_admin': tipo_usuario == 'admin',
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    
+                    # Guardar sesión en ambos sistemas
+                    sesiones_activas[session_id] = session_data
+                    
+                    # También guardar en el sistema del router
+                    from infrastructure.utils.router import sessions
+                    sessions[session_id] = session_data
+                    
+                    # Preparar respuesta
+                    if tipo_usuario == 'admin':
+                        redirect_url = '/admin'
+                    else:
+                        redirect_url = '/cliente'
+                    
+                    respuesta = {
+                        "success": True,
+                        "redirect": redirect_url,
+                        "session_id": session_id,
+                        "tipo_usuario": tipo_usuario,
+                        "mensaje": f"Bienvenido de vuelta, {nombre}!"
+                    }
+                    
+                    # Enviar respuesta con cookie de sesión
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+                    self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+                    self.send_header('Set-Cookie', f'session_id={session_id}; Path=/; HttpOnly; SameSite=Lax')
+                    self.end_headers()
+                    
+                    response_json = json.dumps(respuesta, ensure_ascii=False)
+                    self.wfile.write(response_json.encode('utf-8'))
+                    self.wfile.flush()
+                    print(f"Respuesta de autenticación enviada con session_id: {session_id}")
+                    return
+                    
+                else:
+                    # Error de autenticación
+                    respuesta = {
+                        "success": False,
+                        "message": resultado.get('mensaje', 'Credenciales inválidas')
+                    }
+                    
+                    return responder_json(self, respuesta, 401)
+                    
+            else:
+                # No hay datos
+                respuesta = {"success": False, "message": "No se recibieron datos"}
+                return responder_json(self, respuesta, 400)
+            
+        except Exception as e:
+            print(f"Error en autenticación: {e}")
+            respuesta = {"success": False, "message": f"Error en la autenticación: {str(e)}"}
+            return responder_json(self, respuesta, 500)
 
+    def determinar_tipo_usuario_por_id(self, user_id, username):
+        """Determina si un usuario es administrador o cliente usando el controlador"""
+        try:
+            # Usar el controlador para determinar el tipo de usuario
+            if self.controlador_usuarios and hasattr(self.controlador_usuarios, 'determinar_tipo_usuario'):
+                return self.controlador_usuarios.determinar_tipo_usuario(user_id, username)
+                    else:
+                print("Controlador de usuarios no disponible, asumiendo cliente")
+                return 'cliente'
+        except Exception as e:
+            print(f"Error determinando tipo de usuario: {e}")
+            return 'cliente'  # Por defecto, asumir cliente
+    
+    def registrar_usuario(self):
+        """Registra un nuevo usuario"""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+            else:
+                datos = {}
+            
+            # Usar el método del controlador
+            if self.controlador_usuarios and hasattr(self.controlador_usuarios, 'registrar_usuario'):
+                resultado = self.controlador_usuarios.registrar_usuario(datos)
+            else:
+                resultado = {
+                    'success': False,
+                    'message': 'Error del servidor'
+                }
+            
+            # Enviar respuesta
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.end_headers()
+            
+            response_json = json.dumps(resultado, ensure_ascii=False)
+            self.wfile.write(response_json.encode('utf-8'))
+            
+        except Exception as e:
+            print(f"Error en registro: {e}")
+            self.send_error_response(500, "Error interno del servidor")
 
-@route_get('/api/contenidos/categorias')
-def obtener_categorias_contenido(handler):
-    try:
-        categorias = controladorCategoria.obtener_todas_categorias()
-        responder_json(handler, categorias)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, status_code=500)
+    def get_session_id(self):
+        """Obtiene el session_id de las cookies"""
+        try:
+            cookie_header = self.headers.get('Cookie', '')
+            if cookie_header:
+                cookies = dict(item.split("=") for item in cookie_header.split("; "))
+                return cookies.get('session_id')
+        except:
+            pass
+        return None
 
-@route_get('/promociones')
-def mostrar_interfaz_promociones(handler):
-    contenido = interfazPromocion.mostrar_interfaz()
-    responder_html(handler, contenido)
+    def redirect_to(self, url):
+        """Redirige a una URL específica"""
+        self.send_response(302)
+        self.send_header('Location', url)
+        self.end_headers()
 
-@route_get('/obtener_promociones')
-def obtener_promociones(handler):
-    try:
-        promociones = controladorPromocion.obtener_todas_promociones()
-        responder_json(handler, {"success": True, "promociones": promociones})
-    except Exception as e:
-        responder_json(handler, {"success": False, "error": str(e)}, 500)
+    def redirect_to_admin(self):
+        """Redirige a la página de administrador"""
+        try:
+            # Verificar si el usuario está autenticado como admin
+            session_id = self.get_session_id()
+            if not session_id or session_id not in sesiones_activas:
+                print("Usuario no autenticado, redirigiendo a login")
+                self.redirect_to('/login')
+                return
+                
+            session = sesiones_activas[session_id]
+            if session['tipo'] != 'admin':
+                print(f"Usuario no es admin (tipo: {session['tipo']}), redirigiendo a login")
+                self.redirect_to('/login')
+                return
+            
+            print(f"Usuario autenticado como admin: {session}")
+            
+            # Servir la página de inicio del administrador
+            contenido = self.servir_pagina_admin()
+            if contenido:
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(contenido.encode('utf-8'))
+                print("Página de admin servida correctamente")
+        except Exception as e:
+            print(f"Error sirviendo página admin: {e}")
+            self.send_error_response(500, "Error interno del servidor")
 
-@route_get('/obtener_promocion')
-def obtener_promocion(handler):
-    try:
-        from urllib.parse import parse_qs, urlparse
-        query_components = parse_qs(urlparse(handler.path).query)
-        id_promocion = int(query_components.get('id', [None])[0])
-        
-        if not id_promocion:
-            return responder_json(handler, {"success": False, "error": "ID de promoción no proporcionado"}, 400)
-        
-        print(f"Buscando promoción con ID: {id_promocion}")
-        promocion = controladorPromocion.obtener_promocion_por_id(id_promocion)
-        
-        if promocion:
-            print(f"Promoción encontrada: {promocion}")
-            # Asegurarnos de que los contenidos estén en el formato correcto
-            if 'contenidos' not in promocion:
-                promocion['contenidos'] = []
-            # Asegurarse de que las fechas estén en el formato correcto
-            if 'fecha_inicio' in promocion and promocion['fecha_inicio']:
-                if isinstance(promocion['fecha_inicio'], str):
-                    from datetime import datetime
-                    try:
-                        fecha = datetime.strptime(promocion['fecha_inicio'], '%Y-%m-%d %H:%M:%S')
-                        promocion['fecha_inicio'] = fecha.strftime('%Y-%m-%dT%H:%M')
-                    except ValueError:
-                        pass
-            if 'fecha_fin' in promocion and promocion['fecha_fin']:
-                if isinstance(promocion['fecha_fin'], str):
-                    from datetime import datetime
-                    try:
-                        fecha = datetime.strptime(promocion['fecha_fin'], '%Y-%m-%d %H:%M:%S')
-                        promocion['fecha_fin'] = fecha.strftime('%Y-%m-%dT%H:%M')
-                    except ValueError:
-                        pass
-            responder_json(handler, {"success": True, "promocion": promocion})
-        else:
-            print(f"Promoción con ID {id_promocion} no encontrada")
-            responder_json(handler, {"success": False, "error": "Promoción no encontrada"}, 404)
-            print(f"Promoción con ID {id_promocion} no encontrada")
-            responder_json(handler, {"success": False, "error": "Promoción no encontrada"}, 404)
-    except Exception as e:
-        import traceback
-        error_msg = f"Error en obtener_promocion: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        responder_json(handler, {"success": False, "error": "Error al obtener la promoción"}, 500)
+    def redirect_to_cliente(self):
+        """Redirige a la página de cliente"""
+        try:
+            # Verificar si el usuario está autenticado como cliente
+            session_id = self.get_session_id()
+            if not session_id or session_id not in sesiones_activas:
+                print("Usuario no autenticado, redirigiendo a login")
+                self.redirect_to('/login')
+                return
+                
+            session = sesiones_activas[session_id]
+            if session['tipo'] != 'cliente':
+                print(f"Usuario no es cliente (tipo: {session['tipo']}), redirigiendo a login")
+                self.redirect_to('/login')
+                return
+            
+            print(f"Usuario autenticado como cliente: {session}")
+            
+            # Servir la página de inicio del cliente
+            contenido = self.servir_pagina_cliente()
+            if contenido:
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(contenido.encode('utf-8'))
+                print("Página de cliente servida correctamente")
+        except Exception as e:
+            print(f"Error sirviendo página cliente: {e}")
+            self.send_error_response(500, "Error interno del servidor")
 
+    def api_clientes_handler(self):
+        """Maneja la API para obtener clientes"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-@route_get('/api/promociones/<int:id_promocion>/contenidos')
-def obtener_contenidos_promocion(handler, id_promocion):
-    try:
-        print(f"Buscando contenidos para promoción ID: {id_promocion}")
-        promocion = controladorPromocion.obtener_promocion_por_id(id_promocion)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Obtener clientes usando el controlador
+            clientes = controladorClientes.obtener_todos_clientes()
+            return self.send_json_response({"success": True, "data": clientes})
 
-        if not promocion:
-            print(f"Promoción con ID {id_promocion} no encontrada")
-            return responder_json(handler, {"success": False, "error": "Promoción no encontrada"}, 404)
+        except Exception as e:
+            print(f"Error en api_clientes_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
 
-        print(f"Contenidos encontrados: {promocion.get('contenidos', [])}")
+    def api_carrito_handler(self):
+        """Maneja la API para obtener el carrito del usuario"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-        responder_json(handler, {
-            "success": True,
-            "contenidos": promocion.get("contenidos", []),
-            "promocion": {
-                "porcentaje": promocion.get("porcentaje", 0)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Verificar que el controlador esté disponible
+            if not self.controlador_carrito:
+                return self.send_json_response({"error": "Controlador no disponible"}, 500)
+
+            # Llamar al controlador para obtener el carrito
+            resultado = self.controlador_carrito.obtener_carrito(user_id)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_carrito_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_mis_contenidos_handler(self):
+        """Maneja la API para obtener los contenidos adquiridos por el cliente."""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Llamar al controlador de contenidos adquiridos
+            resultado = controladorContenidosAdquiridos.obtener_mis_contenidos(user_id)
+            
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_mis_contenidos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_usuario_perfil_handler(self):
+        """Maneja la API para obtener el perfil del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            print(f"Cookie recibida: {cookie}")
+            
+            if not cookie or 'session_id=' not in cookie:
+                print("No se encontró session_id en las cookies")
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            print(f"Session ID extraído: {session_id}")
+            
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            print(f"Session data encontrada: {session_data}")
+
+            if not session_data:
+                print("No se encontró session_data")
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            user_id = session_data.get('user_id')
+            print(f"User ID extraído: {user_id}")
+            
+            if not user_id:
+                print("No se encontró user_id en session_data")
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            # Obtener datos del perfil usando el controlador
+            if not self.controlador_perfil:
+                return self.send_json_response({"error": "Controlador no disponible"}, 500)
+                
+            perfil = self.controlador_perfil.obtener_datos_perfil(user_id)
+            print(f"Perfil obtenido: {perfil}")
+            
+            if not perfil:
+                return self.send_json_response({"error": "Perfil no encontrado"}, 404)
+
+            return self.send_json_response({"data": perfil})
+        except Exception as e:
+            print(f"Error en api_usuario_perfil_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_usuario_historial_handler(self, cliente_id):
+        """Maneja la API para obtener el historial de un cliente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Llamar al controlador para obtener el historial
+            historial = controladorClientes.obtener_historial_cliente(cliente_id)
+            
+            # El historial puede ser una lista directamente o un diccionario con mensaje
+            if isinstance(historial, list):
+                # Convertir fechas datetime a strings para serialización JSON
+                for item in historial:
+                    if isinstance(item, dict) and 'fecha_descarga' in item:
+                        if hasattr(item['fecha_descarga'], 'strftime'):
+                            item['fecha_descarga'] = item['fecha_descarga'].strftime('%Y-%m-%d %H:%M:%S')
+                return self.send_json_response({"success": True, "data": historial})
+            elif isinstance(historial, dict):
+                # Si es un diccionario con mensaje (sin historial)
+                return self.send_json_response({"success": True, "data": []})
+            else:
+                return self.send_json_response({"success": True, "data": []})
+
+        except Exception as e:
+            print(f"Error en api_clientes_historial_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_usuario_historial_compras_handler(self):
+        """Maneja la API para obtener el historial de compras del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Llamar al controlador para obtener el historial de compras
+            historial_compras = controladorClientes.obtener_historial_compras_cliente(user_id)
+            
+            # El historial de compras puede ser una lista directamente o un diccionario con mensaje
+            if isinstance(historial_compras, list):
+                # Convertir fechas datetime a strings para serialización JSON
+                for item in historial_compras:
+                    if isinstance(item, dict) and 'fecha_y_hora' in item:
+                        if hasattr(item['fecha_y_hora'], 'strftime'):
+                            item['fecha_y_hora'] = item['fecha_y_hora'].strftime('%Y-%m-%d %H:%M:%S')
+                return self.send_json_response({"success": True, "data": historial_compras})
+            elif isinstance(historial_compras, dict):
+                # Si es un diccionario con mensaje (sin historial de compras)
+                return self.send_json_response({"success": True, "data": []})
+            else:
+                return self.send_json_response({"success": True, "data": []})
+
+        except Exception as e:
+            print(f"Error en api_usuario_historial_compras_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def cerrar_sesion_handler(self):
+        """Maneja el cierre de sesión"""
+        try:
+            # Obtener session_id de las cookies
+            cookie = self.headers.get('Cookie', '')
+            if 'session_id=' in cookie:
+                session_id = cookie.split('session_id=')[1].split(';')[0]
+                
+                # Limpiar sesión en ambos sistemas
+                from infrastructure.utils.router import sessions
+                if session_id in sessions:
+                    del sessions[session_id]
+                if session_id in sesiones_activas:
+                    del sesiones_activas[session_id]
+                
+                print(f"Sesión {session_id} eliminada de ambos sistemas")
+
+            # Enviar respuesta con cookie de expiración
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+            self.send_header('Set-Cookie', 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax')
+            self.end_headers()
+            
+            response_data = {
+                "success": True,
+                "message": "Sesión cerrada correctamente",
+                "redirect": "/"
             }
-        })
-    except Exception as e:
-        import traceback
-        error_msg = f"Error en obtener_contenidos_promocion: {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        responder_json(handler, {"success": False, "error": "Error al obtener los contenidos de la promoción"}, 500)
+            
+            response_json = json.dumps(response_data, ensure_ascii=False)
+            self.wfile.write(response_json.encode('utf-8'))
+            self.wfile.flush()
+            print("Respuesta de logout enviada correctamente")
+            
+        except Exception as e:
+            print(f"Error en cerrar_sesion_handler: {e}")
+            # Enviar respuesta de error
+            self.send_response(500)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            error_response = {
+                "success": False,
+                "error": str(e)
+            }
+            
+            self.wfile.write(json.dumps(error_response).encode('utf-8'))
 
-@route_post('/agregar_promocion')
-def agregar_promocion(handler):
-    try:
-        form_data = handler.leer_form_data()
-        resultado = controladorPromocion.agregar_promocion(form_data)
-        responder_json(handler, resultado)
-    except Exception as e:
-        responder_json(handler, {"success": False, "error": str(e)}, 500)
+    def api_usuario_cambiar_contrasena_handler(self):
+        """Maneja la API para cambiar contraseña del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-@route_post('/api/promociones/<int:id_promocion>/editar')
-def editar_promocion(handler, id_promocion):
-    try:
-        form_data = handler.leer_form_data()
-        resultado = controladorPromocion.editar_promocion(id_promocion, form_data)
-        responder_json(handler, resultado)
-    except Exception as e:
-        responder_json(handler, {"success": False, "error": str(e)}, 500)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
 
-@route_post('/eliminar_promocion')
-def eliminar_promocion(handler):
-    try:
-        form_data = handler.leer_form_data()
-        id_promocion = int(form_data.get('promocion_id'))
-        resultado = controladorPromocion.eliminar_promocion(id_promocion)
-        responder_json(handler, resultado)
-    except Exception as e:
-        responder_json(handler, {"success": False, "error": str(e)}, 500)
+            if not session_data:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-@route_get('/categorias')
-def mostrar_interfaz_categorias(handler):
-    contenido = interfazCategorias.mostrar_interfaz()
-    responder_html(handler, contenido)
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-@route_get('/api/categorias')
-def obtener_todas_categorias(handler):
-    try:
-        categorias = controladorCategoria.obtener_todas_categorias()
-        responder_json(handler, categorias)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, status_code=500)
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                contrasena_actual = datos.get('contrasena_actual', '')
+                nueva_contrasena = datos.get('nueva_contrasena', '')
+                
+                if not contrasena_actual or not nueva_contrasena:
+                    return self.send_json_response({"error": "Datos incompletos"}, 400)
+                
+                # Cambiar contraseña usando el controlador
+                if not self.controlador_perfil:
+                    return self.send_json_response({"error": "Controlador no disponible"}, 500)
+                    
+                resultado = self.controlador_perfil.cambiar_contrasena(user_id, contrasena_actual, nueva_contrasena)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+                
+        except Exception as e:
+            print(f"Error en api_usuario_cambiar_contrasena_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
 
-@route_post('/api/categorias')
-def crear_categoria(handler):
-    try:
-        datos = handler.leer_json()
-        resultado = controladorCategoria.crear_categoria(
-            datos['nombre'],
-            datos.get('id_categoria_padre')
-        )
-        responder_json(handler, {
-            "message": "Categoría creada exitosamente",
-            "categoria": resultado
-        })
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, 500)
+    def api_usuario_eliminar_cuenta_handler(self):
+        """Maneja la API para eliminar cuenta del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
 
-@route_put('/api/categorias/<int:id_categoria>')
-def actualizar_categoria(handler, id_categoria):
-    try:
-        datos = handler.leer_json()
-        resultado = controladorCategoria.actualizar_categoria(
-            id_categoria,
-            datos['nombre']
-        )
-        responder_json(handler, {
-            "message": "Categoría actualizada exitosamente",
-            "categoria": resultado
-        })
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, 500)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
 
-@route_get('/api/categorias/buscar')
-def buscar_categorias(handler):
-    try:
-        termino = handler.headers.get('Search-Term', '')
-        categorias = controladorCategoria.buscar_categorias(termino)
-        responder_json(handler, categorias)
-    except Exception as e:
-        responder_json(handler, {"error": str(e)}, 500)
+            if not session_data:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            contrasena = ""
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                contrasena = datos.get('contrasena', '')
+            
+            if not contrasena:
+                return self.send_json_response({"error": "Contraseña requerida"}, 400)
+            
+            # Eliminar cuenta usando el controlador
+            if not self.controlador_perfil:
+                return self.send_json_response({"error": "Controlador no disponible"}, 500)
+                
+            resultado = self.controlador_perfil.eliminar_cuenta(user_id, contrasena)
+            return self.send_json_response(resultado)
+                
+        except Exception as e:
+            print(f"Error en api_usuario_eliminar_cuenta_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_carrito_agregar_handler(self):
+        """Maneja la API para agregar contenido al carrito"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                contenido_id = datos.get('contenido_id')
+                cantidad = datos.get('cantidad', 1)
+                
+                if not contenido_id:
+                    return self.send_json_response({"error": "ID de contenido requerido"}, 400)
+                
+                # Verificar que el controlador esté disponible
+                if not self.controlador_carrito:
+                    return self.send_json_response({"error": "Controlador no disponible"}, 500)
+                
+                # Llamar al controlador para agregar al carrito
+                resultado = self.controlador_carrito.agregar_contenido(user_id, contenido_id, cantidad)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+                
+        except Exception as e:
+            print(f"Error en api_carrito_agregar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_carrito_comprar_handler(self):
+        """Maneja la API para procesar la compra del carrito"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Verificar que el controlador esté disponible
+            if not self.controlador_carrito:
+                return self.send_json_response({"error": "Controlador no disponible"}, 500)
+
+            # Llamar al controlador para procesar la compra
+            resultado = self.controlador_carrito.procesar_compra(user_id)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_carrito_comprar_handler: {e}")
+            return self.send_json_response({"error": "Error interno del servidor"}, 500)
+
+    def api_mis_contenidos_descargar_handler(self, content_id):
+        """Maneja la API para descargar contenido"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Llamar al controlador para descargar contenido
+            resultado = controladorContenidosAdquiridos.descargar_contenido(user_id, content_id)
+            
+            if resultado.get('success'):
+                # Obtener información del contenido
+                nombre = resultado.get('nombre', f'contenido_{content_id}')
+                archivo_binario = resultado.get('archivo')
+                mime_type = resultado.get('mime_type', 'application/octet-stream')
+                
+                if archivo_binario:
+                    # Enviar contenido como respuesta
+                    self.send_response(200)
+                    self.send_header('Content-Type', mime_type)
+                    self.send_header('Content-Disposition', f'attachment; filename="{nombre}"')
+                    self.send_header('Content-Length', str(len(archivo_binario)))
+                    self.end_headers()
+                    self.wfile.write(archivo_binario)
+                    print(f"Contenido {content_id} descargado exitosamente")
+                else:
+                    return self.send_json_response({"error": "Archivo no encontrado"}, 404)
+            else:
+                return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_mis_contenidos_descargar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_contenido_ver_handler(self, content_id):
+        """Maneja la API para ver contenido"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Obtener contenido específico por ID
+            contenido = controladorContenido.obtener_contenido(content_id)
+            
+            if contenido:
+                return self.send_json_response(contenido)
+            else:
+                return self.send_json_response({"error": "Contenido no encontrado"}, 404)
+
+        except Exception as e:
+            print(f"Error en api_contenido_ver_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_contenido_miniatura_handler(self, content_id):
+        """Maneja la API para obtener la miniatura de un contenido"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Obtener información del contenido
+            from domain.entities.contenido import Contenido
+            contenido = Contenido.obtener_por_id(content_id)
+            
+            if not contenido:
+                return self.send_json_response({"error": "Contenido no encontrado"}, 404)
+
+            # Generar miniatura basada en el tipo de contenido
+            if contenido.formato and 'imagen' in contenido.formato.lower():
+                # Para imágenes, intentar usar el archivo real
+                if contenido.archivo:
+                    # Enviar la imagen real como miniatura
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'image/jpeg')
+                    self.send_header('Content-Length', str(len(contenido.archivo)))
+                    self.send_header('Cache-Control', 'public, max-age=3600')
+                    self.end_headers()
+                    self.wfile.write(contenido.archivo)
+                    print(f"Miniatura real para imagen {content_id} mostrada exitosamente")
+                    return
+                else:
+                    # Generar placeholder para imagen
+                    self._generar_placeholder_imagen()
+            elif contenido.formato and ('video' in contenido.formato.lower() or 'mp4' in contenido.formato.lower()):
+                # Para videos, generar placeholder con icono de video
+                self._generar_placeholder_video()
+            elif contenido.formato and ('audio' in contenido.formato.lower() or 'mp3' in contenido.formato.lower()):
+                # Para audios, generar placeholder con icono de audio
+                self._generar_placeholder_audio()
+            else:
+                # Para otros tipos, generar placeholder genérico
+                self._generar_placeholder_generico()
+
+        except Exception as e:
+            print(f"Error en api_contenido_miniatura_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def _generar_placeholder_imagen(self):
+        """Genera un placeholder para imágenes"""
+        # Crear una imagen SVG simple para imágenes
+        svg_content = '''
+        <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#f0f0f0"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" fill="#666">
+                Imagen
+            </text>
+        </svg>
+        '''
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/svg+xml')
+        self.send_header('Content-Length', str(len(svg_content)))
+        self.send_header('Cache-Control', 'public, max-age=3600')
+        self.end_headers()
+        self.wfile.write(svg_content.encode('utf-8'))
+
+    def _generar_placeholder_video(self):
+        """Genera un placeholder para videos"""
+        # Crear una imagen SVG para videos con icono de play
+        svg_content = '''
+        <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#e0e0e0"/>
+            <circle cx="150" cy="100" r="40" fill="#333" opacity="0.8"/>
+            <polygon points="140,85 140,115 165,100" fill="white"/>
+            <text x="50%" y="85%" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">
+                Video
+            </text>
+        </svg>
+        '''
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/svg+xml')
+        self.send_header('Content-Length', str(len(svg_content)))
+        self.send_header('Cache-Control', 'public, max-age=3600')
+        self.end_headers()
+        self.wfile.write(svg_content.encode('utf-8'))
+
+    def _generar_placeholder_audio(self):
+        """Genera un placeholder para audios"""
+        # Crear una imagen SVG para audios con ondas
+        svg_content = '''
+        <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#f8f8f8"/>
+            <circle cx="150" cy="100" r="30" fill="#4CAF50"/>
+            <text x="150" y="105" text-anchor="middle" font-family="Arial" font-size="20" fill="white">♪</text>
+            <rect x="200" y="80" width="4" height="40" fill="#666"/>
+            <rect x="210" y="70" width="4" height="60" fill="#666"/>
+            <rect x="220" y="85" width="4" height="30" fill="#666"/>
+            <rect x="230" y="75" width="4" height="50" fill="#666"/>
+            <rect x="240" y="90" width="4" height="20" fill="#666"/>
+            <text x="50%" y="85%" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">
+                Audio
+            </text>
+        </svg>
+        '''
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/svg+xml')
+        self.send_header('Content-Length', str(len(svg_content)))
+        self.send_header('Cache-Control', 'public, max-age=3600')
+        self.end_headers()
+        self.wfile.write(svg_content.encode('utf-8'))
+
+    def _generar_placeholder_generico(self):
+        """Genera un placeholder genérico"""
+        # Crear una imagen SVG genérica
+        svg_content = '''
+        <svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100%" height="100%" fill="#f5f5f5"/>
+            <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-family="Arial" font-size="16" fill="#999">
+                Contenido
+            </text>
+        </svg>
+        '''
+        
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/svg+xml')
+        self.send_header('Content-Length', str(len(svg_content)))
+        self.send_header('Cache-Control', 'public, max-age=3600')
+        self.end_headers()
+        self.wfile.write(svg_content.encode('utf-8'))
+
+    def api_mis_contenidos_calificar_handler(self):
+        """Maneja la API para calificar contenido"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('user_id'):
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            user_id = session_data.get('user_id')
+
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                id_contenido = datos.get('id_contenido')
+                puntuacion = datos.get('puntuacion', 0)
+                
+                if not id_contenido:
+                    return self.send_json_response({"error": "ID de contenido requerido"}, 400)
+                
+                # Usar el controlador de contenidos adquiridos para calificar
+                resultado = controladorContenidosAdquiridos.calificar_contenido(user_id, id_contenido, puntuacion)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+                
+        except Exception as e:
+            print(f"Error en api_mis_contenidos_calificar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_promocion_contenidos_handler(self, promo_id):
+        """Devuelve los contenidos asociados a una promoción"""
+        try:
+            # Verificar autenticación y permisos de admin
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Llama al controlador de promociones
+            resultado = controladorPromocion.obtener_contenidos_promocion(promo_id)
+            
+            # Si el resultado es una tupla (datos, status_code), extraer solo los datos
+            if isinstance(resultado, tuple):
+                datos, status_code = resultado
+                return self.send_json_response(datos, status_code)
+            else:
+                return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_promocion_contenidos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_ranking_handler(self, tipo_ranking):
+        """Maneja la API para obtener contenido de acuerdo al tipo de ranking"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            # Obtener contenido de acuerdo al tipo de ranking usando el controlador
+            contenido = controladorRanking.obtener_contenido_por_tipo(tipo_ranking)
+            return self.send_json_response(contenido)
+
+        except Exception as e:
+            print(f"Error en api_ranking_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def manejar_logout_get(self):
+        """Maneja la solicitud GET para cerrar sesión y redirige a la página de inicio"""
+        try:
+            # Obtener session_id de las cookies
+            cookie = self.headers.get('Cookie', '')
+            if 'session_id=' in cookie:
+                session_id = cookie.split('session_id=')[1].split(';')[0]
+                
+                # Limpiar sesión en ambos sistemas
+                from infrastructure.utils.router import sessions
+                if session_id in sessions:
+                    del sessions[session_id]
+                if session_id in sesiones_activas:
+                    del sesiones_activas[session_id]
+                
+                print(f"Sesión {session_id} eliminada de ambos sistemas")
+
+            # Redirigir a la página de inicio con cookie de expiración
+            self.send_response(302)  # Redirect
+            self.send_header('Location', '/')
+            self.send_header('Set-Cookie', 'session_id=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax')
+            self.end_headers()
+            print("Redirección de logout enviada correctamente")
+            
+        except Exception as e:
+            print(f"Error en manejar_logout_get: {e}")
+            # En caso de error, redirigir de todas formas
+            self.send_response(302)
+            self.send_header('Location', '/')
+            self.end_headers()
+
+    def api_obtener_promociones_handler(self):
+        """Maneja la API para obtener promociones"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Obtener promociones usando el controlador
+            promociones = controladorPromocion.obtener_todas_promociones()
+            return self.send_json_response({"success": True, "data": promociones})
+
+        except Exception as e:
+            print(f"Error en api_obtener_promociones_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_contenidos_eliminar_handler(self):
+        try:
+            content_type = self.headers['Content-Type']
+            if 'application/json' in content_type:
+                content_length = int(self.headers['Content-Length'])
+                body = self.rfile.read(content_length)
+                data = json.loads(body)
+                content_id = data.get('id')
+            elif 'application/x-www-form-urlencoded' in content_type:
+                content_length = int(self.headers['Content-Length'])
+                body = self.rfile.read(content_length).decode('utf-8')
+                from urllib.parse import parse_qs
+                parsed_data = parse_qs(body)
+                content_id = parsed_data.get('contenido_id', [None])[0]
+            else:
+                return self.send_json_response({"error": "Tipo de contenido no soportado"}, 400)
+
+            if not content_id:
+                return self.send_json_response({"error": "ID de contenido no proporcionado"}, 400)
+                
+            from app.controllers.controlador_contenido import ControladorContenido
+            controlador = ControladorContenido()
+            resultado = controlador.eliminar_contenido(content_id)
+
+            if resultado['success']:
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": resultado.get('message', 'Error al eliminar')}, 404)
+        except Exception as e:
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_contenidos_agregar_handler(self):
+        try:
+            # Usar cgi para parsear el formulario multipart/form-data
+            import cgi
+            from io import BytesIO
+            form = cgi.FieldStorage(
+                fp=BytesIO(self.rfile.read(int(self.headers['Content-Length']))),
+                headers=self.headers,
+                environ={'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': self.headers['Content-Type']}
+            )
+
+            # Extraer los datos del formulario
+            contenido_data = {
+                "nombre": form.getvalue("nombre"),
+                "autor": form.getvalue("autor"),
+                "descripcion": form.getvalue("descripcion"),
+                "precio": form.getvalue("precio"),
+                "id_categoria": form.getvalue("categoria_id")
+            }
+
+            # Manejar el archivo
+            if 'archivo' in form and form['archivo'].filename:
+                archivo_item = form['archivo']
+                contenido_data['archivo'] = {
+                    'filename': archivo_item.filename,
+                    'file_content': archivo_item.file.read()
+                }
+
+            from app.controllers.controlador_contenido import ControladorContenido
+            controlador = ControladorContenido()
+            resultado = controlador.agregar_contenido(contenido_data)
+
+            if resultado and resultado.get('success'):
+                return self.send_json_response(resultado)
+            else:
+                error_msg = resultado.get('error', 'Error desconocido al agregar contenido')
+                return self.send_json_response({"error": error_msg}, 500)
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return self.send_json_response({"error": f"Error en el servidor: {str(e)}"}, 500)
+
+    def api_contenidos_editar_handler(self):
+        try:
+            import cgi
+            from io import BytesIO
+            form = cgi.FieldStorage(
+                fp=BytesIO(self.rfile.read(int(self.headers['Content-Length']))),
+                headers=self.headers,
+                environ={'REQUEST_METHOD': 'POST',
+                         'CONTENT_TYPE': self.headers['Content-Type']}
+            )
+
+            contenido_data = {
+                "id_contenido": form.getvalue("contenido_id"),
+                "nombre": form.getvalue("nombre"),
+                "autor": form.getvalue("autor"),
+                "descripcion": form.getvalue("descripcion"),
+                "precio": form.getvalue("precio"),
+                "id_categoria": form.getvalue("categoria_id"),
+            }
+            
+            # Manejar el archivo si se sube uno nuevo
+            if 'archivo' in form and form['archivo'].filename:
+                archivo_item = form['archivo']
+                contenido_data['archivo'] = {
+                    'filename': archivo_item.filename,
+                    'file_content': archivo_item.file.read()
+                }
+
+            from app.controllers.controlador_contenido import ControladorContenido
+            controlador = ControladorContenido()
+            resultado = controlador.actualizar_contenido(contenido_data)
+            
+            if resultado.get('success'):
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": resultado.get('error', 'Error al actualizar')}, 400)
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return self.send_json_response({"error": f"Error en el servidor: {str(e)}"}, 500)
+
+    def api_contenido_por_id_handler(self, content_id):
+        try:
+            from app.controllers.controlador_contenido import ControladorContenido
+            controlador = ControladorContenido()
+            contenido = controlador.obtener_contenido(content_id)
+            
+            if contenido:
+                return self.send_json_response(contenido)
+            else:
+                return self.send_json_response({"error": "Contenido no encontrado"}, 404)
+        except Exception as e:
+            print(f"Error en api_contenido_por_id_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_clientes_saldo_handler(self, cliente_id):
+        """Maneja la API para actualizar el saldo de un cliente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                nuevo_saldo = datos.get('nuevo_saldo')
+                
+                if not nuevo_saldo:
+                    return self.send_json_response({"error": "Nuevo saldo requerido"}, 400)
+                
+                # Llamar al controlador para actualizar el saldo
+                resultado = controladorClientes.actualizar_saldo_cliente(cliente_id, nuevo_saldo)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_clientes_saldo_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_clientes_historial_handler(self, cliente_id):
+        """Maneja la API para obtener el historial de un cliente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Llamar al controlador para obtener el historial
+            historial = controladorClientes.obtener_historial_cliente(cliente_id)
+            
+            # El historial puede ser una lista directamente o un diccionario con mensaje
+            if isinstance(historial, list):
+                # Convertir fechas datetime a strings para serialización JSON
+                for item in historial:
+                    if isinstance(item, dict) and 'fecha_descarga' in item:
+                        if hasattr(item['fecha_descarga'], 'strftime'):
+                            item['fecha_descarga'] = item['fecha_descarga'].strftime('%Y-%m-%d %H:%M:%S')
+                return self.send_json_response({"success": True, "data": historial})
+            elif isinstance(historial, dict):
+                # Si es un diccionario con mensaje (sin historial)
+                return self.send_json_response({"success": True, "data": []})
+            else:
+                return self.send_json_response({"success": True, "data": []})
+
+        except Exception as e:
+            print(f"Error en api_clientes_historial_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_regalos_recibidos_handler(self):
+        """Maneja la API para obtener regalos recibidos del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Llamar al controlador para obtener regalos recibidos
+            from app.controllers.controlador_regalo import ControladorRegalo
+            controlador_regalo = ControladorRegalo()
+            resultado = controlador_regalo.obtener_regalos_recibidos(user_id)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_regalos_recibidos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_descuentos_info_handler(self):
+        """Maneja la API para obtener información sobre descuentos del usuario autenticado"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Llamar al controlador para obtener información sobre descuentos
+            from domain.entities.carrito import Carrito
+            info_descuentos = Carrito.obtener_descuentos_aplicados(user_id)
+            return self.send_json_response({"success": True, "data": info_descuentos})
+
+        except Exception as e:
+            print(f"Error en api_descuentos_info_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_regalos_enviar_handler(self):
+        """Maneja la API para enviar un regalo"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                id_usuario_recibe = datos.get('id_usuario_recibe')
+                id_contenido = datos.get('id_contenido')
+                
+                if not id_usuario_recibe or not id_contenido:
+                    return self.send_json_response({"error": "Datos incompletos"}, 400)
+                
+                # Llamar al controlador para enviar regalo
+                from app.controllers.controlador_regalo import ControladorRegalo
+                controlador_regalo = ControladorRegalo()
+                resultado = controlador_regalo.enviar_regalo(user_id, id_usuario_recibe, id_contenido)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_regalos_enviar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_descuentos_aplicar_handler(self):
+        """Maneja la API para aplicar o remover descuentos"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                id_contenido = datos.get('id_contenido')
+                aplicar = datos.get('aplicar', True)
+                
+                if not id_contenido:
+                    return self.send_json_response({"error": "ID de contenido requerido"}, 400)
+                
+                # Llamar al controlador para aplicar/remover descuento
+                from domain.entities.carrito import Carrito
+                resultado = Carrito.aplicar_descuento_contenido(user_id, id_contenido, aplicar)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_descuentos_aplicar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_notificaciones_regalos_handler(self):
+        """Maneja la API para obtener notificaciones de regalos"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Llamar al controlador para obtener notificaciones de regalos
+            from app.controllers.controlador_notificacion import ControladorNotificacion
+            controlador_notificacion = ControladorNotificacion()
+            resultado = controlador_notificacion.obtener_notificaciones_regalos(user_id)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_notificaciones_regalos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_regalos_abrir_handler(self):
+        """Maneja la API para abrir un regalo"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                id_regalo = datos.get('id_regalo')
+                
+                if not id_regalo:
+                    return self.send_json_response({"error": "ID de regalo requerido"}, 400)
+                
+                # Llamar al controlador para abrir regalo
+                from app.controllers.controlador_regalo import ControladorRegalo
+                controlador_regalo = ControladorRegalo()
+                resultado = controlador_regalo.abrir_regalo(id_regalo, user_id)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_regalos_abrir_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_usuario_buscar_handler(self):
+        """Maneja la API para buscar un usuario por username"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+            
+            # Obtener username de los parámetros de consulta
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
+            username = query_params.get('username', [None])[0]
+            
+            if not username:
+                return self.send_json_response({"error": "Username requerido"}, 400)
+            
+            # Llamar al controlador para buscar usuario
+            from app.controllers.controlador_usuarios import ControladorUsuarios
+            controlador_usuarios = ControladorUsuarios()
+            resultado = controlador_usuarios.buscar_usuario_por_username(username)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_usuario_buscar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_notificaciones_marcar_leida_handler(self):
+        """Maneja la API para marcar notificaciones como leídas"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            user_id = session_data.get('user_id')
+            if not user_id:
+                return self.send_json_response({"error": "Usuario no válido"}, 401)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            id_regalo = None
+            
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                id_regalo = datos.get('id_regalo')  # Opcional, si no se proporciona marca todas como leídas
+            
+            # Llamar al controlador para marcar notificación como leída
+            from app.controllers.controlador_notificacion import ControladorNotificacion
+            controlador_notificacion = ControladorNotificacion()
+            resultado = controlador_notificacion.marcar_notificacion_leida(user_id, id_regalo)
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_notificaciones_marcar_leida_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_categorias_crear_handler(self):
+        """Maneja la API para crear una nueva categoría"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                nombre = datos.get('nombre')
+                id_categoria_padre = datos.get('id_categoria_padre')
+                
+                if not nombre:
+                    return self.send_json_response({"error": "Nombre de categoría requerido"}, 400)
+                
+                # Llamar al controlador para crear categoría
+                resultado = controladorCategoria.crear_categoria(nombre, id_categoria_padre)
+                return self.send_json_response({
+                    "success": True,
+                    "message": "Categoría creada exitosamente",
+                    "categoria": resultado
+                })
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_categorias_crear_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_clientes_buscar_handler(self):
+        """Maneja la API para buscar clientes por término de búsqueda"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Obtener término de búsqueda de los parámetros de consulta
+            parsed_url = urlparse(self.path)
+            query_params = parse_qs(parsed_url.query)
+            termino = query_params.get('termino', [''])[0]
+            
+            print(f"[DEBUG] Búsqueda de clientes - término: '{termino}'")
+            
+            # Llamar al controlador para buscar clientes
+            resultado = controladorClientes.buscar_clientes(termino)
+            
+            print(f"[DEBUG] Resultado de búsqueda: {len(resultado)} clientes encontrados")
+            
+            return self.send_json_response(resultado)
+
+        except Exception as e:
+            print(f"Error en api_clientes_buscar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_promocion_crear_handler(self):
+        """Maneja la API para crear una nueva promoción"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                datos = json.loads(post_data.decode('utf-8'))
+                
+                # Llamar al controlador para crear promoción
+                resultado = controladorPromocion.agregar_promocion(datos)
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_promocion_crear_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_promocion_actualizar_handler(self, promocion_id):
+        """Maneja la API para actualizar una promoción existente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            print(f"[DEBUG] Content-Length: {content_length}")
+            
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                print(f"[DEBUG] Raw data: {post_data}")
+                
+                # Verificar el tipo de contenido
+                content_type = self.headers.get('Content-Type', '')
+                print(f"[DEBUG] Content-Type: {content_type}")
+                
+                if 'application/json' in content_type:
+                    # Procesar como JSON
+                    try:
+                        datos = json.loads(post_data.decode('utf-8'))
+                        print(f"[DEBUG] Parsed JSON data: {datos}")
+                    except json.JSONDecodeError as e:
+                        print(f"[DEBUG] JSON decode error: {e}")
+                        return self.send_json_response({"error": f"Error al parsear JSON: {str(e)}"}, 400)
+                elif 'multipart/form-data' in content_type:
+                    # Procesar como multipart/form-data
+                    try:
+                        from urllib.parse import parse_qs
+                        # Decodificar los datos multipart
+                        datos_raw = post_data.decode('utf-8')
+                        print(f"[DEBUG] Multipart data: {datos_raw}")
+                        
+                        # Extraer los campos del multipart
+                        datos = {}
+                        lines = datos_raw.split('\r\n')
+                        current_field = None
+                        
+                        for line in lines:
+                            if line.startswith('Content-Disposition: form-data; name='):
+                                # Extraer nombre del campo
+                                field_name = line.split('name="')[1].split('"')[0]
+                                current_field = field_name
+                            elif current_field and line and not line.startswith('------'):
+                                # Extraer valor del campo
+                                if current_field in datos:
+                                    # Si ya existe, convertir a lista
+                                    if not isinstance(datos[current_field], list):
+                                        datos[current_field] = [datos[current_field]]
+                                    datos[current_field].append(line)
+                                else:
+                                    datos[current_field] = line
+                                current_field = None
+                        
+                        print(f"[DEBUG] Parsed multipart data: {datos}")
+                    except Exception as e:
+                        print(f"[DEBUG] Multipart parse error: {e}")
+                        return self.send_json_response({"error": f"Error al parsear multipart: {str(e)}"}, 400)
+                else:
+                    return self.send_json_response({"error": "Tipo de contenido no soportado"}, 400)
+                
+                # Llamar al controlador para actualizar promoción
+                resultado = controladorPromocion.editar_promocion(promocion_id, datos)
+                return self.send_json_response(resultado)
+            else:
+                print(f"[DEBUG] No content length provided")
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_promocion_actualizar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_promocion_eliminar_handler(self):
+        """Maneja la API para eliminar una promoción existente"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data or not session_data.get('es_admin', False):
+                return self.send_json_response({"error": "Acceso denegado"}, 403)
+            
+            # Leer datos del request
+            content_length = int(self.headers.get('Content-Length', 0))
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                
+                # Verificar el tipo de contenido
+                content_type = self.headers.get('Content-Type', '')
+                
+                if 'application/json' in content_type:
+                    datos = json.loads(post_data.decode('utf-8'))
+                elif 'multipart/form-data' in content_type:
+                    # Procesar como multipart/form-data
+                    datos_raw = post_data.decode('utf-8')
+                    datos = {}
+                    lines = datos_raw.split('\r\n')
+                    current_field = None
+                    
+                    for line in lines:
+                        if line.startswith('Content-Disposition: form-data; name='):
+                            field_name = line.split('name="')[1].split('"')[0]
+                            current_field = field_name
+                        elif current_field and line and not line.startswith('------'):
+                            datos[current_field] = line
+                            current_field = None
+                else:
+                    return self.send_json_response({"error": "Tipo de contenido no soportado"}, 400)
+                
+                promocion_id = datos.get('promocion_id')
+                if not promocion_id:
+                    return self.send_json_response({"error": "ID de promoción requerido"}, 400)
+                
+                # Llamar al controlador para eliminar promoción
+                resultado = controladorPromocion.eliminar_promocion(int(promocion_id))
+                return self.send_json_response(resultado)
+            else:
+                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
+
+        except Exception as e:
+            print(f"Error en api_promocion_eliminar_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)
+
+    def api_promociones_contenidos_handler(self):
+        """Maneja la API para obtener contenidos con promociones"""
+        try:
+            # Verificar autenticación
+            cookie = self.headers.get('Cookie', '')
+            if not cookie or 'session_id=' not in cookie:
+                return self.send_json_response({"error": "No autenticado"}, 401)
+
+            session_id = cookie.split('session_id=')[1].split(';')[0]
+            from infrastructure.utils.router import sessions
+            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+            
+            if not session_data:
+                return self.send_json_response({"error": "Sesión inválida"}, 401)
+
+            # Obtener contenidos con promociones usando el controlador
+            contenidos = controladorPromocion.obtener_contenidos_con_promociones()
+            return self.send_json_response(contenidos)
+
+        except Exception as e:
+            print(f"Error en api_promociones_contenidos_handler: {e}")
+            return self.send_json_response({"error": str(e)}, 500)

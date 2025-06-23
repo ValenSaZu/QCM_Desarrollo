@@ -2,51 +2,38 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Administrar Clientes</title>
+    <title>Administrar Clientes - QuickContentMedia</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        a{
-            text-decoration:none;
-            color:inherit;
-        }
-        
-        .side-bar {
-            position: fixed;
-            left: 0;
-            top: 0;
-        }
-        
-        .main-content {
-            margin-left: 200px;
-            margin: 0 auto;
-        }
-    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="app-container">
         <div class="side-bar">
-            <h2 class="name">QuickContentMedia</h2>
+            <div class="name">QCM</div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-tags"></i>
-                <a href="/promociones"><span>Administrar Promociones</span></a>
+                <a href="/admin"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-plus"></i>
-                <a href="/contenidos"><span>Administrar Contenido</span></a>
+                <a href="/admin/promociones"><i class="fa-solid fa-tags"></i><span>Administrar Promociones</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-layer-group"></i>
-                <a href="/categorias"><span>Administrar Categoría</span></a>
+                <a href="/admin/contenidos"><i class="fa-solid fa-plus"></i><span>Administrar Contenido</span></a>
             </div>
             <div class="side-bar-options">
-                <i class="fa-solid fa-users"></i>
-                <a href="/clientes"><span>Administrar Clientes</span></a>
+                <a href="/admin/categorias"><i class="fa-solid fa-layer-group"></i><span>Administrar Categoría</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/admin/clientes"><i class="fa-solid fa-users"></i><span>Administrar Clientes</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
             </div>
         </div>
-        <div class="main-content">
-            <div class="content-header">
+        <div class="main-content" id="clientesSection">
+            <div class="content-wrapper">
                 <h2 class="small-title">Clientes</h2>
+                <div class="content-header">
                 <div class="search-container">
                     <input type="text" id="search-client" class="search-input" placeholder="Buscar por nombre o username">
                     <i class="fas fa-search search-icon"></i>
@@ -69,6 +56,7 @@
                         <!-- Los datos se cargarán dinámicamente -->
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
@@ -133,18 +121,29 @@
         async function cargarClientes() {
             try {
                 showLoader();
-                const response = await fetch('http://localhost:8000/api/clientes');
+                console.log('Haciendo petición a /api/clientes...');
+                const response = await fetch('/api/clientes');
 
+                console.log('Respuesta recibida:', response);
                 if (!response.ok) {
                     const error = await response.json().catch(() => null);
+                    console.error('Error en la respuesta:', error);
                     throw new Error(error?.error || 'Error al cargar clientes');
                 }
 
-                clientesData = await response.json();
-                actualizarTablaClientes(clientesData);
+                const result = await response.json();
+                console.log('Datos recibidos:', result);
+                
+                // Extraer el array de clientes de la propiedad 'data' del resultado
+                const clientes = result.success && Array.isArray(result.data) ? result.data : [];
+                console.log('Datos procesados:', clientes);
+                actualizarTablaClientes(clientes);
             } catch (error) {
                 console.error('Error:', error);
                 showError(error.message);
+                // Inicializar como array vacío en caso de error
+                clientesData = [];
+                actualizarTablaClientes([]);
             } finally {
                 hideLoader();
             }
@@ -153,27 +152,45 @@
         // Función para actualizar la tabla de clientes
         function actualizarTablaClientes(clientes) {
             const tbody = document.getElementById('clientesTableBody');
-            tbody.innerHTML = clientes.map(cliente => `
-                <tr>
-                    <td>${cliente.id_usuario.toString().padStart(3, '0')}</td>
-                    <td>${cliente.nombre}</td>
-                    <td>${cliente.apellido}</td>
-                    <td>${cliente.username}</td>
-                    <td>S/.${cliente.saldo.toFixed(2)}</td>
-                    <td>
-                        <button class="button-full-gray small-btn gestionar-saldo"
-                                data-id="${cliente.id_usuario}"
-                                data-saldo="${cliente.saldo}"
-                                ${cliente.excliente ? 'disabled title="Cliente excluido"' : ''}>
-                            Gestionar Saldo
-                        </button>
-                        <button class="button-full-gray small-btn ver-historial"
-                                data-id="${cliente.id_usuario}">
-                            Ver historial
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            
+            // Verificar si clientes es un array y tiene elementos
+            if (!Array.isArray(clientes) || clientes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">No se encontraron clientes</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = clientes.map(cliente => {
+                // Asegurarse de que los campos requeridos tengan valores por defecto
+                const id = cliente?.id_usuario?.toString()?.padStart(3, '0') || 'N/A';
+                const nombre = cliente?.nombre || 'Sin nombre';
+                const apellido = cliente?.apellido || '';
+                const username = cliente?.username || 'Sin usuario';
+                const saldo = typeof cliente?.saldo === 'number' ? 
+                    `S/.${cliente.saldo.toFixed(2)}` : 'S/.0.00';
+                const excluido = cliente?.excliente ? 'disabled title="Cliente excluido"' : '';
+
+                return `
+                    <tr>
+                        <td>${id}</td>
+                        <td>${nombre}</td>
+                        <td>${apellido}</td>
+                        <td>${username}</td>
+                        <td>${saldo}</td>
+                        <td>
+                            <button class="button-full-gray small-btn gestionar-saldo"
+                                    data-id="${cliente.id_usuario || ''}"
+                                    data-saldo="${cliente.saldo || 0}"
+                                    ${excluido}>
+                                Gestionar Saldo
+                            </button>
+                            <button class="button-full-gray small-btn ver-historial"
+                                    data-id="${cliente.id_usuario || ''}">
+                                Ver historial
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
 
             // Agregar event listeners a los botones
             document.querySelectorAll('.gestionar-saldo:not([disabled])').forEach(btn => {
@@ -210,8 +227,12 @@
                     throw new Error(errorData?.error || 'Error al cargar historial');
                 }
 
-                const historial = await response.json();
-                actualizarTablaHistorial(Array.isArray(historial) ? historial : []);
+                const resultado = await response.json();
+                
+                // El backend devuelve {success: true, data: historial}
+                const historial = resultado.data || [];
+                
+                actualizarTablaHistorial(historial);
                 historialModal.style.display = "flex";
             } catch (error) {
                 console.error('Error:', error);
@@ -288,11 +309,7 @@
         async function buscarClientes(termino) {
             try {
                 showLoader();
-                const response = await fetch(`/api/clientes/buscar`, {
-                    headers: {
-                        'Search-Term': termino
-                    }
-                });
+                const response = await fetch(`/api/clientes/buscar?termino=${encodeURIComponent(termino)}`);
 
                 if (!response.ok) {
                     const error = await response.text();

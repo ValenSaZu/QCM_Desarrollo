@@ -12,28 +12,21 @@ def procesar_archivo(archivo):
 
 
 def determinar_tipo_archivo(nombre_archivo):
-    from infrastructure.bd.conexion import obtener_conexion
-
-    extension = nombre_archivo.split('.')[-1].lower()
-    conexion = obtener_conexion()
-    cursor = conexion.cursor()
-
+    """Determina el tipo de archivo usando la entidad TipoArchivo"""
     try:
-        cursor.execute("""
-                       SELECT id_tipo_archivo, formato, mime_type
-                       FROM TIPO_ARCHIVO
-                       WHERE extension = %s
-                       """, (extension,))
-
-        tipo_archivo = cursor.fetchone()
+        extension = nombre_archivo.split('.')[-1].lower()
+        
+        # Usar la entidad TipoArchivo
+        from domain.entities.tipo_archivo import TipoArchivo
+        tipo_archivo = TipoArchivo.obtener_por_extension(extension)
+        
         if not tipo_archivo:
             raise Exception(f"Tipo de archivo no soportado: {extension}")
 
         return {
-            "id": tipo_archivo[0],
-            "formato": tipo_archivo[1],
-            "mime_type": tipo_archivo[2]
+            "id": tipo_archivo.id_tipo_archivo,
+            "formato": tipo_archivo.formato,
+            "mime_type": tipo_archivo.mime_type
         }
-    finally:
-        cursor.close()
-        conexion.close()
+    except Exception as e:
+        raise Exception(f"Error al determinar tipo de archivo: {str(e)}")

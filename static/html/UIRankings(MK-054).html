@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Rankings - QuickContentMedia</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .green-icon {
+            color: #28a745;
+        }
+
+        .red-icon {
+            color: #dc3545;
+        }
+
+        .gray-icon {
+            color: #6c757d;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-button.active {
+            border-bottom-color: var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <h2 class="small-title">Rankings</h2>
+                    <div class="tabs">
+                        <button class="tab-button active" data-tab="descargas">Ranking de Descargas</button>
+                        <button class="tab-button" data-tab="valoracion">Ranking de Valoración</button>
+                        <button class="tab-button" data-tab="clientes">Ranking de Clientes</button>
+                    </div>
+                </div>
+
+                <!-- Tabla de Ranking de Descargas -->
+                <div id="descargas" class="tab-content active">
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Ranking Anterior</th>
+                                    <th>Nombre</th>
+                                    <th>Formato</th>
+                                    <th>N° Descargas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="descargasTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla de Ranking de Valoración -->
+                <div id="valoracion" class="tab-content">
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Ranking Anterior</th>
+                                    <th>Nombre</th>
+                                    <th>Formato</th>
+                                    <th>Nota Promedio</th>
+                                </tr>
+                            </thead>
+                            <tbody id="valoracionTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tabla de Ranking de Clientes -->
+                <div id="clientes" class="tab-content">
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ranking</th>
+                                    <th>Ranking Anterior</th>
+                                    <th>Username</th>
+                                    <th>N° Descargas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientesTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let rankingsData = {
+            descargas: [],
+            valoracion: [],
+            clientes: []
+        };
+
+        // Elementos del DOM
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const searchInput = document.getElementById('search-ranking');
+
+        // Cargar rankings al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarRanking('descargas');
+            setupTabs();
+        });
+
+        // Configurar pestañas
+        function setupTabs() {
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+
+                    // Cambiar pestaña activa
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+
+                    // Cargar datos si no están cargados
+                    if (rankingsData[tabId].length === 0) {
+                        cargarRanking(tabId);
+                    }
+                });
+            });
+        }
+
+        // Función para cargar rankings desde la API
+        async function cargarRanking(tipo) {
+            try {
+                console.log(`Cargando ranking de ${tipo}...`);
+                showLoader();
+                const response = await fetch(`/api/ranking/${tipo}`);
+                console.log('Respuesta del servidor:', response);
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || `Error al cargar ranking de ${tipo}`);
+                }
+
+                const result = await response.json();
+                console.log('Datos recibidos:', result);
+                rankingsData[tipo] = Array.isArray(result.data) ? result.data : [];
+                console.log(`Datos procesados para ${tipo}:`, rankingsData[tipo]);
+                actualizarTablaRanking(tipo);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+                rankingsData[tipo] = [];
+                actualizarTablaRanking(tipo);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Función para actualizar las tablas de ranking
+        function actualizarTablaRanking(tipo) {
+            const tbody = document.getElementById(`${tipo}TableBody`);
+            const data = rankingsData[tipo];
+
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="no-data">No hay datos disponibles</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map((item, index) => {
+                const rankingActual = index + 1;
+                const rankingAnterior = item.ranking_anterior || 'Nuevo';
+                const diferencia = typeof item.ranking_anterior === 'number'
+                    ? item.ranking_anterior - rankingActual
+                    : 0;
+
+                let diferenciaIcon = '';
+                if (diferencia > 0) {
+                    diferenciaIcon = `<i class="fas fa-arrow-up green-icon" title="Subió ${diferencia} posiciones"></i>`;
+                } else if (diferencia < 0) {
+                    diferenciaIcon = `<i class="fas fa-arrow-down red-icon" title="Bajó ${Math.abs(diferencia)} posiciones"></i>`;
+                } else if (rankingAnterior !== 'Nuevo') {
+                    diferenciaIcon = `<i class="fas fa-equals gray-icon" title="Misma posición"></i>`;
+                }
+
+                // Plantillas base para cada fila
+                const baseRow = `
+                    <td>${rankingActual}</td>
+                    <td>${rankingAnterior} ${diferenciaIcon}</td>
+                `;
+
+                if (tipo === 'descargas') {
+                    return `
+                        <tr>
+                            ${baseRow}
+                            <td>${item.nombre || 'Sin nombre'}</td>
+                            <td>${item.formato || 'N/A'}</td>
+                            <td>${item.total_descargas || 0}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'valoracion') {
+                    return `
+                        <tr>
+                            ${baseRow}
+                            <td>${item.nombre || 'Sin nombre'}</td>
+                            <td>${item.formato || 'N/A'}</td>
+                            <td>${item.promedio_calificacion ? item.promedio_calificacion.toFixed(1) : 'N/A'}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'clientes') {
+                    return `
+                        <tr>
+                            ${baseRow}
+                            <td>${item.username || 'Sin usuario'}</td>
+                            <td>${item.total_descargas || 0}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Funciones de utilidad
+        function showLoader() {
+            // Implementar lógica para mostrar spinner/loader
+            console.log("Loading...");
+        }
+
+        function hideLoader() {
+            // Implementar lógica para ocultar spinner/loader
+            console.log("Loading complete");
+        }
+
+        function showError(message) {
+            alert("Error: " + message);
+        }
+    </script>
+</body>
+</html>

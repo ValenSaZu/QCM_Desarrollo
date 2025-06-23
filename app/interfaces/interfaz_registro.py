@@ -1,6 +1,16 @@
 # Clase que maneja la interfaz de registro de nuevos clientes, incluyendo formulario de registro, confirmación y manejo de errores
 class InterfazRegistro:
 
+    @staticmethod
+    def servir_pagina_registro():
+        """Sirve la página de registro"""
+        try:
+            with open('static/html/UIRegistroCliente(MK-002).html', 'r', encoding='utf-8') as file:
+                return file.read()
+        except Exception as e:
+            print(f"Error leyendo archivo de registro: {e}")
+            return None
+
     def mostrar_formulario(self):
         """Muestra el formulario de registro para nuevos clientes
 

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carrito de Compras - QCM</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>QCM</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="UIInicioCliente(MK-012).html" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="UIInicioCliente(MK-012).html#promociones" class="nav-link">
+                    <i class="fas fa-percentage"></i>
+                    <span>Promociones</span>
+                </a>
+                <a href="UIInicioCliente(MK-012).html#ranking" class="nav-link">
+                    <i class="fas fa-trophy"></i>
+                    <span>Ranking</span>
+                </a>
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Carrito</span>
+                </a>
+                <a href="UIMisContenidos(MK-005).html" class="nav-link">
+                    <i class="fas fa-download"></i>
+                    <span>Mis Contenidos</span>
+                </a>
+                <a href="UIPerfilCliente (MK-006).html" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    <span>Mi Perfil</span>
+                </a>
+                <a href="#" class="nav-link" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            <h1>Carrito de Compras</h1>
+            
+            <div class="carrito-container">
+                <div class="carrito-items" id="carrito-items">
+                </div>
+                
+                <div class="carrito-resumen">
+                    <h3>Resumen de Compra</h3>
+                    <div class="resumen-item">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Descuentos:</span>
+                        <span id="descuentos">-$0.00</span>
+                    </div>
+                    <div class="resumen-item total">
+                        <span>Total:</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                    <button onclick="procesarCompra()" class="btn btn-primary btn-large" id="btn-comprar">
+                        Proceder al Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarCarrito();
+        });
+
+        function cargarCarrito() {
+            fetch('/api/carrito')
+                .then(response => response.json())
+                .then(data => {
+                    mostrarItemsCarrito(data.items);
+                    actualizarResumen(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function mostrarItemsCarrito(items) {
+            const container = document.getElementById('carrito-items');
+            
+            if (items.length === 0) {
+                container.innerHTML = `
+                    <div class="carrito-vacio">
+                        <i class="fas fa-shopping-cart"></i>
+                        <h3>Tu carrito está vacío</h3>
+                        <p>Agrega algunos contenidos para comenzar</p>
+                        <a href="UIInicioCliente(MK-012).html" class="btn btn-primary">Explorar Contenidos</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = items.map(item => `
+                <div class="carrito-item">
+                    <div class="item-preview">
+                        <i class="fas fa-file-${obtenerIconoFormato(item.formato)}"></i>
+                    </div>
+                    <div class="item-info">
+                        <h3>${item.nombre}</h3>
+                        <p class="autor">Por: ${item.autor}</p>
+                        <p class="categoria">${item.categoria}</p>
+                        <div class="rating">
+                            <span class="stars">${generarEstrellas(item.calificacion_promedio)}</span>
+                            <span class="rating-text">(${item.calificacion_promedio})</span>
+                        </div>
+                    </div>
+                    <div class="item-precio">
+                        ${item.precio_descuento ? 
+                            `<span class="precio-original">$${item.precio}</span>
+                             <span class="precio-actual">$${item.precio_descuento}</span>
+                             <span class="descuento-badge">-${item.porcentaje_descuento}%</span>` :
+                            `<span class="precio-actual">$${item.precio}</span>`
+                        }
+                    </div>
+                    <div class="item-acciones">
+                        <button onclick="eliminarDelCarrito(${item.id_contenido})" class="btn btn-danger">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function obtenerIconoFormato(formato) {
+            if (!formato) return 'alt';
+            const formatoLower = formato.toLowerCase();
+            if (formatoLower.includes('mp4') || formatoLower.includes('avi') || formatoLower.includes('mov')) return 'video';
+            if (formatoLower.includes('mp3') || formatoLower.includes('wav') || formatoLower.includes('ogg')) return 'audio';
+            if (formatoLower.includes('jpg') || formatoLower.includes('png') || formatoLower.includes('gif')) return 'image';
+            if (formatoLower.includes('pdf') || formatoLower.includes('doc')) return 'pdf';
+            return 'alt';
+        }
+
+        function generarEstrellas(calificacion) {
+            const estrellasLlenas = Math.floor(calificacion / 2);
+            const estrellaMedia = calificacion % 2 >= 1;
+            const estrellasVacias = 5 - estrellasLlenas - (estrellaMedia ? 1 : 0);
+            
+            return '★'.repeat(estrellasLlenas) + 
+                   (estrellaMedia ? '☆' : '') + 
+                   '☆'.repeat(estrellasVacias);
+        }
+
+        function actualizarResumen(data) {
+            document.getElementById('subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
+            document.getElementById('descuentos').textContent = `-$${data.descuentos.toFixed(2)}`;
+            document.getElementById('total').textContent = `$${data.total.toFixed(2)}`;
+            
+            const btnComprar = document.getElementById('btn-comprar');
+            btnComprar.disabled = data.items.length === 0;
+        }
+
+        function eliminarDelCarrito(idContenido) {
+            if (confirm('¿Estás seguro de que quieres eliminar este contenido del carrito?')) {
+                fetch(`/api/carrito/eliminar/${idContenido}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            cargarCarrito();
+                        } else {
+                            alert('Error: ' + result.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Error al eliminar del carrito');
+                    });
+            }
+        }
+
+        function procesarCompra() {
+            fetch('/api/carrito/comprar', { method: 'POST' })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('¡Compra realizada exitosamente!');
+                        window.location.href = 'UIMisContenidos(MK-005).html';
+                    } else {
+                        alert('Error: ' + result.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al procesar la compra');
+                });
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

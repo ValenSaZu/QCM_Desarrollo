@@ -14,50 +14,108 @@
 
     <div class="form-group">
       <label for="username" class="form-label">Username</label>
-      <input type="text" id="username" class="form-input" placeholder="Placeholder" required>
+      <input type="text" id="username" name="username" class="form-input" 
+             placeholder="Enter your username" autocomplete="username" required>
     </div>
 
     <div class="form-group">
       <label for="password" class="form-label">Password</label>
-      <input type="password" id="password" class="form-input" placeholder="Placeholder" required>
+      <input type="password" id="password" name="password" class="form-input" 
+             placeholder="Enter your password" autocomplete="current-password" required>
     </div>
 
-    <button type="submit" class="button-full">Log In</button>
+    <div id="error-message" class="error-message" style="color: red; margin-bottom: 15px; display: none;"></div>
+
+    <button type="submit" class="button-full">
+      <span class="button-text">Log In</span>
+      <span class="button-loader" style="display: none;">Signing in...</span>
+    </button>
 
     <p class="form-footer">
         <a href="/registro" class="form-link">No account yet? Sign Up</a>
     </p>
   </form>
 
+<style>
+    .error-message {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 4px;
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+    .button-text, .button-loader {
+        display: inline-block;
+    }
+    .button-loader {
+        display: none;
+    }
+    .loading .button-text {
+        display: none;
+    }
+    .loading .button-loader {
+        display: inline-block;
+    }
+</style>
+
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
-      const data = {
-        username: document.getElementById('username').value,
-        password: document.getElementById('password').value
-      };
-
-      try {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
         
-        if (result.success) {
-          // Redirigir a la página de promociones
-          window.location.href = result.redirect;
-        } else {
-          // Mostrar mensaje de error
-          alert('Error: ' + result.error);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error al procesar la respuesta del servidor');
-      }
+        console.log('Enviando login:', { username, password });
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/login', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                console.log('Status:', xhr.status);
+                console.log('Response:', xhr.responseText);
+
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        console.log('Datos parseados:', data);
+                        
+                        if (data.success) {
+                            if (data.session_id) {
+                                document.cookie = `session_id=${data.session_id}; path=/`;
+                            }
+                            
+                            console.log('Redirigiendo a:', data.redirect);
+                            window.location.href = data.redirect;
+                        } else {
+                            alert(data.message || 'Error en la autenticación');
+                        }
+                    } catch (e) {
+                        console.error('Error parseando JSON:', e);
+                        alert('Error procesando respuesta del servidor');
+                    }
+          } else {
+                    console.error('Error HTTP:', xhr.status);
+                    alert('Error de conexión: ' + xhr.status);
+          }
+            }
+        };
+        
+        xhr.onerror = function() {
+            console.error('Error de red');
+            alert('Error de conexión');
+        };
+        
+        const requestData = JSON.stringify({
+            username: username,
+            password: password
+        });
+        
+        console.log('Enviando datos:', requestData);
+        xhr.send(requestData);
     });
 </script>
 </body>

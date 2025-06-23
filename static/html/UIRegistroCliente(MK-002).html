@@ -30,10 +30,18 @@
 
     <div class="form-group">
       <label for="password" class="form-label">Password</label>
-      <input type="password" id="password" class="form-input" placeholder="Placeholder" required>
+      <input type="password" id="password" class="form-input" placeholder="Placeholder" required minlength="8">
+      <small class="password-hint">Mínimo 8 caracteres</small>
+      <div id="password-strength" class="password-strength"></div>
     </div>
 
-    <button type="submit" class="button-full">Registrarse</button>
+    <div class="form-group">
+      <label for="confirm-password" class="form-label">Confirmar Password</label>
+      <input type="password" id="confirm-password" class="form-input" placeholder="Placeholder" required>
+      <div id="password-match" class="password-match"></div>
+    </div>
+
+    <button type="submit" class="button-full" id="submit-btn">Registrarse</button>
 
     <p class="form-footer">
         <a href="/" class="form-link">Already have an account?</a>
@@ -41,12 +49,128 @@
   </form>
 
 <script>
+    let isPasswordValid = false;
+    let isPasswordMatch = false;
+
+    document.getElementById('password').addEventListener('input', validarPassword);
+    document.getElementById('confirm-password').addEventListener('input', validarConfirmacionPassword);
+
+    function validarPassword() {
+        const password = document.getElementById('password').value;
+        const strengthDiv = document.getElementById('password-strength');
+        const confirmPassword = document.getElementById('confirm-password').value;
+        
+        strengthDiv.innerHTML = '';
+        strengthDiv.className = 'password-strength';
+        
+        if (password.length === 0) {
+            isPasswordValid = false;
+            actualizarBoton();
+            return;
+        }
+        
+        if (password.length < 8) {
+            strengthDiv.innerHTML = '<span style="color: #ff4444;"> Mínimo 8 caracteres</span>';
+            strengthDiv.className = 'password-strength error';
+            isPasswordValid = false;
+            actualizarBoton();
+            return;
+        }
+        
+        let strength = 0;
+        
+        if (password.length >= 8) strength++;
+        if (/[a-z]/.test(password)) strength++;
+        if (/[A-Z]/.test(password)) strength++;
+        if (/[0-9]/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+        
+        let color, message;
+        if (strength <= 2) {
+            color = '#ff4444';
+            message = ' Débil';
+        } else if (strength <= 3) {
+            color = '#ffaa00';
+            message = ' Media';
+        } else {
+            color = '#00aa00';
+            message = ' Fuerte';
+        }
+        
+        strengthDiv.innerHTML = `<span style="color: ${color};">${message}</span>`;
+        strengthDiv.className = 'password-strength valid';
+        isPasswordValid = true;
+        
+        if (confirmPassword) {
+            validarConfirmacionPassword();
+        } else {
+            actualizarBoton();
+        }
+    }
+
+    function validarConfirmacionPassword() {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        const matchDiv = document.getElementById('password-match');
+        
+        matchDiv.innerHTML = '';
+        matchDiv.className = 'password-match';
+        
+        if (confirmPassword.length === 0) {
+            isPasswordMatch = false;
+            actualizarBoton();
+            return;
+        }
+        
+        if (password === confirmPassword) {
+            matchDiv.innerHTML = '<span style="color: #00aa00;"> Las contraseñas coinciden</span>';
+            matchDiv.className = 'password-match valid';
+            isPasswordMatch = true;
+        } else {
+            matchDiv.innerHTML = '<span style="color: #ff4444;"> Las contraseñas no coinciden</span>';
+            matchDiv.className = 'password-match error';
+            isPasswordMatch = false;
+        }
+        
+        actualizarBoton();
+    }
+
+    function actualizarBoton() {
+        const submitBtn = document.getElementById('submit-btn');
+        const nombre = document.getElementById('nombre').value.trim();
+        const username = document.getElementById('username').value.trim();
+        
+        if (nombre && username && isPasswordValid && isPasswordMatch) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.6';
+        }
+    }
+
+    document.getElementById('nombre').addEventListener('input', actualizarBoton);
+    document.getElementById('username').addEventListener('input', actualizarBoton);
+
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (password.length < 8) {
+        alert('La contraseña debe tener al menos 8 caracteres');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert('Las contraseñas no coinciden');
+        return;
+      }
+
       const data = {
         username: document.getElementById('username').value,
-        password: document.getElementById('password').value,
+        password: password,
         nombre: document.getElementById('nombre').value,
         apellido: document.getElementById('apellido').value || ''
       };
@@ -62,6 +186,7 @@
         document.body.innerHTML = result;
       } catch (error) {
         console.error('Error:', error);
+        alert('Error al registrar usuario. Por favor, inténtalo de nuevo.');
       }
     });
 </script>

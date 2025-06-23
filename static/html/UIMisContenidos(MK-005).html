@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mis Contenidos - QuickContentMedia</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    .content-card {
+      position: relative;
+    }
+
+    .download-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .rating-stars {
+      display: flex;
+      gap: 2px;
+      margin-top: 5px;
+      flex-wrap: wrap;
+    }
+
+    .rating-star {
+      color: #ddd;
+      cursor: pointer;
+      font-size: 12px;
+      transition: color 0.2s ease;
+    }
+
+    .rating-star:hover,
+    .rating-star.active {
+      color: #ffc107;
+    }
+
+    .rated {
+      pointer-events: none;
+    }
+
+    .content-type-icon {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    
+    .default-preview {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .modal-content {
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+    }
+    
+    .preview-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      max-height: 500px;
+      overflow: hidden;
+    }
+    
+    .preview-area img,
+    .preview-area video {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    a{
+        text-decoration:none;
+        color:inherit;
+    }
+
+    .rating-info {
+      margin-bottom: 5px;
+    }
+    
+    .rating-summary {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    .rating-summary p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <h2 class="page-title">Mis Contenidos Adquiridos</h2>
+                    <div class="search-container">
+                        <input type="text" id="search-my-content" class="search-input" placeholder="Buscar por nombre o autor...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="content-section" id="my-videos-section">
+                        <h3 class="small-title"><i class="fas fa-video"></i> Videos</h3>
+                        <div class="cards-container" id="my-videos-container">
+                            <div class="no-content">Cargando tus videos...</div>
+                        </div>
+                    </div>
+
+                    <div class="content-section" id="my-images-section">
+                        <h3 class="small-title"><i class="fas fa-image"></i> Imágenes</h3>
+                        <div class="cards-container" id="my-images-container">
+                            <div class="no-content">Cargando tus imágenes...</div>
+                        </div>
+                    </div>
+
+                    <div class="content-section" id="my-audios-section">
+                        <h3 class="small-title"><i class="fas fa-music"></i> Audios</h3>
+                        <div class="cards-container" id="my-audios-container">
+                            <div class="no-content">Cargando tus audios...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewContentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeViewModal">&times;</span>
+            <div class="modal-grid">
+                <div class="left-grid">
+                    <div id="viewContentPreview" class="preview-area">
+                    </div>
+                </div>
+                <div class="right-grid">
+                    <h2 id="viewContentTitle" class="small-title"></h2>
+                    <p id="viewContentAuthor" class="content-meta"><i class="fas fa-user"></i> <span></span></p>
+                    <p id="viewContentCategory" class="content-meta"><i class="fas fa-tag"></i> <span></span></p>
+                    <p id="viewContentDescription" class="content-description"></p>
+                    <p id="viewContentDate" class="content-meta"><i class="fas fa-calendar"></i> <span></span></p>
+                    <p id="viewContentType" class="content-meta"><i class="fas fa-info-circle"></i> <span></span></p>
+
+                    <div id="viewContentRatingContainer">
+                        <div class="rating-summary">
+                            <p><strong>Calificación promedio:</strong> <span id="viewContentAverageRating">0</span>/10</p>
+                            <p><strong>Tu calificación:</strong> <span id="viewContentUserRatingText">No calificado</span></p>
+                        </div>
+                        <p>Tu calificación:</p>
+                        <div id="viewContentUserRating" class="rating-stars"></div>
+                        <small id="ratingNote" style="color: #666; font-style: italic;">Solo puedes calificar después de descargar el contenido</small>
+                    </div>
+
+                    <button id="downloadContentBtn" class="button-full">
+                        <i class="fas fa-download"></i> Descargar Contenido
+                    </button>
+                    
+                    <div id="downloadStatus" style="margin-top: 10px; padding: 10px; border-radius: 4px; display: none;">
+                        <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                        <span>Contenido descargado - Ya puedes calificar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myContents = [];
+        let currentViewedContent = null;
+
+        const searchInput = document.getElementById('search-my-content');
+        const videosContainer = document.getElementById('my-videos-container');
+        const imagesContainer = document.getElementById('my-images-container');
+        const audiosContainer = document.getElementById('my-audios-container');
+        const viewContentModal = document.getElementById('viewContentModal');
+        const closeViewModal = document.getElementById('closeViewModal');
+        const downloadContentBtn = document.getElementById('downloadContentBtn');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarMisContenidos();
+            cargarNotificacionesRegalos();
+        });
+
+        closeViewModal.addEventListener('click', () => {
+            viewContentModal.classList.remove('show');
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === viewContentModal) {
+                viewContentModal.classList.remove('show');
+            }
+        });
+
+        async function cargarMisContenidos() {
+            try {
+                showLoader();
+                
+                const response = await fetch('/api/mis-contenidos/obtener', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar los contenidos');
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Error al cargar los contenidos');
+                }
+                
+                myContents = data.data || [];
+                console.log('Contenidos cargados:', myContents);
+                
+                if (myContents.length > 0) {
+                    console.log('Primer contenido:', myContents[0]);
+                }
+                
+                actualizarContenidos(myContents);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+        
+        function actualizarContenidos(contenidos) {
+            console.log('Actualizando contenidos:', contenidos);
+            
+            videosContainer.innerHTML = '';
+            imagesContainer.innerHTML = '';
+            audiosContainer.innerHTML = '';
+            
+            if (!Array.isArray(contenidos) || contenidos.length === 0) {
+                console.log('No hay contenidos para mostrar');
+                const noContentMsg = '<div class="no-content">No tienes contenidos adquiridos</div>';
+                videosContainer.innerHTML = noContentMsg;
+                imagesContainer.innerHTML = noContentMsg;
+                audiosContainer.innerHTML = noContentMsg;
+                return;
+            }
+            
+            const videos = contenidos.filter(content => content.tipo_contenido === 'video');
+            const imagenes = contenidos.filter(content => content.tipo_contenido === 'imagen');
+            const audios = contenidos.filter(content => content.tipo_contenido === 'audio');
+            
+            console.log('Videos encontrados:', videos.length);
+            console.log('Imágenes encontradas:', imagenes.length);
+            console.log('Audios encontrados:', audios.length);
+            
+            if (videos.length > 0) {
+                videos.forEach(content => {
+                    const card = crearTarjetaContenido(content);
+                    videosContainer.appendChild(card);
+                });
+                console.log('Videos renderizados');
+            } else {
+                videosContainer.innerHTML = '<div class="no-content">No tienes videos adquiridos</div>';
+            }
+            
+            if (imagenes.length > 0) {
+                imagenes.forEach(content => {
+                    const card = crearTarjetaContenido(content);
+                    imagesContainer.appendChild(card);
+                });
+                console.log('Imágenes renderizadas');
+            } else {
+                imagesContainer.innerHTML = '<div class="no-content">No tienes imágenes adquiridas</div>';
+            }
+            
+            if (audios.length > 0) {
+                audios.forEach(content => {
+                    const card = crearTarjetaContenido(content);
+                    audiosContainer.appendChild(card);
+                    });
+                console.log('Audios renderizados');
+            } else {
+                audiosContainer.innerHTML = '<div class="no-content">No tienes audios adquiridos</div>';
+                }
+            }
+
+        function crearTarjetaContenido(content) {
+            console.log('Creando tarjeta para contenido:', content);
+            const card = document.createElement('div');
+            card.className = 'content-card';
+            card.dataset.contentId = content.id_contenido;
+            
+            let previewHTML = '';
+            let typeIcon = '';
+
+            switch (content.tipo_contenido) {
+                case 'video':
+                    typeIcon = '<i class="fas fa-video"></i>';
+                    if (content.miniatura_url) {
+                        previewHTML = `
+                            <div class="content-preview">
+                                <img src="${content.miniatura_url}" alt="${content.nombre}" onerror="this.parentElement.innerHTML='<div class=\'video-placeholder\'><i class=\'fas fa-video video-icon\'></i></div>'">
+                                <div class="content-overlay">
+                                    <button class="view-content-btn" onclick="verContenido(${content.id_contenido})">
+                                        <i class="fas fa-play play-icon"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    } else {
+                        previewHTML = `
+                            <div class="content-preview">
+                                <div class="video-placeholder">
+                                    <i class="fas fa-video video-icon"></i>
+                                </div>
+                                <div class="content-overlay">
+                                    <button class="view-content-btn" onclick="verContenido(${content.id_contenido})">
+                                        <i class="fas fa-play play-icon"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    }
+                    break;
+
+                case 'imagen':
+                    typeIcon = '<i class="fas fa-image"></i>';
+                    if (content.miniatura_url) {
+                        previewHTML = `
+                            <div class="content-preview">
+                                <img src="${content.miniatura_url}" alt="${content.nombre}" onerror="this.parentElement.innerHTML='<div class=\'image-placeholder\'><i class=\'fas fa-image image-icon\'></i></div>'">
+                                <div class="content-overlay">
+                                    <button class="view-content-btn" onclick="verContenido(${content.id_contenido})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                </div>
+                            </div>`;
+                    } else {
+                        previewHTML = `
+                            <div class="content-preview">
+                                <div class="image-placeholder">
+                                    <i class="fas fa-image image-icon"></i>
+                    </div>
+                    <div class="content-overlay">
+                                    <button class="view-content-btn" onclick="verContenido(${content.id_contenido})">
+                                        <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                            </div>`;
+                    }
+                    break;
+
+                case 'audio':
+                    typeIcon = '<i class="fas fa-music"></i>';
+                    previewHTML = `
+                        <div class="content-preview">
+                            <div class="audio-preview">
+                                <i class="fas fa-music audio-icon"></i>
+                                <div class="audio-wave">
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                </div>
+                            </div>
+                            <div class="content-overlay">
+                                <button class="view-content-btn" onclick="verContenido(${content.id_contenido})">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>`;
+                    break;
+            }
+
+            console.log('Preview HTML generado:', previewHTML);
+
+            card.innerHTML = `
+                <div class="content-type-icon">${typeIcon}</div>
+                ${previewHTML}
+                <div class="content-info">
+                    <h3 class="content-name">${content.nombre}</h3>
+                    <p class="content-description">${content.descripcion || 'Sin descripción'}</p>
+                    <div class="content-meta">
+                        <span><i class="fas fa-user"></i> ${content.autor}</span>
+                        <span><i class="fas fa-tag"></i> ${content.categoria || 'Sin categoría'}</span>
+                        </div>
+                    <div class="content-footer">
+                        <div class="rating" id="rating-${content.id_contenido}">
+                            ${generarEstrellas(content.calificacion_promedio || 0)}
+                        </div>
+                        <p class="content-meta">
+                            <i class="fas fa-calendar"></i> 
+                            ${content.fecha_adquisicion ? new Date(content.fecha_adquisicion).toLocaleDateString() : 'Fecha no disponible'}
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            console.log('Tarjeta creada:', card);
+            return card;
+        }
+
+        function generarEstrellas(puntuacion) {
+            const estrellasLlenas = Math.floor(puntuacion / 2);
+            const tieneMediaEstrella = puntuacion % 2 !== 0;
+            let html = '';
+
+            for (let i = 0; i < 5; i++) {
+                if (i < estrellasLlenas) {
+                    html += '<i class="fas fa-star" style="color: #ffc107;"></i>';
+                } else if (i === estrellasLlenas && tieneMediaEstrella) {
+                    html += '<i class="fas fa-star-half-alt" style="color: #ffc107;"></i>';
+                            } else {
+                    html += '<i class="far fa-star" style="color: #ddd;"></i>';
+                            }
+            }
+
+            return html + ` <span style="margin-left: 5px; font-size: 0.9em; color: #666;">${puntuacion.toFixed(1)}/10</span>`;
+        }
+
+        async function verContenido(contentId) {
+            console.log('verContenido llamado con ID:', contentId);
+            try {
+                const content = myContents.find(c => c.id_contenido === contentId);
+                console.log('Contenido encontrado:', content);
+                
+                if (!content) {
+                    throw new Error('Contenido no encontrado');
+                }
+            
+                currentViewedContent = content;
+                console.log('Contenido actual establecido:', currentViewedContent);
+            
+                document.getElementById('viewContentTitle').textContent = content.nombre;
+                document.getElementById('viewContentAuthor').querySelector('span').textContent = content.autor;
+                document.getElementById('viewContentCategory').querySelector('span').textContent = content.categoria || 'Sin categoría';
+                document.getElementById('viewContentDescription').textContent = content.descripcion || 'Sin descripción';
+                document.getElementById('viewContentDate').querySelector('span').textContent = content.fecha_adquisicion ? new Date(content.fecha_adquisicion).toLocaleDateString() : 'Fecha no disponible';
+                document.getElementById('viewContentType').querySelector('span').textContent = content.tipo_contenido.charAt(0).toUpperCase() + content.tipo_contenido.slice(1);
+            
+                console.log('Información del modal actualizada');
+            
+                const previewArea = document.getElementById('viewContentPreview');
+                previewArea.innerHTML = '';
+
+                switch (content.tipo_contenido) {
+                    case 'video':
+                        if (content.miniatura_url) {
+                            previewArea.innerHTML = `<img src="${content.miniatura_url}" alt="${content.nombre}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+            } else {
+                            previewArea.innerHTML = `
+                                <div class="default-preview">
+                                    <i class="fas fa-video" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                    <p>Vista previa no disponible</p>
+                                </div>`;
+                        }
+                        break;
+
+                case 'imagen':
+                        if (content.miniatura_url) {
+                            previewArea.innerHTML = `<img src="${content.miniatura_url}" alt="${content.nombre}" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+                        } else {
+                            previewArea.innerHTML = `
+                                <div class="default-preview">
+                                    <i class="fas fa-image" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                    <p>Vista previa no disponible</p>
+                                </div>`;
+                        }
+                    break;
+                    
+                case 'audio':
+                        previewArea.innerHTML = `
+                            <div class="default-preview">
+                                <i class="fas fa-music" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                <p>Vista previa de audio</p>
+                                <div class="audio-wave" style="margin-top: 1rem;">
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                    <div class="wave-bar"></div>
+                                </div>
+                            </div>`;
+                    break;
+                }
+
+                console.log('Vista previa actualizada');
+
+                actualizarCalificacionEnModal(content);
+                console.log('Calificación actualizada');
+
+                console.log('Mostrando modal...');
+                viewContentModal.classList.add('show');
+                console.log('Modal mostrado');
+
+            } catch (error) {
+                console.error('Error al ver contenido:', error);
+                showError('Error al cargar el contenido');
+            }
+        }
+            
+        function actualizarCalificacionEnModal(content) {
+            const averageRating = document.getElementById('viewContentAverageRating');
+            const userRatingText = document.getElementById('viewContentUserRatingText');
+            const userRatingStars = document.getElementById('viewContentUserRating');
+            const ratingNote = document.getElementById('ratingNote');
+
+            averageRating.textContent = (content.calificacion_promedio || 0).toFixed(1);
+                    
+            if (content.calificacion_usuario !== null && content.calificacion_usuario !== undefined) {
+                userRatingText.textContent = `${content.calificacion_usuario}/10`;
+                ratingNote.style.display = 'none';
+                    } else {
+                userRatingText.textContent = 'No calificado';
+                ratingNote.style.display = 'block';
+            }
+            
+            userRatingStars.innerHTML = '';
+            const userRating = content.calificacion_usuario || 0;
+            
+            for (let i = 1; i <= 10; i++) {
+                const star = document.createElement('span');
+                star.className = 'rating-star';
+                star.innerHTML = '★';
+                
+                if (i <= userRating) {
+                    star.classList.add('active');
+                }
+                
+                star.addEventListener('click', () => {
+                    if (content.ya_descargado) {
+                        calificarContenido(content.id_contenido, i);
+                    }
+                });
+                
+                userRatingStars.appendChild(star);
+            }
+
+            if (content.ya_descargado) {
+                ratingNote.textContent = 'Haz clic en las estrellas para calificar';
+                ratingNote.style.color = '#666';
+            } else {
+                ratingNote.textContent = 'Solo puedes calificar después de descargar el contenido';
+                ratingNote.style.color = '#dc3545';
+            }
+            }
+
+        async function calificarContenido(contentId, rating) {
+            try {
+                const response = await fetch('/api/mis-contenidos/calificar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contenido_id: contentId,
+                        calificacion: rating
+                    }),
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al calificar el contenido');
+                }
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Error al calificar el contenido');
+                }
+                
+                if (currentViewedContent && currentViewedContent.id_contenido === contentId) {
+                    currentViewedContent.calificacion_usuario = rating;
+                    actualizarCalificacionEnModal(currentViewedContent);
+                }
+                
+                const ratingElement = document.getElementById(`rating-${contentId}`);
+                if (ratingElement) {
+                    ratingElement.innerHTML = generarEstrellas(rating);
+                }
+
+                showSuccess('Contenido calificado exitosamente');
+                
+            } catch (error) {
+                console.error('Error al calificar:', error);
+                showError(error.message);
+            }
+        }
+
+        downloadContentBtn.addEventListener('click', async () => {
+            if (!currentViewedContent) {
+                showError('No hay contenido seleccionado');
+                return;
+            }
+
+            try {
+                downloadContentBtn.disabled = true;
+                downloadContentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
+
+                const response = await fetch(`/api/mis-contenidos/descargar/${currentViewedContent.id_contenido}`, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al descargar el contenido');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentViewedContent.nombre + getFileExtension(currentViewedContent.tipo_contenido);
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                currentViewedContent.ya_descargado = true;
+                
+                const downloadStatus = document.getElementById('downloadStatus');
+                downloadStatus.style.display = 'block';
+                downloadStatus.innerHTML = `
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                    <span>Contenido descargado - Ya puedes calificar</span>
+                `;
+            
+                const ratingNote = document.getElementById('ratingNote');
+                ratingNote.textContent = 'Haz clic en las estrellas para calificar';
+                ratingNote.style.color = '#666';
+
+                showSuccess('Contenido descargado exitosamente');
+
+            } catch (error) {
+                console.error('Error al descargar:', error);
+                showError(error.message);
+            } finally {
+                downloadContentBtn.disabled = false;
+                downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+            }
+        });
+            
+        function getFileExtension(tipoContenido) {
+            switch (tipoContenido) {
+                case 'video': return '.mp4';
+                case 'imagen': return '.jpg';
+                case 'audio': return '.mp3';
+                default: return '';
+                    }
+        }
+
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        showGiftNotification(data.data.length, data.data);
+                }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
+        }
+        
+        function showGiftNotification(giftCount, regalos) {
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                        </div>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+            setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                }
+                }, 500);
+                
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        function goToMyContents(giftCount) {
+            window.location.href = '/cliente/mis-contenidos';
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredContents = myContents.filter(content => 
+                content.nombre.toLowerCase().includes(searchTerm) ||
+                content.autor.toLowerCase().includes(searchTerm) ||
+                (content.categoria && content.categoria.toLowerCase().includes(searchTerm))
+            );
+            actualizarContenidos(filteredContents);
+        });
+
+        function showLoader() {
+            const loader = document.createElement('div');
+            loader.id = 'loader';
+            loader.innerHTML = '<div class="spinner"></div>';
+            loader.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            document.body.appendChild(loader);
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.remove();
+            }
+        }
+
+        function showError(message) {
+            alert(message);
+        }
+
+        function showSuccess(message) {
+            alert(message);
+        }
+    </script>
+</body>
+</html>

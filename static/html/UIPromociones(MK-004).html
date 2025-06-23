@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Promociones - QuickContentMedia</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .promotion-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+        }
+
+        .discount-price {
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .page-subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <h2 class="page-title">🎉 Ofertas Especiales</h2>
+                    <p class="page-subtitle">Contenidos con descuentos exclusivos</p>
+                    <div class="search-container">
+                        <input type="text" id="search-content" class="search-input" placeholder="Buscar ofertas por autor o categoría...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Contenedor principal con tres columnas -->
+                <div class="content-layout">
+                    <!-- Columna de Videos -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-video"></i>
+                            <h3>Videos en Oferta</h3>
+                        </div>
+                        <div class="content-cards" id="videos-container">
+                            <!-- Las tarjetas de video se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Columna de Imágenes -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-image"></i>
+                            <h3>Imágenes en Oferta</h3>
+                        </div>
+                        <div class="content-cards" id="images-container">
+                            <!-- Las tarjetas de imagen se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Columna de Audios -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-music"></i>
+                            <h3>Audios en Oferta</h3>
+                        </div>
+                        <div class="content-cards" id="audios-container">
+                            <!-- Las tarjetas de audio se cargarán dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles del contenido -->
+    <div id="contentDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeContentModal">&times;</span>
+            <div class="modal-grid">
+                <div class="left-grid">
+                    <div id="contentPreview" class="preview-area">
+                        <!-- Vista previa del contenido (imagen, video o audio) -->
+                    </div>
+                </div>
+                <div class="right-grid">
+                    <h2 id="contentTitle" class="small-title"></h2>
+                    <p id="contentAuthor" class="content-meta"><i class="fas fa-user"></i> <span></span></p>
+                    <p id="contentCategory" class="content-meta"><i class="fas fa-tag"></i> <span></span></p>
+                    <div class="rating-container">
+                        <div id="contentRating" class="rating">
+                            <!-- Estrellas de calificación -->
+                        </div>
+                        <span id="ratingValue" class="rating-text"></span>
+                    </div>
+                    <p id="contentDescription" class="content-description"></p>
+
+                    <div class="file-info">
+                        <div class="file-box" id="contentSize">Peso: -</div>
+                        <div class="file-box" id="contentExtension">Extensión: -</div>
+                        <div class="file-box" id="contentMime">MIME-Type: -</div>
+                    </div>
+
+                    <div class="price-container">
+                        <span id="contentPrice" class="price"></span>
+                        <span id="contentDiscountPrice" class="discount-price"></span>
+                        <div id="promotionInfo" class="promotion-info"></div>
+                    </div>
+
+                    <button id="addToCartBtn" class="button-full">
+                        <i class="fas fa-cart-plus"></i> Añadir al carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" class="loader" style="display: none;">
+        <div class="loader-content">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando ofertas...</p>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let allContents = [];
+        let currentContent = null;
+
+        // Elementos del DOM
+        const searchInput = document.getElementById('search-content');
+        const videosContainer = document.getElementById('videos-container');
+        const imagesContainer = document.getElementById('images-container');
+        const audiosContainer = document.getElementById('audios-container');
+        const contentDetailModal = document.getElementById('contentDetailModal');
+        const closeContentModal = document.getElementById('closeContentModal');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+
+        // Cargar contenidos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarContenidosPromociones();
+            cargarNotificacionesRegalos();
+        });
+
+        // Función para cargar contenidos con promociones desde la API
+        async function cargarContenidosPromociones() {
+            try {
+                showLoader();
+                const response = await fetch('/api/promociones/contenidos');
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || 'Error al cargar ofertas');
+                }
+
+                const result = await response.json();
+
+                // Asegurarse de que allContents sea un array
+                allContents = Array.isArray(result) ? result :
+                            (result.success ? result.data : []);
+
+                actualizarContenidos(allContents);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Función para actualizar las tarjetas de contenido
+        function actualizarContenidos(contenidos) {
+            // Limpiar contenedores
+            videosContainer.innerHTML = '';
+            imagesContainer.innerHTML = '';
+            audiosContainer.innerHTML = '';
+
+            // Verificar si contenidos es un array y tiene elementos
+            if (!Array.isArray(contenidos) || contenidos.length === 0) {
+                const noContentMsg = '<div class="no-content">No hay ofertas disponibles en este momento</div>';
+                videosContainer.innerHTML = noContentMsg;
+                imagesContainer.innerHTML = noContentMsg;
+                audiosContainer.innerHTML = noContentMsg;
+                return;
+            }
+
+            // Filtrar y mostrar contenidos por tipo
+            contenidos.forEach(contenido => {
+                const card = crearTarjetaContenido(contenido);
+                if (card) {
+                    switch(contenido.tipo_contenido) {
+                        case 'video':
+                            videosContainer.appendChild(card);
+                            break;
+                        case 'imagen':
+                            imagesContainer.appendChild(card);
+                            break;
+                        case 'audio':
+                            audiosContainer.appendChild(card);
+                            break;
+                    }
+                }
+            });
+        }
+
+        // Función para crear una tarjeta de contenido
+        function crearTarjetaContenido(contenido) {
+            if (!contenido) return null;
+
+            const card = document.createElement('div');
+            card.className = 'content-card';
+            card.dataset.id = contenido.id_contenido;
+
+            // Determinar el ícono según el tipo de contenido
+            let icono = 'fa-file';
+            if (contenido.tipo_contenido === 'video') icono = 'fa-play';
+            else if (contenido.tipo_contenido === 'imagen') icono = 'fa-image';
+            else if (contenido.tipo_contenido === 'audio') icono = 'fa-music';
+
+            // Calcular precio con descuento
+            const precioOriginal = contenido.precio || 0;
+            const descuento = contenido.descuento || 0;
+            const precioConDescuento = precioOriginal * (1 - descuento / 100);
+
+            // Crear estrellas de calificación
+            const calificacion = contenido.calificacion || 0;
+            const estrellasHTML = crearEstrellasCalificacion(calificacion);
+
+            // Crear el HTML de la tarjeta
+            card.innerHTML = `
+                <div class="content-type-icon">
+                    <i class="fas ${icono}"></i>
+                </div>
+                <div class="promotion-badge">
+                    <i class="fas fa-percent"></i> ${descuento}% OFF
+                </div>
+                <div class="content-thumbnail">
+                    <img src="/api/contenido/${contenido.id_contenido}/miniatura" alt="miniatura" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.onerror=null;this.style.display='none';this.parentNode.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;\'><i class=\'fas fa-image\' style=\'font-size:2em;color:#ccc;\'></i></div>';">
+                    <div class="content-overlay">
+                        <button class="view-content-btn" data-id="${contenido.id_contenido}">
+                            <i class="fas fa-eye"></i> Ver
+                        </button>
+                    </div>
+                </div>
+                <div class="content-info">
+                    <h4 class="content-title">${contenido.nombre || 'Sin título'}</h4>
+                    
+                    <!-- Información del autor -->
+                    <div class="content-meta" style="margin: 8px 0;">
+                        <i class="fas fa-user" style="color: #666; margin-right: 5px;"></i>
+                        <span style="color: #333; font-weight: 500;">${contenido.autor || 'Autor desconocido'}</span>
+                    </div>
+                    
+                    <!-- Información de categoría -->
+                    <div class="content-meta" style="margin: 8px 0;">
+                        <i class="fas fa-tag" style="color: #666; margin-right: 5px;"></i>
+                        <span style="color: #333;">${contenido.categoria || 'Sin categoría'}</span>
+                    </div>
+                    
+                    <!-- Calificación -->
+                    <div class="rating-container" style="margin: 12px 0; display: flex; align-items: center; gap: 8px;">
+                        <div class="rating-stars" style="display: flex; gap: 2px;">
+                            ${estrellasHTML}
+                        </div>
+                        <span style="color: #666; font-size: 0.9em; font-weight: 500;">${calificacion.toFixed(1)}/10</span>
+                    </div>
+                    
+                    <!-- Precios con promoción -->
+                    <div class="price-container" style="margin-top: 12px; padding: 10px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-radius: 8px; border: 1px solid #dee2e6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="color: #666; font-size: 0.9em;">Precio original:</span>
+                            <span class="original-price" style="text-decoration: line-through; color: #999; font-size: 1em;">S/.${precioOriginal.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #28a745; font-weight: bold; font-size: 0.9em;">Precio con descuento:</span>
+                            <span class="discount-price" style="color: #ff6b6b; font-weight: bold; font-size: 1.2em;">S/.${precioConDescuento.toFixed(2)}</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 5px;">
+                            <span style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">
+                                ¡Ahorras S/.${(precioOriginal - precioConDescuento).toFixed(2)}!
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Agregar evento de clic para ver el contenido
+            const viewBtn = card.querySelector('.view-content-btn');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    mostrarDetallesContenido(contenido);
+                });
+            }
+
+            return card;
+        }
+
+        // Función para crear estrellas de calificación
+        function crearEstrellasCalificacion(calificacion) {
+            let html = '';
+            
+            // Crear 10 estrellas (escala 1-10)
+            for (let i = 1; i <= 10; i++) {
+                if (i <= calificacion) {
+                    // Estrella llena
+                    html += '<span style="color: #ffc107; font-size: 14px; margin-right: 1px;">★</span>';
+                } else if (i - 0.5 <= calificacion) {
+                    // Media estrella
+                    html += '<span style="color: #ffc107; font-size: 14px; margin-right: 1px;">☆</span>';
+                } else {
+                    // Estrella vacía
+                    html += '<span style="color: #ddd; font-size: 14px; margin-right: 1px;">☆</span>';
+                }
+            }
+            
+            return html;
+        }
+
+        // Función para mostrar detalles del contenido
+        function mostrarDetallesContenido(contenido) {
+            currentContent = contenido;
+            
+            // Actualizar información del modal
+            document.getElementById('contentTitle').textContent = contenido.nombre || 'Sin título';
+            document.getElementById('contentAuthor').querySelector('span').textContent = contenido.autor || 'Autor desconocido';
+            document.getElementById('contentCategory').querySelector('span').textContent = contenido.categoria || 'Sin categoría';
+            document.getElementById('contentDescription').textContent = contenido.descripcion || 'Sin descripción';
+            
+            // Actualizar calificación
+            const ratingContainer = document.getElementById('contentRating');
+            ratingContainer.innerHTML = crearEstrellasCalificacion(contenido.calificacion || 0);
+            document.getElementById('ratingValue').textContent = `${contenido.calificacion || 0}/10`;
+
+            // Actualizar información del archivo
+            document.getElementById('contentSize').textContent = `Peso: ${formatearTamano(contenido.tamano)}`;
+            document.getElementById('contentExtension').textContent = `Extensión: ${contenido.formato || 'Desconocido'}`;
+            document.getElementById('contentMime').textContent = `MIME-Type: ${obtenerMimeType(contenido.formato)}`;
+
+            // Actualizar precios
+            const precioOriginal = contenido.precio || 0;
+            const descuento = contenido.descuento || 0;
+            const precioConDescuento = precioOriginal * (1 - descuento / 100);
+
+            // Crear HTML mejorado para los precios
+            let preciosHTML = '';
+            if (descuento > 0) {
+                preciosHTML = `
+                    <div style="background: linear-gradient(135deg, #fff5f5, #ffe8e8); border: 2px solid #ff6b6b; border-radius: 12px; padding: 15px; margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #666; font-size: 1em; font-weight: 500;">Precio original:</span>
+                            <span style="text-decoration: line-through; color: #999; font-size: 1.1em; font-weight: 500;">S/.${precioOriginal.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #28a745; font-weight: bold; font-size: 1em;">Precio con descuento:</span>
+                            <span style="color: #ff6b6b; font-weight: bold; font-size: 1.4em;">S/.${precioConDescuento.toFixed(2)}</span>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; border-radius: 8px; margin-top: 10px;">
+                            <i class="fas fa-percent"></i> ¡${descuento}% de descuento! Ahorras S/.${(precioOriginal - precioConDescuento).toFixed(2)}
+                        </div>
+                    </div>
+                `;
+            } else {
+                preciosHTML = `
+                    <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #333; font-weight: bold; font-size: 1.1em;">Precio:</span>
+                            <span style="color: #007bff; font-weight: bold; font-size: 1.3em;">S/.${precioOriginal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('contentPrice').innerHTML = preciosHTML;
+            document.getElementById('contentDiscountPrice').innerHTML = ''; // Ya incluido en el HTML anterior
+
+            // Actualizar información de la promoción
+            const promotionInfo = document.getElementById('promotionInfo');
+            if (descuento > 0) {
+                promotionInfo.innerHTML = `
+                    <div style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; padding: 12px; border-radius: 8px; margin-top: 15px; text-align: center; box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);">
+                        <i class="fas fa-fire" style="margin-right: 8px;"></i>
+                        <strong>¡OFERTA ESPECIAL!</strong>
+                        <br>
+                        <small>Esta promoción es por tiempo limitado</small>
+                    </div>
+                `;
+            } else {
+                promotionInfo.innerHTML = '';
+            }
+
+            // Actualizar vista previa
+            const previewArea = document.getElementById('contentPreview');
+            previewArea.innerHTML = '';
+            
+            let previewContent;
+            const contenidoUrl = `/api/contenido/${contenido.id_contenido}/ver`;
+            
+            switch(contenido.tipo_contenido) {
+                case 'imagen':
+                    previewContent = document.createElement('img');
+                    previewContent.src = contenidoUrl;
+                    previewContent.alt = contenido.nombre || 'Imagen';
+                    previewContent.style.cssText = 'max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px;';
+                    break;
+                    
+                case 'video':
+                    previewContent = document.createElement('video');
+                    previewContent.controls = true;
+                    previewContent.src = contenidoUrl;
+                    previewContent.alt = contenido.nombre || 'Video';
+                    previewContent.style.cssText = 'max-width: 100%; max-height: 300px; border-radius: 8px;';
+                    break;
+                    
+                case 'audio':
+                    previewContent = document.createElement('audio');
+                    previewContent.controls = true;
+                    const source = document.createElement('source');
+                    source.src = contenidoUrl;
+                    source.type = `audio/${contenido.formato || 'mp3'}`;
+                    previewContent.appendChild(source);
+                    previewContent.style.cssText = 'max-width: 100%;';
+                    break;
+                    
+                default:
+                    previewContent = document.createElement('div');
+                    previewContent.className = 'default-preview';
+                    previewContent.innerHTML = `
+                        <i class="fas fa-file-download" style="font-size: 3em; color: #666; margin-bottom: 10px;"></i>
+                        <p style="margin: 10px 0; font-size: 1.1em;">${contenido.nombre || 'Archivo'}</p>
+                        <p style="color: #666; font-size: 0.9em;">Formato: ${contenido.formato || 'Desconocido'}</p>
+                        <p style="color: #666; font-size: 0.9em;">Previsualización no disponible</p>
+                    `;
+            }
+            
+            previewArea.appendChild(previewContent);
+
+            // Mostrar modal
+            contentDetailModal.style.display = 'block';
+        }
+
+        // Función para formatear tamaño de archivo
+        function formatearTamano(bytes) {
+            if (!bytes) return 'Desconocido';
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Función para obtener MIME type
+        function obtenerMimeType(formato) {
+            if (!formato) return 'application/octet-stream';
+            
+            const mimeTypes = {
+                'mp4': 'video/mp4', 'avi': 'video/x-msvideo', 'mov': 'video/quicktime',
+                'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif',
+                'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg'
+            };
+            
+            return mimeTypes[formato.toLowerCase()] || 'application/octet-stream';
+        }
+
+        // Eventos del modal
+        closeContentModal.addEventListener('click', () => {
+            contentDetailModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === contentDetailModal) {
+                contentDetailModal.style.display = 'none';
+            }
+        });
+
+        // Evento para añadir al carrito
+        addToCartBtn.addEventListener('click', async () => {
+            if (!currentContent) return;
+
+            try {
+                const response = await fetch('/api/carrito/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id_contenido: currentContent.id_contenido,
+                        cantidad: 1
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('¡Contenido añadido al carrito!');
+                    contentDetailModal.style.display = 'none';
+                } else {
+                    showError(result.error || 'Error al añadir al carrito');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error al añadir al carrito');
+            }
+        });
+
+        // Función de búsqueda
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredContents = allContents.filter(contenido => 
+                contenido.nombre?.toLowerCase().includes(searchTerm) ||
+                contenido.autor?.toLowerCase().includes(searchTerm) ||
+                contenido.categoria?.toLowerCase().includes(searchTerm)
+            );
+            actualizarContenidos(filteredContents);
+        });
+
+        // Funciones de utilidad
+        function showLoader() {
+            document.getElementById('loader').style.display = 'flex';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            alert(message); // En una implementación real, usarías un toast o notificación
+        }
+
+        function showError(message) {
+            alert('Error: ' + message); // En una implementación real, usarías un toast o notificación
+        }
+
+        // Función para cargar notificaciones de regalos
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Mostrar notificación elegante
+                        showGiftNotification(data.data.length, data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
+        }
+
+        // Función para mostrar notificación elegante de regalos
+        function showGiftNotification(giftCount, regalos) {
+            // Crear contenedor de notificaciones si no existe
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-cerrar después de 10 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        // Función para cerrar notificación y marcar como leída
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+                
+                // Marcar todas las notificaciones como leídas
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        // Función para marcar notificaciones como leídas
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        // Función para ir a Mis Contenidos y marcar como leída
+        async function goToMyContents(giftCount) {
+            // Marcar notificaciones como leídas antes de redirigir
+            await marcarNotificacionesLeidas();
+            
+            // Redirigir a la página correcta
+            window.location.href = '/cliente/mis-contenidos';
+        }
+    </script>
+</body>
+</html> 

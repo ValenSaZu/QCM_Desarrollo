@@ -1,6 +1,4 @@
 from infrastructure.bd.conexion import obtener_conexion
-from datetime import datetime
-
 
 class Promocion:
     def __init__(self, id_promocion, nombre, descuento, fecha_inicio, fecha_fin):
@@ -64,27 +62,28 @@ class Promocion:
         cursor = conexion.cursor()
 
         try:
+            # Verificar que la promoción existe
             cursor.execute("SELECT 1 FROM promocion WHERE id_promocion = %s", (id_promocion,))
             if not cursor.fetchone():
                 return []
 
+            # Obtener los contenidos asociados a la promoción
             query = """
-                    SELECT c.id_contenido, c.nombre, t.formato, c.autor, cat.nombre AS categoria
-                    FROM contenido c
-                             JOIN promocion p ON c.id_promocion = p.id_promocion
-                             LEFT JOIN tipo_archivo t ON c.id_tipo_archivo = t.id_tipo_archivo
-                             LEFT JOIN categoria cat ON c.id_categoria = cat.id_categoria
-                    WHERE c.id_promocion = %s \
-                    """
+                SELECT c.id_contenido, c.nombre, t.formato, c.precio
+                FROM contenido c
+                LEFT JOIN tipo_archivo t ON c.id_tipo_archivo = t.id_tipo_archivo
+                WHERE c.id_promocion = %s
+                ORDER BY c.nombre
+            """
             cursor.execute(query, (id_promocion,))
 
+            # Devolver los resultados como una lista de diccionarios
             return [{
                 'id_contenido': row[0],
-                'nombre': row[1] or '',
-                'formato': row[2] or '',
-                'autor': row[3] or '',
-                'categoria': row[4] or ''
-            } for row in cursor.fetchall() if row[0]]
+                'nombre': row[1] or 'Sin nombre',
+                'formato': row[2] or 'Desconocido',
+                'precio': float(row[3]) if row[3] is not None else 0.0
+            } for row in cursor.fetchall() if row[0] is not None]
 
         except Exception as e:
             raise Exception(f"Error al obtener contenido promociones: {str(e)}")
@@ -104,7 +103,10 @@ class Promocion:
                    VALUES (%s, %s, %s, %s) RETURNING id_promocion""",
                 (nombre, float(descuento), fecha_inicio, fecha_fin)
             )
-            id_promocion = cursor.fetchone()[0]
+            id_promocion_row = cursor.fetchone()
+            if not id_promocion_row:
+                raise Exception("No se pudo obtener el ID de la nueva promoción")
+            id_promocion = id_promocion_row[0]
             conexion.commit()
             return id_promocion
         except Exception as e:
