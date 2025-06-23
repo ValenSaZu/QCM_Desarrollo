@@ -1,63 +1,55 @@
-# Controlador para gestionar las operaciones relacionadas con categorías
 from domain.entities.categoria import Categoria
 
+# G-003: Controlador para gestionar todas las operaciones relacionadas con categorías (CRUD, búsqueda, validaciones)
 class ControladorCategoria:
+    # CTRL-CAT-001: Obtiene todas las categorías existentes y las retorna en formato JSON
     def obtener_todas_categorias(self):
-        """Obtiene todas las categorías existentes y las retorna en formato JSON"""
         try:
             print("ControladorCategoria: Iniciando obtención de todas las categorías")
             categorias = Categoria.obtener_todas_categorias()
             print(f"ControladorCategoria: Categorías obtenidas de la entidad: {len(categorias) if categorias else 0}")
-            
-            # Asegurarse de que siempre devolvemos una lista
+
             if not categorias:
                 print("ControladorCategoria: No se encontraron categorías, devolviendo lista vacía")
                 return []
-                
-            # Convertir las categorías a diccionarios
+
             categorias_dict = [{
                 "id_categoria": categoria.id_categoria,
                 "nombre": categoria.nombre,
                 "id_categoria_padre": categoria.id_categoria_padre
             } for categoria in categorias]
-            
+
             print(f"ControladorCategoria: Categorías convertidas a diccionarios: {len(categorias_dict)}")
-            print(f"ControladorCategoria: Categorías principales: {[cat for cat in categorias_dict if cat['id_categoria_padre'] is None]}")
-            
             return categorias_dict
         except Exception as e:
             print(f"Error en obtener_todas_categorias: {str(e)}")
             raise Exception(f"Error al obtener categorías: {str(e)}")
 
+    # CTRL-CAT-002: Busca categorías que coincidan con el término de búsqueda (filtrado por nombre)
     def buscar_categorias(self, termino):
-        """Busca categorías que coincidan con el término de búsqueda"""
         try:
             print(f"ControladorCategoria: Buscando categorías con término: '{termino}'")
             categorias = Categoria.buscar_categorias(termino)
             print(f"ControladorCategoria: Categorías encontradas en búsqueda: {len(categorias) if categorias else 0}")
-            
-            # Asegurarse de que siempre devolvemos una lista
+
             if not categorias:
                 print("ControladorCategoria: No se encontraron categorías en la búsqueda")
                 return []
-                
-            # Convertir las categorías a diccionarios
+
             categorias_dict = [{
                 "id_categoria": categoria.id_categoria,
                 "nombre": categoria.nombre,
                 "id_categoria_padre": categoria.id_categoria_padre
             } for categoria in categorias]
-            
+
             print(f"ControladorCategoria: Categorías convertidas a diccionarios: {len(categorias_dict)}")
-            print(f"ControladorCategoria: Categorías encontradas: {[cat['nombre'] for cat in categorias_dict]}")
-            
             return categorias_dict
         except Exception as e:
             print(f"Error en buscar_categorias: {str(e)}")
             raise Exception(f"Error al buscar categorías: {str(e)}")
 
+    # CTRL-CAT-003: Crea una nueva categoría con el nombre y categoría padre especificados
     def crear_categoria(self, nombre, id_categoria_padre=None):
-        """Crea una nueva categoría con el nombre y categoría padre especificados"""
         try:
             categoria = Categoria.crear_categoria(nombre, id_categoria_padre)
             return {
@@ -68,8 +60,8 @@ class ControladorCategoria:
         except Exception as e:
             raise Exception(f"Error al crear categoría: {str(e)}")
 
+    # CTRL-CAT-004: Actualiza el nombre de una categoría existente (identificada por ID)
     def actualizar_categoria(self, id_categoria, nombre):
-        """Actualiza el nombre de una categoría existente"""
         try:
             categoria = Categoria.actualizar_categoria(id_categoria, nombre)
             return {
@@ -80,6 +72,7 @@ class ControladorCategoria:
         except Exception as e:
             raise Exception(f"Error al actualizar categoría: {str(e)}")
 
+    # CTRL-CAT-005: Agrega una categoría validando los datos de entrada y la existencia de la categoría padre
     def agregar_categoria(self, categoria_data):
         try:
             nombre = categoria_data.get('nombre')
@@ -111,6 +104,7 @@ class ControladorCategoria:
             print(f"Error al agregar categoría: {str(e)}")
             return {"success": False, "error": str(e)}
 
+    # CTRL-CAT-006: Valida si una categoría existe (usado internamente para verificaciones)
     def validar_categoria_existe(self, id_categoria):
         try:
             categorias = Categoria.obtener_todas_categorias()
@@ -118,6 +112,7 @@ class ControladorCategoria:
         except:
             return False
 
+    # CTRL-CAT-007: Obtiene todas las categorías con formato estandarizado para respuestas API
     def obtener_categorias(self):
         try:
             categorias = Categoria.obtener_todas_categorias()
@@ -136,6 +131,7 @@ class ControladorCategoria:
             print(f"Error al obtener categorías: {str(e)}")
             return {"success": False, "error": str(e)}
 
+    # CTRL-CAT-008: Obtiene una categoría específica por su ID (búsqueda puntual)
     def obtener_categoria(self, id_categoria):
         try:
             categorias = Categoria.obtener_todas_categorias()
@@ -147,6 +143,7 @@ class ControladorCategoria:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    # CTRL-CAT-009: Elimina una categoría existente (incluye validación de existencia previa)
     def eliminar_categoria(self, id_categoria):
         try:
             Categoria.eliminar_categoria_por_id(id_categoria)

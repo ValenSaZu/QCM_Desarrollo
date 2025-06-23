@@ -2,339 +2,413 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administrar Categorías - QCM</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <title>Administrar Categorías - QuickContentMedia</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
+
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>QCM Admin</h2>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/admin"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="UIInicioAdmin.html" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="#" class="nav-link active">
-                    <i class="fas fa-tags"></i>
-                    <span>Administrar Categorías</span>
-                </a>
-                <a href="UIAdministrarContenidos(MK-034).html" class="nav-link">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Administrar Contenidos</span>
-                </a>
-                <a href="UIAdministrarCliente(MK-038).html" class="nav-link">
-                    <i class="fas fa-users"></i>
-                    <span>Administrar Clientes</span>
-                </a>
-                <a href="UIAdministrarPromocion(MK-025).html" class="nav-link">
-                    <i class="fas fa-percentage"></i>
-                    <span>Administrar Promociones</span>
-                </a>
-                <a href="#" class="nav-link" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
+            <div class="side-bar-options">
+                <a href="/admin/promociones"><i class="fa-solid fa-tags"></i><span>Administrar Promociones</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/admin/contenidos"><i class="fa-solid fa-plus"></i><span>Administrar Contenido</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/admin/categorias"><i class="fa-solid fa-layer-group"></i><span>Administrar Categoría</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/admin/clientes"><i class="fa-solid fa-users"></i><span>Administrar Clientes</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
+            </div>
         </div>
-        
-        <div class="main-content">
-            <h1>Administrar Categorías</h1>
-            
-            <div class="admin-actions">
-                <button onclick="mostrarFormularioCategoria()" class="btn btn-primary">Agregar Nueva Categoría</button>
-            </div>
-            
-            <div class="categorias-container">
-                <div class="categorias-principales">
-                    <h3>Categorías Principales</h3>
-                    <div id="categorias-principales-lista"></div>
+
+        <div class="main-content" id="categoriasSection">
+            <div class="content-wrapper">
+                <h2 class="small-title">Categorías</h2>
+                <div class="content-header">
+                    <div id="small-btn">
+                        <button id="addCategoryBtn" class="button-full">Agregar Categoría Principal</button>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="search-category" class="search-input" placeholder="Buscar categoría">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
                 </div>
-                
-                <div class="subcategorias">
-                    <h3>Subcategorías</h3>
-                    <div id="subcategorias-lista"></div>
+
+                <div class="table-container">
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th>Subcategorías</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTableBody">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <div id="categoryModal" class="modal">
+        <form id="categoryForm">
+            <div class="modal-content">
+                <span id="closeCategoryModal" class="close">&times;</span>
+                <h2 class="small-title" id="modalTitle">Agregar Categoría</h2>
+                <input type="hidden" id="categoryId">
+                <input type="hidden" id="parentId">
+                <label for="categoryName" class="form-label">Nombre de la categoría:</label><br>
+                <input type="text" id="categoryName" class="form-input" name="categoryName" required><br>
+                <button type="submit" class="button-full">Guardar</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="subcategoriesModal" class="modal">
+        <div class="modal-content">
+            <span id="closeSubcategoriesModal" class="close">&times;</span>
+            <h2 class="small-title" id="subcategoriesModalTitle">Subcategorías</h2>
+            <div class="table-container">
+                <div class="table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Subcategorías</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subcategoriesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarCategorias();
+        function showLoader() {
+            const loader = document.createElement('div');
+            loader.id = 'global-loader';
+            loader.style.position = 'fixed';
+            loader.style.top = '0';
+            loader.style.left = '0';
+            loader.style.width = '100%';
+            loader.style.height = '100%';
+            loader.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            loader.style.display = 'flex';
+            loader.style.justifyContent = 'center';
+            loader.style.alignItems = 'center';
+            loader.style.zIndex = '1000';
+            loader.innerHTML = '<div style="background: white; padding: 20px; border-radius: 5px;">Cargando...</div>';
+            document.body.appendChild(loader);
+        }
+
+        function hideLoader() {
+            const loader = document.getElementById('global-loader');
+            if (loader) {
+                document.body.removeChild(loader);
+            }
+        }
+
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+
+        function showSuccess(message) {
+            alert('Éxito: ' + message);
+        }
+
+        let categoriesData = [];
+        let currentParentId = null;
+
+        const categoryModal = document.getElementById("categoryModal");
+        const subcategoriesModal = document.getElementById("subcategoriesModal");
+        const categoryForm = document.getElementById("categoryForm");
+        const categoryNameInput = document.getElementById("categoryName");
+        const categoryIdInput = document.getElementById("categoryId");
+        const parentIdInput = document.getElementById("parentId");
+        const searchInput = document.getElementById("search-category");
+        const closeCategoryModal = document.getElementById("closeCategoryModal");
+        const closeSubcategoriesModal = document.getElementById("closeSubcategoriesModal");
+        const addCategoryBtn = document.getElementById("addCategoryBtn");
+        const modalTitle = document.getElementById("modalTitle");
+        const subcategoriesModalTitle = document.getElementById("subcategoriesModalTitle");
+
+        async function cargarCategorias() {
+            try {
+                showLoader();
+                const response = await fetch('/api/contenidos/categorias');
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || 'Error al cargar categorías');
+                }
+
+                const responseData = await response.json();
+                categoriesData = Array.isArray(responseData) ? responseData :
+                              (responseData.success ? responseData.data : []);
+
+                actualizarTablaCategorias(categoriesData);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarCategorias);
+
+        function actualizarTablaCategorias(categorias, parentId = null) {
+            const tbody = parentId ?
+                document.getElementById('subcategoriesTableBody') :
+                document.getElementById('categoriesTableBody');
+
+            if (!tbody) return;
+
+            const searchTerm = document.getElementById('search-category').value.trim();
+            const isSearching = searchTerm.length >= 3;
+
+            let categoriasAMostrar = [];
+
+            if (isSearching && parentId === null) {
+                const categoriasCoincidentes = categorias.filter(cat => {
+                    const catParentId = cat.id_categoria_padre;
+                    const isMainCategory = catParentId === null || catParentId === undefined || catParentId === '';
+                    return isMainCategory && cat.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+
+                categoriasCoincidentes.forEach(catPrincipal => {
+                    categoriasAMostrar.push(catPrincipal);
+
+                    const subcategorias = categorias.filter(cat => {
+                        const catParentId = cat.id_categoria_padre;
+                        return parseInt(catParentId) === parseInt(catPrincipal.id_categoria);
+                    });
+
+                    categoriasAMostrar.push(...subcategorias);
+                });
+
+                const subcategoriasCoincidentes = categorias.filter(cat => {
+                    const catParentId = cat.id_categoria_padre;
+                    const isSubcategory = catParentId !== null && catParentId !== undefined && catParentId !== '';
+                    return isSubcategory && cat.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+
+                subcategoriasCoincidentes.forEach(subcat => {
+                    if (!categoriasAMostrar.find(cat => cat.id_categoria === subcat.id_categoria)) {
+                        categoriasAMostrar.push(subcat);
+                    }
+
+                    const categoriaPadre = categorias.find(cat => parseInt(cat.id_categoria) === parseInt(subcat.id_categoria_padre));
+                    if (categoriaPadre && !categoriasAMostrar.find(cat => cat.id_categoria === categoriaPadre.id_categoria)) {
+                        categoriasAMostrar.push(categoriaPadre);
+                    }
+                });
+            } else {
+                const parentIdNum = parentId ? parseInt(parentId) : null;
+
+                categoriasAMostrar = Array.isArray(categorias) ?
+                    categorias.filter(cat => {
+                        const catParentId = cat.id_categoria_padre;
+                        if (parentIdNum === null) {
+                            return catParentId === null || catParentId === undefined || catParentId === '';
+                        } else {
+                            return parseInt(catParentId) === parentIdNum;
+                        }
+                    }) : [];
+            }
+
+            if (categoriasAMostrar.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="no-data">No hay categorías</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = categoriasAMostrar.map(categoria => {
+                const subcategorias = categorias.filter(cat => {
+                    const catParentId = cat.id_categoria_padre;
+                    return parseInt(catParentId) === parseInt(categoria.id_categoria);
+                });
+                const hasSubcategories = subcategorias.length > 0;
+                const isMainCategory = categoria.id_categoria_padre === null || categoria.id_categoria_padre === undefined || categoria.id_categoria_padre === '';
+
+                return `
+                    <tr>
+                        <td>${categoria.nombre} ${isMainCategory ? '<strong>(Principal)</strong>' : '<em>(Subcategoría)</em>'}</td>
+                        <td>
+                            ${subcategorias.slice(0, 3).map(sub => sub.nombre).join(', ')}
+                            ${subcategorias.length > 3 ? `... (+${subcategorias.length - 3} más)` : ''}
+                            ${hasSubcategories ?
+                                `<button class="expand-btn" data-id="${categoria.id_categoria}" title="Ver subcategorías">
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>` :
+                                ''}
+                            <button class="button-full-gray small-btn add-subcategory"
+                                    data-id="${categoria.id_categoria}">
+                                Agregar subcategoría
+                            </button>
+                        </td>
+                        <td>
+                            <button class="button-full-gray small-btn rename-category"
+                                    data-id="${categoria.id_categoria}">
+                                Renombrar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.expand-btn').forEach(btn => {
+                btn.addEventListener('click', abrirModalSubcategorias);
+            });
+
+            document.querySelectorAll('.add-subcategory').forEach(btn => {
+                btn.addEventListener('click', prepararAgregarSubcategoria);
+            });
+
+            document.querySelectorAll('.rename-category').forEach(btn => {
+                btn.addEventListener('click', prepararRenombrarCategoria);
+            });
+        }
+
+        function abrirModalSubcategorias(e) {
+            const categoriaId = e.currentTarget.getAttribute('data-id');
+            const categoria = categoriesData.find(c => c.id_categoria == categoriaId);
+
+            currentParentId = categoriaId;
+            subcategoriesModalTitle.textContent = `Subcategorías de ${categoria.nombre}`;
+            actualizarTablaCategorias(categoriesData, categoriaId);
+            subcategoriesModal.style.display = "flex";
+        }
+
+        function prepararAgregarSubcategoria(e) {
+            const parentId = e.currentTarget.getAttribute('data-id');
+            parentIdInput.value = parentId;
+            categoryIdInput.value = '';
+            categoryNameInput.value = '';
+            modalTitle.textContent = 'Agregar Subcategoría';
+            categoryModal.style.display = "flex";
+        }
+
+        function prepararRenombrarCategoria(e) {
+            const categoriaId = e.currentTarget.getAttribute('data-id');
+            const categoria = categoriesData.find(c => c.id_categoria == categoriaId);
+
+            categoryIdInput.value = categoriaId;
+            parentIdInput.value = categoria.id_categoria_padre;
+            categoryNameInput.value = categoria.nombre;
+            modalTitle.textContent = 'Renombrar Categoría';
+            categoryModal.style.display = "flex";
+        }
+
+        addCategoryBtn.addEventListener('click', () => {
+            categoryIdInput.value = '';
+            parentIdInput.value = '';
+            categoryNameInput.value = '';
+            modalTitle.textContent = 'Agregar Categoría Principal';
+            categoryModal.style.display = "flex";
         });
 
-        function cargarCategorias() {
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    const categoriasPrincipales = data.filter(cat => !cat.id_categoria_padre);
-                    const subcategorias = data.filter(cat => cat.id_categoria_padre);
-                    
-                    mostrarCategoriasPrincipales(categoriasPrincipales);
-                    mostrarSubcategorias(subcategorias, data);
-                })
-                .catch(error => console.error('Error:', error));
-        }
+        categoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        function mostrarCategoriasPrincipales(categorias) {
-            const lista = document.getElementById('categorias-principales-lista');
-            lista.innerHTML = `
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Descripción</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${categorias.map(cat => `
-                            <tr>
-                                <td>${cat.id_categoria}</td>
-                                <td>${cat.nombre}</td>
-                                <td>${cat.descripcion || 'Sin descripción'}</td>
-                                <td>
-                                    <button onclick="editarCategoria(${cat.id_categoria})" class="btn btn-small">Editar</button>
-                                    <button onclick="eliminarCategoria(${cat.id_categoria})" class="btn btn-small btn-danger">Eliminar</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
+            try {
+                showLoader();
+                const method = categoryIdInput.value ? 'PUT' : 'POST';
+                const url = categoryIdInput.value ?
+                    `/api/categorias/${categoryIdInput.value}` :
+                    '/api/categorias';
 
-        function mostrarSubcategorias(subcategorias, todasCategorias) {
-            const lista = document.getElementById('subcategorias-lista');
-            lista.innerHTML = `
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Categoría Padre</th>
-                            <th>Descripción</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${subcategorias.map(sub => {
-                            const categoriaPadre = todasCategorias.find(cat => cat.id_categoria === sub.id_categoria_padre);
-                            return `
-                                <tr>
-                                    <td>${sub.id_categoria}</td>
-                                    <td>${sub.nombre}</td>
-                                    <td>${categoriaPadre ? categoriaPadre.nombre : 'N/A'}</td>
-                                    <td>${sub.descripcion || 'Sin descripción'}</td>
-                                    <td>
-                                        <button onclick="editarCategoria(${sub.id_categoria})" class="btn btn-small">Editar</button>
-                                        <button onclick="eliminarCategoria(${sub.id_categoria})" class="btn btn-small btn-danger">Eliminar</button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-
-        function mostrarFormularioCategoria() {
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h3>Agregar Nueva Categoría</h3>
-                    <form id="form-categoria">
-                        <div class="form-group">
-                            <label>Nombre:</label>
-                            <input type="text" name="nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Descripción:</label>
-                            <textarea name="descripcion" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Tipo de Categoría:</label>
-                            <select name="tipo_categoria" onchange="toggleCategoriaPadre(this.value)">
-                                <option value="principal">Categoría Principal</option>
-                                <option value="subcategoria">Subcategoría</option>
-                            </select>
-                        </div>
-                        <div class="form-group" id="categoria-padre-group" style="display: none;">
-                            <label>Categoría Padre:</label>
-                            <select name="id_categoria_padre">
-                                <option value="">Seleccionar categoría padre</option>
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                            <button type="button" onclick="cerrarModal()" class="btn">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            cargarCategoriasPrincipalesParaSelect();
-            
-            document.getElementById('form-categoria').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const data = {
-                    nombre: formData.get('nombre'),
-                    descripcion: formData.get('descripcion'),
-                    id_categoria_padre: formData.get('tipo_categoria') === 'subcategoria' ? 
-                        formData.get('id_categoria_padre') : null
-                };
-                
-                fetch('/api/categorias', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        cerrarModal();
-                        cargarCategorias();
-                        alert('Categoría agregada exitosamente');
-                    } else {
-                        alert('Error: ' + result.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al agregar la categoría');
-                });
-            });
-        }
-
-        function toggleCategoriaPadre(tipo) {
-            const grupo = document.getElementById('categoria-padre-group');
-            if (tipo === 'subcategoria') {
-                grupo.style.display = 'block';
-            } else {
-                grupo.style.display = 'none';
-            }
-        }
-
-        function cargarCategoriasPrincipalesParaSelect() {
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    const categoriasPrincipales = data.filter(cat => !cat.id_categoria_padre);
-                    const select = document.querySelector('select[name="id_categoria_padre"]');
-                    
-                    categoriasPrincipales.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat.id_categoria;
-                        option.textContent = cat.nombre;
-                        select.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function editarCategoria(id) {
-            fetch(`/api/categorias/${id}`)
-                .then(response => response.json())
-                .then(categoria => {
-                    mostrarFormularioEditarCategoria(categoria);
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function mostrarFormularioEditarCategoria(categoria) {
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h3>Editar Categoría</h3>
-                    <form id="form-editar-categoria">
-                        <input type="hidden" name="id_categoria" value="${categoria.id_categoria}">
-                        <div class="form-group">
-                            <label>Nombre:</label>
-                            <input type="text" name="nombre" value="${categoria.nombre}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Descripción:</label>
-                            <textarea name="descripcion" rows="3">${categoria.descripcion || ''}</textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Actualizar</button>
-                            <button type="button" onclick="cerrarModal()" class="btn">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            document.getElementById('form-editar-categoria').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const data = {
-                    nombre: formData.get('nombre'),
-                    descripcion: formData.get('descripcion')
-                };
-                
-                fetch(`/api/categorias/${categoria.id_categoria}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        cerrarModal();
-                        cargarCategorias();
-                        alert('Categoría actualizada exitosamente');
-                    } else {
-                        alert('Error: ' + result.error);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al actualizar la categoría');
-                });
-            });
-        }
-
-        function eliminarCategoria(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta categoría? Esta acción no se puede deshacer.')) {
-                fetch(`/api/categorias/${id}`, { method: 'DELETE' })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            cargarCategorias();
-                            alert('Categoría eliminada exitosamente');
-                        } else {
-                            alert('Error: ' + result.error);
-                        }
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: categoryNameInput.value,
+                        id_categoria_padre: parentIdInput.value || null
                     })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error al eliminar la categoría');
-                    });
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Error al guardar categoría');
+                }
+
+                const resultado = await response.json();
+                showSuccess(resultado.message);
+                categoryModal.style.display = "none";
+                await cargarCategorias();
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        });
+
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.trim();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (term.length >= 3 || term.length === 0) {
+                    buscarCategorias(term);
+                }
+            }, 300);
+        });
+
+        async function buscarCategorias(termino) {
+            try {
+                showLoader();
+
+                if (!termino || termino.length === 0) {
+                    await cargarCategorias();
+                    return;
+                }
+
+                const headers = {};
+                if (termino && termino.length > 0) {
+                    headers['Search-Term'] = termino;
+                }
+
+                const response = await fetch(`/api/categorias/buscar`, {
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error || 'Error en búsqueda');
+                }
+
+                const resultados = await response.json();
+                actualizarTablaCategorias(resultados);
+            } catch (error) {
+                showError('Error en búsqueda: ' + error.message);
+            } finally {
+                hideLoader();
             }
         }
 
-        function cerrarModal() {
-            const modal = document.querySelector('.modal');
-            if (modal) modal.remove();
-        }
+        closeCategoryModal.onclick = () => categoryModal.style.display = "none";
+        closeSubcategoriesModal.onclick = () => subcategoriesModal.style.display = "none";
 
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => {
-                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
-                })
-                .catch(error => console.error('Error:', error));
-        }
+        window.onclick = (event) => {
+            if (event.target == categoryModal) categoryModal.style.display = "none";
+            if (event.target == subcategoriesModal) subcategoriesModal.style.display = "none";
+        };
     </script>
 </body>
 </html>

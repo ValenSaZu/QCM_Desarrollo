@@ -1,9 +1,10 @@
-# Controlador para gestionar las operaciones relacionadas con rankings
 from domain.entities.ranking import Ranking
 
+# G-007: Controlador para gestionar todas las operaciones de rankings
 class ControladorRanking:
+
+    # CTRL-RANK-001: Obtiene el top 10 de contenidos más descargados
     def ranking_contenidos_mas_descargados(self):
-        """Retorna el top 10 de contenidos más descargados con su posición anterior (si existe)"""
         try:
             resultados = Ranking.ranking_contenidos_mas_descargados()
             return [{
@@ -14,12 +15,11 @@ class ControladorRanking:
                 "total_descargas": row[4],
                 "ranking_anterior": row[5] if row[5] is not None else "Nuevo"
             } for row in resultados]
-        except Exception as e:
-            print(f"Error en ranking_contenidos_mas_descargados: {str(e)}")
-            raise Exception("No se pudo obtener el ranking de descargas.")
+        except Exception:
+            raise Exception("Error al obtener ranking de descargas")
 
+    # CTRL-RANK-002: Obtiene el top 10 de contenidos mejor calificados
     def ranking_contenidos_mejor_calificados(self):
-        """Retorna el top 10 de contenidos con mejor promedio de calificación y su posición anterior"""
         try:
             resultados = Ranking.ranking_contenidos_mejor_calificados()
             return [{
@@ -30,12 +30,11 @@ class ControladorRanking:
                 "promedio_calificacion": float(row[4]),
                 "ranking_anterior": row[5] if row[5] is not None else "Nuevo"
             } for row in resultados]
-        except Exception as e:
-            print(f"Error en ranking_contenidos_mejor_calificados: {str(e)}")
-            raise Exception("No se pudo obtener el ranking de calificaciones.")
+        except Exception:
+            raise Exception("Error al obtener ranking de calificaciones")
 
+    # CTRL-RANK-003: Obtiene el ranking de clientes por descargas
     def ranking_clientes_por_descargas(self):
-        """Retorna los clientes ordenados por número de descargas en los últimos 6 meses"""
         try:
             resultados = Ranking.ranking_clientes_por_descargas()
             return [{
@@ -44,38 +43,20 @@ class ControladorRanking:
                 "nombre": row[2],
                 "apellido": row[3],
                 "total_descargas": row[4],
-                "ranking_anterior": "Nuevo"  # Por ahora siempre nuevo, se puede implementar después
+                "ranking_anterior": "Nuevo"
             } for row in resultados]
-        except Exception as e:
-            print(f"Error en ranking_clientes_por_descargas: {str(e)}")
-            raise Exception("No se pudo obtener el ranking de clientes.")
+        except Exception:
+            raise Exception("Error al obtener ranking de clientes")
 
+    # CTRL-RANK-004: Obtiene un ranking específico según el tipo solicitado
     def obtener_contenido_por_tipo(self, tipo_ranking):
-        """Obtiene el ranking según el tipo especificado"""
         try:
             if tipo_ranking == 'descargas':
-                return {
-                    "success": True,
-                    "data": self.ranking_contenidos_mas_descargados()
-                }
+                return {"success": True, "data": self.ranking_contenidos_mas_descargados()}
             elif tipo_ranking == 'valoracion':
-                return {
-                    "success": True,
-                    "data": self.ranking_contenidos_mejor_calificados()
-                }
+                return {"success": True, "data": self.ranking_contenidos_mejor_calificados()}
             elif tipo_ranking == 'clientes':
-                return {
-                    "success": True,
-                    "data": self.ranking_clientes_por_descargas()
-                }
-            else:
-                return {
-                    "success": False,
-                    "error": f"Tipo de ranking '{tipo_ranking}' no válido"
-                }
+                return {"success": True, "data": self.ranking_clientes_por_descargas()}
+            return {"success": False, "error": f"Tipo de ranking no válido: {tipo_ranking}"}
         except Exception as e:
-            print(f"Error en obtener_contenido_por_tipo: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}

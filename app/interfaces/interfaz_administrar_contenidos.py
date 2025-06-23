@@ -1,9 +1,9 @@
-# Clase que maneja la interfaz para administrar contenidos, permitiendo gestionar y visualizar los contenidos disponibles.
+# UI-CONT-001: Clase para manejar la interfaz de administración de contenidos, incluyendo gestión y visualización de contenidos
 class InterfazAdministrarContenidos:
 
+    # FUNC-UI-CONT-001: Sirve el archivo HTML de la página de administración de contenidos
     @staticmethod
     def servir_pagina_admin_contenidos():
-        """Sirve la página de administrar contenidos"""
         try:
             with open('static/html/UIAdministrarContenidos(MK-034).html', 'r', encoding='utf-8') as file:
                 return file.read()

@@ -1,5 +1,6 @@
 from infrastructure.bd.conexion import obtener_conexion
 
+# BD-002: Entidad para gestionar administradores del sistema
 class Administrador:
     def __init__(self, id_usuario, username, nombre, apellido, contrasena, acceso):
         self.id_usuario = id_usuario
@@ -9,6 +10,7 @@ class Administrador:
         self.contrasena = contrasena
         self.acceso = acceso
 
+    # ENT-ADMIN-001: Busca administradores por nombre de usuario
     @classmethod
     def buscar_por_username(cls, username):
         conexion = obtener_conexion()
@@ -16,61 +18,48 @@ class Administrador:
 
         try:
             query = """
-            SELECT a.id_usuario, u.username, u.nombre, u.apellido, u.contrasena, a.acceso 
-            FROM administrador AS a 
-            JOIN usuario AS u ON u.id_usuario = a.id_usuario 
-            WHERE u.username = %s;
-                """
+                    SELECT a.id_usuario, u.username, u.nombre, u.apellido, u.contrasena, a.acceso
+                    FROM administrador AS a
+                             JOIN usuario AS u ON u.id_usuario = a.id_usuario
+                    WHERE u.username = %s; \
+                    """
             cursor.execute(query, (username,))
 
-            administradores = []
-            for row in cursor.fetchall():
-                administrador = cls(
+            return [
+                cls(
                     id_usuario=row[0],
                     username=row[1],
                     nombre=row[2],
                     apellido=row[3],
                     contrasena=row[4],
                     acceso=row[5]
-                )
-                administradores.append(administrador)
-            return administradores
-
+                ) for row in cursor.fetchall()
+            ]
         except Exception as e:
-            raise Exception(f"Error al obtener administrador: {str(e)}")
+            raise Exception("Error al buscar administrador")
         finally:
             cursor.close()
             conexion.close()
 
+    # ENT-ADMIN-002: Obtiene un administrador por ID de usuario
     @classmethod
     def obtener_por_id(cls, id_usuario):
-        """Obtiene un administrador por su ID de usuario"""
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
         try:
             query = """
-            SELECT a.id_usuario, u.username, u.nombre, u.apellido, u.contrasena, a.acceso 
-            FROM administrador AS a 
-            JOIN usuario AS u ON u.id_usuario = a.id_usuario 
-            WHERE a.id_usuario = %s;
-                """
+                    SELECT a.id_usuario, u.username, u.nombre, u.apellido, u.contrasena, a.acceso
+                    FROM administrador AS a
+                             JOIN usuario AS u ON u.id_usuario = a.id_usuario
+                    WHERE a.id_usuario = %s; \
+                    """
             cursor.execute(query, (id_usuario,))
             row = cursor.fetchone()
 
-            if row:
-                return cls(
-                    id_usuario=row[0],
-                    username=row[1],
-                    nombre=row[2],
-                    apellido=row[3],
-                    contrasena=row[4],
-                    acceso=row[5]
-                )
-            return None
-
-        except Exception as e:
-            raise Exception(f"Error al obtener administrador por ID: {str(e)}")
+            return cls(*row) if row else None
+        except Exception:
+            raise Exception("Error al obtener administrador")
         finally:
             cursor.close()
             conexion.close()

@@ -6,13 +6,12 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-        /* Estilos para las estrellas de valoración */
         .rating {
             display: inline-flex;
             align-items: center;
             font-size: 0;
         }
-        
+
         .star {
             color: #ddd;
             font-size: 18px;
@@ -20,11 +19,11 @@
             display: inline-block;
             margin-right: 1px;
         }
-        
+
         .star.filled {
-            color: #ffd700; /* Color dorado para estrellas llenas */
+            color: #ffd700;
         }
-        
+
         .star.half-filled::before {
             content: '★';
             position: absolute;
@@ -33,7 +32,7 @@
             overflow: hidden;
             color: #ffd700;
         }
-        
+
         .rating-text {
             margin-left: 5px;
             font-size: 14px;
@@ -66,7 +65,6 @@
                 <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
             </div>
         </div>
-        <!-- Sección de Administrar Contenidos -->
         <div class="main-content" id="contenidosSection">
             <div class="content-wrapper">
             <h2 class="small-title">Contenidos</h2>
@@ -91,7 +89,6 @@
                         </tr>
                     </thead>
                     <tbody id="contenidosTableBody">
-                        <!-- Contenido tabla -->
                     </tbody>
                     <div class="pagination" id="contenidosPagination"></div>
                 </table>
@@ -99,7 +96,6 @@
             </div>
         </div>
 
-        <!-- Modal Agregar Contenido -->
         <div id="agregarContenidoModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('agregarContenidoModal')">&times;</span>
@@ -157,12 +153,11 @@
             </div>
         </div>
 
-        <!-- Modal Editar Contenido -->
         <div id="editarContenidoModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('editarContenidoModal')">&times;</span>
                 <h2 class="small-title">Editar Contenido</h2>
-                <form id="editarContenidoForm" action="/editar_contenido" method="POST" enctype="multipart/form-data">
+                <form id="editarContenidoForm" method="POST" enctype="multipart/form-data">
                     <input type="hidden" id="editContenidoId" name="contenido_id">
                     <div class="modal-grid">
                         <div class="left-grid">
@@ -206,7 +201,6 @@
             </div>
         </div>
 
-        <!-- Modal Eliminar Contenido -->
         <div id="eliminarContenidoModal" class="modal">
             <form class="form" action="/eliminar_contenido" method="POST">
                 <div class="modal-content">
@@ -219,7 +213,6 @@
             </form>
         </div>
 
-        <!-- Modal Seleccionar Categoría -->
         <div id="seleccionarCategoria" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('seleccionarCategoria')">&times;</span>
@@ -236,7 +229,6 @@
                             </tr>
                         </thead>
                         <tbody id="categoriaTableBody">
-                            <!-- Contenido tabla -->
                         </tbody>
                         <div class="pagination" id="categoriaPagination"></div>
                     </table>
@@ -244,108 +236,132 @@
             </div>
         </div>
 
-        <!-- Funciones JavaScript relacionadas -->
         <script>
-            // Variable global para controlar de qué modal viene la selección de categoría
             let returnToModal = null;
-            
-            // Handle form submission
+
             document.getElementById('agregarContenidoForm').addEventListener('submit', async function(e) {
-                e.preventDefault(); // Prevent default form submission
-                
-                // Get form elements
+                e.preventDefault();
+
                 const form = this;
                 const categoriaIdInput = document.getElementById('categoriaId');
                 const categoriaId = categoriaIdInput ? categoriaIdInput.value.trim() : '';
                 const submitButton = form.querySelector('button[type="submit"]');
-                
-                // Validate category selection
+
                 if (!categoriaId) {
                     alert('Por favor seleccione una categoría');
                     const categoriaBtn = document.getElementById('editarCategoriaBtn');
                     if (categoriaBtn) categoriaBtn.focus();
                     return;
                 }
-                
-                // Disable submit button to prevent double submission
+
                 const originalButtonText = submitButton.innerHTML;
                 submitButton.disabled = true;
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
-                
+
                 try {
-                    // Create new FormData and manually append all fields
                     const formData = new FormData();
-                    
-                    // Add all form fields manually
+
                     formData.append('tipo_contenido', form.tipo_contenido.value);
                     formData.append('nombre', form.nombre.value);
                     formData.append('descripcion', form.descripcion.value);
                     formData.append('categoria_id', categoriaId);
                     formData.append('autor', form.autor.value);
                     formData.append('precio', form.precio.value);
-                    
-                    // Add file if present
+
                     const fileInput = document.getElementById('uploadFile');
                     if (fileInput.files.length > 0) {
                         formData.append('archivo', fileInput.files[0]);
                     }
-                    
-                    // Debug: Log form data before submission
-                    console.log('=== Datos del formulario ===');
-                    console.log('categoriaId:', categoriaId);
-                    console.log('Contenido de formData:');
-                    for (let [key, value] of formData.entries()) {
-                        if (key === 'archivo') {
-                            console.log(`${key}:`, value.name, `(${value.size} bytes)`);
-                        } else {
-                            console.log(`${key}:`, value);
-                        }
-                    }
-                    
-                    // Submit the form
-                    console.log('Enviando datos al servidor...');
+
                     const response = await fetch(form.action, {
                         method: 'POST',
                         body: formData
                     });
-                    
-                    console.log('Respuesta recibida:', response.status, response.statusText);
+
                     const result = await response.json();
-                    console.log('Datos de respuesta:', result);
-                    
+
                     if (response.ok) {
                         alert('Contenido agregado exitosamente');
                         form.reset();
                         document.getElementById('categoriaId').value = '';
                         document.getElementById('categoriaNombre').value = '';
                         closeModal('agregarContenidoModal');
-                        await cargarContenidos(); // Wait for content to reload
+                        await cargarContenidos();
                     } else {
                         throw new Error(result.error || 'Error al agregar el contenido');
                     }
                 } catch (error) {
-                    console.error('Error al enviar el formulario:', error);
                     alert(error.message || 'Error al procesar la solicitud');
                 } finally {
-                    // Re-enable submit button
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalButtonText;
                 }
             });
 
-            // Función para cargar contenidos
+            document.getElementById('editarContenidoForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const form = this;
+                const categoriaIdInput = document.getElementById('editCategoriaId');
+                const categoriaId = categoriaIdInput ? categoriaIdInput.value.trim() : '';
+                const submitButton = form.querySelector('button[type="submit"]');
+
+                if (!categoriaId) {
+                    alert('Por favor seleccione una categoría');
+                    return;
+                }
+
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                try {
+                    const formData = new FormData();
+
+                    formData.append('contenido_id', document.getElementById('editContenidoId').value);
+                    formData.append('nombre', form.nombre.value);
+                    formData.append('descripcion', form.descripcion.value);
+                    formData.append('categoria_id', categoriaId);
+                    formData.append('autor', form.autor.value);
+                    formData.append('precio', form.precio.value);
+
+                    const fileInput = document.getElementById('editFileInput');
+                    if (fileInput.files.length > 0) {
+                        formData.append('archivo', fileInput.files[0]);
+                    }
+
+                    const response = await fetch('/api/contenidos/editar', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        alert('Contenido actualizado exitosamente');
+                        closeModal('editarContenidoModal');
+                        await cargarContenidos();
+                    } else {
+                        throw new Error(result.error || 'Error al actualizar el contenido');
+                    }
+                } catch (error) {
+                    alert(error.message || 'Error al procesar la solicitud');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                }
+            });
+
             async function cargarContenidos() {
                 try {
-                    console.log('Cargando contenidos...');
                     const response = await fetch('/api/contenidos');
-                    
+
                     if (!response.ok) {
                         throw new Error(`Error HTTP: ${response.status}`);
                     }
-                    
+
                     const data = await response.json();
-                    console.log('Datos recibidos:', data);
-                    
+
                     if (data.success && data.data) {
                         const tbody = document.getElementById("contenidosTableBody");
                         tbody.innerHTML = '';
@@ -358,7 +374,7 @@
                                     ${contenido.calificacion ? `
                                         <div class="rating" title="${contenido.calificacion.toFixed(1)}/5.0">
                                             ${Array(5).fill().map((_, i) => `
-                                                <span class="star ${i < Math.floor(contenido.calificacion) ? 'filled' : ''} 
+                                                <span class="star ${i < Math.floor(contenido.calificacion) ? 'filled' : ''}
                                                     ${i === Math.floor(contenido.calificacion) && contenido.calificacion % 1 >= 0.5 ? 'half-filled' : ''}">
                                                     ★
                                                 </span>
@@ -382,16 +398,13 @@
                             paginarTabla('contenidosSection .table', 'contenidosPagination');
                         }
                     } else {
-                        console.error('Error en la respuesta del servidor:', data);
                         alert(data.error || 'Error al cargar los contenidos');
                     }
                 } catch (error) {
-                    console.error('Error al cargar los contenidos:', error);
                     alert('Error al cargar los contenidos. Por favor, intente nuevamente.');
                 }
             }
 
-            // Función para abrir modal de edición con datos del contenido
             function openEditarModal(button, contenidoId) {
                 fetch(`/api/contenido?id=${contenidoId}`)
                     .then(response => {
@@ -403,7 +416,6 @@
                     .then(data => {
                         if (data.success) {
                             const contenido = data.contenido;
-                            console.log('Datos del contenido:', contenido);
 
                             document.getElementById("editContenidoId").value = contenido.id_contenido;
                             document.getElementById("editNombre").value = contenido.nombre || '';
@@ -413,7 +425,6 @@
                             document.getElementById("editCategoriaId").value = contenido.id_categoria || '';
                             document.getElementById("editCategoriaNombre").value = contenido.categoria || 'Sin categoría';
 
-                            // Actualizar vista previa si hay un archivo
                             const previewEditar = document.getElementById("previewEditar");
                             previewEditar.innerHTML = '';
 
@@ -429,33 +440,26 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error al cargar el contenido:', error);
                         alert('Error al cargar el contenido: ' + error.message);
                     });
             }
 
-            // Función para preparar modal de eliminar contenido
             function prepararEliminarContenido(contenidoId) {
                 if (confirm('¿Está seguro de que desea eliminar este contenido? Esta acción no se puede deshacer.')) {
                     eliminarContenido(contenidoId);
                 }
             }
 
-            // Función para eliminar contenido
             async function eliminarContenido(contenidoId) {
                 if (!contenidoId) {
-                    console.error('ID de contenido no proporcionado');
                     alert('Error: No se proporcionó un ID de contenido válido');
                     return;
                 }
-                
+
                 try {
-                    console.log('Enviando solicitud para eliminar contenido ID:', contenidoId);
-                    
-                    // Crear los parámetros de la URL
                     const params = new URLSearchParams();
                     params.append('contenido_id', contenidoId);
-                    
+
                     const response = await fetch('/api/contenidos/eliminar', {
                         method: 'POST',
                         headers: {
@@ -465,35 +469,28 @@
                         body: params.toString()
                     });
 
-                    console.log('Respuesta del servidor:', response.status, response.statusText);
-                    
-                    // Intentar obtener el cuerpo de la respuesta como JSON
                     let data;
                     try {
                         data = await response.json();
-                        console.log('Datos de respuesta:', data);
                     } catch (jsonError) {
-                        console.error('Error al analizar la respuesta JSON:', jsonError);
                         throw new Error('Error al procesar la respuesta del servidor');
                     }
-                    
+
                     if (!response.ok) {
                         throw new Error(data.error || `Error HTTP: ${response.status}`);
                     }
 
                     if (data.success) {
                         alert(data.message || 'Contenido eliminado correctamente');
-                        cargarContenidos(); // Recargar la lista de contenidos
+                        cargarContenidos();
                     } else {
                         throw new Error(data.error || 'Error al eliminar el contenido');
                     }
                 } catch (error) {
-                    console.error('Error al eliminar contenido:', error);
                     alert('Error al eliminar el contenido: ' + (error.message || 'Error desconocido'));
                 }
             }
 
-            // Manejo de archivo subido en agregar contenido
             const uploadFileInput = document.getElementById('uploadFile');
             const fileNameSpan = document.getElementById('file-name');
             const fileSizeBox = document.getElementById('file-size');
@@ -512,7 +509,6 @@
                 fileExtensionBox.textContent = `Extensión: .${extension}`;
                 fileMimeBox.textContent = `MIME-Type: ${file.type}`;
 
-                // Actualizar tipo de contenido basado en el archivo
                 const tipoContenidoSelect = document.getElementById('tipoContenido');
                 if (file.type.startsWith('image/')) {
                     tipoContenidoSelect.value = 'imagen';
@@ -554,7 +550,6 @@
                 reader.readAsDataURL(file);
             });
 
-            // Manejo de archivo subido en editar contenido
             const editFileInput = document.getElementById('editFileInput');
             editFileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -595,7 +590,6 @@
                 document.getElementById("editMime").textContent = `MIME-Type: ${file.type}`;
             });
 
-            // Búsqueda de contenidos
             const searchContenidoInput = document.getElementById('search-contenido');
             searchContenidoInput.addEventListener('input', function() {
                 const filtro = this.value.toLowerCase();
@@ -613,7 +607,22 @@
                 });
             });
 
-            // Función para seleccionar una categoría y volver al modal anterior
+            const searchCategoriaInput = document.getElementById('searchCategoria');
+            searchCategoriaInput.addEventListener('input', function() {
+                const filtro = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#categoriaTableBody tr');
+
+                rows.forEach(fila => {
+                    const nombreCategoria = fila.querySelector("td").textContent.toLowerCase();
+
+                    if (nombreCategoria.includes(filtro)) {
+                        fila.style.display = "";
+                    } else {
+                        fila.style.display = "none";
+                    }
+                });
+            });
+
             function seleccionarCategoria(categoriaId, categoriaNombre) {
                 if (returnToModal === 'agregar') {
                     document.getElementById('categoriaId').value = categoriaId;
@@ -625,18 +634,15 @@
                     closeModal('seleccionarCategoria');
             }
 
-            // Función para abrir modal
             function openModal(modalId) {
                 const modal = document.getElementById(modalId);
                 modal.style.display = "block";
-                
-                // Si es el modal de selección de categorías, cargar las categorías
+
                 if (modalId === 'seleccionarCategoria') {
                     cargarCategorias();
                 }
             }
 
-            // Función para cerrar modal
             function closeModal(modalId) {
                 const modal = document.getElementById(modalId);
                 if (modal) {
@@ -645,7 +651,6 @@
                 }
             }
 
-            // Cerrar modal al hacer clic fuera
             window.onclick = function(event) {
                 const modals = document.getElementsByClassName("modal");
                 for (let i = 0; i < modals.length; i++) {
@@ -656,35 +661,31 @@
                 }
             }
 
-            // Función para cargar las categorías
             function cargarCategorias() {
                 fetch('/api/contenidos/categorias')
                     .then(response => response.json())
                     .then(response => {
-                        // Verificar si la respuesta tiene el formato {success, data} o es un array directo
-                        const categorias = Array.isArray(response) ? response : 
+                        const categorias = Array.isArray(response) ? response :
                                       (response.success ? response.data : []);
-                        
+
                         const tbody = document.getElementById('categoriaTableBody');
                         tbody.innerHTML = '';
 
                         if (!Array.isArray(categorias)) {
-                            console.error('Las categorías no son un array:', categorias);
                             throw new Error('Formato de respuesta inesperado');
                         }
 
                         categorias.forEach(categoria => {
-                            if (!categoria) return; // Saltar elementos nulos o indefinidos
-                            
+                            if (!categoria) return;
+
                             const row = document.createElement('tr');
-                            // Create a safe version of the name by escaping quotes
                             const safeNombre = String(categoria.nombre || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                             const categoriaId = categoria.id_categoria || 0;
-                            
+
                             row.innerHTML = `
                                 <td>${categoria.nombre || 'Sin nombre'}</td>
                                 <td>
-                                    <button type="button" class="button-full-gray" 
+                                    <button type="button" class="button-full-gray"
                                         onclick="seleccionarCategoria(${categoriaId}, '${safeNombre}')">
                                         Seleccionar
                                     </button>
@@ -694,14 +695,11 @@
                         });
                     })
                     .catch(error => {
-                        console.error('Error al cargar categorías:', error);
                         alert('Error al cargar las categorías');
                     });
             }
 
-            // Inicializar la carga de contenidos y categorías
             document.addEventListener('DOMContentLoaded', () => {
-                console.log("Formulario de agregar contenido inicializado");
                 cargarContenidos();
                 cargarCategorias();
 

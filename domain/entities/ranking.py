@@ -1,7 +1,9 @@
 from infrastructure.bd.conexion import obtener_conexion
 from datetime import datetime, timedelta
 
+# BD-010: Entidad para gestionar operaciones de rankings y estadísticas
 class Ranking:
+    # ENT-RANK-001: Obtiene ranking de los contenidos más descargados
     @classmethod
     def ranking_contenidos_mas_descargados(cls):
         conexion = obtener_conexion()
@@ -32,13 +34,13 @@ class Ranking:
             """
             cursor.execute(query)
             return cursor.fetchall()
-
         except Exception as e:
             raise Exception(f"Error al obtener ranking de descargas: {str(e)}")
         finally:
             cursor.close()
             conexion.close()
 
+    # ENT-RANK-002: Obtiene ranking de los contenidos mejor calificados
     @classmethod
     def ranking_contenidos_mejor_calificados(cls):
         conexion = obtener_conexion()
@@ -70,13 +72,13 @@ class Ranking:
             """
             cursor.execute(query)
             return cursor.fetchall()
-
         except Exception as e:
             raise Exception(f"Error al obtener ranking de calificaciones: {str(e)}")
         finally:
             cursor.close()
             conexion.close()
 
+    # ENT-RANK-003: Obtiene ranking de clientes por cantidad de descargas
     @classmethod
     def ranking_clientes_por_descargas(cls):
         conexion = obtener_conexion()
@@ -100,7 +102,6 @@ class Ranking:
             """
             cursor.execute(query, (seis_meses_atras,))
             return cursor.fetchall()
-
         except Exception as e:
             raise Exception(f"Error al obtener ranking de clientes por descargas: {str(e)}")
         finally:

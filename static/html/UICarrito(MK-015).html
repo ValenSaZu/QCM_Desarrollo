@@ -3,208 +3,1058 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carrito de Compras - QCM</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <title>Carrito de Compras - QuickContentMedia</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Estilos específicos para el carrito */
+        .content-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: var(--color-gray-light);
+            border-radius: 0.25rem;
+        }
+
+        .content-section h3 {
+            margin-top: 0;
+            color: var(--color-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .discount-badge {
+            background-color: #28a745;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+
+        .price-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #DDE1E6;
+        }
+
+        .total-price {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .apply-discount-btn {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .gift-form {
+            margin-top: 1rem;
+            display: none;
+        }
+
+        /* Estilos para checkboxes de descuento */
+        .discount-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #28a745;
+        }
+
+        .discount-checkbox:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .item-name {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .item-name:hover {
+            color: var(--color-primary);
+        }
+
+        /* Estilos para items con descuento */
+        .item-with-discount {
+            background-color: #f8fff8;
+        }
+
+        .item-with-discount td {
+            border-bottom-color: #d4edda;
+        }
+
+        /* Estilos para el resumen de descuentos */
+        .discount-summary {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .discount-summary h4 {
+            margin: 0 0 10px 0;
+            color: #1976d2;
+        }
+
+        .discount-summary p {
+            margin: 5px 0;
+            color: #424242;
+        }
+
+        /* Estilos para botones de descuento */
+        .discount-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .discount-buttons .button-full {
+            margin-top: 0;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .discount-buttons .button-full-gray {
+            margin-top: 0;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* Estilos para el modal de regalo */
+        .gift-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .gift-summary p {
+            margin: 0;
+            color: #333;
+        }
+
+        .gift-summary strong {
+            color: #007bff;
+        }
+
+        .gift-items-preview {
+            margin: 20px 0;
+        }
+
+        .gift-items-preview h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .gift-items-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .gift-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .gift-item:last-child {
+            border-bottom: none;
+        }
+
+        .gift-item-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .gift-item-price {
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .form-hint {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: block;
+        }
+    </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>QCM</h2>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="UIInicioCliente(MK-012).html" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="UIInicioCliente(MK-012).html#promociones" class="nav-link">
-                    <i class="fas fa-percentage"></i>
-                    <span>Promociones</span>
-                </a>
-                <a href="UIInicioCliente(MK-012).html#ranking" class="nav-link">
-                    <i class="fas fa-trophy"></i>
-                    <span>Ranking</span>
-                </a>
-                <a href="#" class="nav-link active">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Carrito</span>
-                </a>
-                <a href="UIMisContenidos(MK-005).html" class="nav-link">
-                    <i class="fas fa-download"></i>
-                    <span>Mis Contenidos</span>
-                </a>
-                <a href="UIPerfilCliente (MK-006).html" class="nav-link">
-                    <i class="fas fa-user"></i>
-                    <span>Mi Perfil</span>
-                </a>
-                <a href="#" class="nav-link" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
+            <div class="side-bar-options active">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
         </div>
-        
+
         <div class="main-content">
-            <h1>Carrito de Compras</h1>
-            
-            <div class="carrito-container">
-                <div class="carrito-items" id="carrito-items">
+            <div class="content-wrapper">
+                <h2 class="small-title">Carrito de Compras</h2>
+
+                <!-- Sección de Videos -->
+                <div class="content-section" id="videos-section">
+                    <h3>Videos <span id="videos-discounts" class="discount-badge">0 descuentos aplicados</span></h3>
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Descuento</th>
+                                    <th>Precio Final</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="videos-table-body">
+                                <!-- Los videos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="price-section">
+                        <div class="discount-buttons">
+                            <button class="button-full apply-discount-btn" onclick="applyMultipleDiscounts('videos')">Aplicar Descuentos</button>
+                            <button class="button-full-gray" onclick="removeAllDiscounts('videos')">Remover Descuentos</button>
+                        </div>
+                        <div>
+                            <span>Subtotal Videos: </span>
+                            <span id="videos-subtotal">S/.0.00</span>
+                        </div>
+                    </div>
                 </div>
-                
-                <div class="carrito-resumen">
+
+                <!-- Sección de Imágenes -->
+                <div class="content-section" id="images-section">
+                    <h3>Imágenes <span id="images-discounts" class="discount-badge">0 descuentos aplicados</span></h3>
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Descuento</th>
+                                    <th>Precio Final</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="images-table-body">
+                                <!-- Las imágenes se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="price-section">
+                        <div class="discount-buttons">
+                            <button class="button-full apply-discount-btn" onclick="applyMultipleDiscounts('images')">Aplicar Descuentos</button>
+                            <button class="button-full-gray" onclick="removeAllDiscounts('images')">Remover Descuentos</button>
+                        </div>
+                        <div>
+                            <span>Subtotal Imágenes: </span>
+                            <span id="images-subtotal">S/.0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de Audios -->
+                <div class="content-section" id="audios-section">
+                    <h3>Audios <span id="audios-discounts" class="discount-badge">0 descuentos aplicados</span></h3>
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Precio</th>
+                                    <th>Descuento</th>
+                                    <th>Precio Final</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audios-table-body">
+                                <!-- Los audios se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="price-section">
+                        <div class="discount-buttons">
+                            <button class="button-full apply-discount-btn" onclick="applyMultipleDiscounts('audios')">Aplicar Descuentos</button>
+                            <button class="button-full-gray" onclick="removeAllDiscounts('audios')">Remover Descuentos</button>
+                        </div>
+                        <div>
+                            <span>Subtotal Audios: </span>
+                            <span id="audios-subtotal">S/.0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen y acciones -->
+                <div class="content-section">
                     <h3>Resumen de Compra</h3>
-                    <div class="resumen-item">
-                        <span>Subtotal:</span>
-                        <span id="subtotal">$0.00</span>
+                    <div class="price-section">
+                        <div>
+                            <span>Total de descuentos disponibles: </span>
+                            <span id="available-discounts">0</span>
+                        </div>
+                        <div class="total-price">
+                            <span>Total a pagar: </span>
+                            <span id="total-price">S/.0.00</span>
+                        </div>
                     </div>
-                    <div class="resumen-item">
-                        <span>Descuentos:</span>
-                        <span id="descuentos">-$0.00</span>
+
+                    <div class="action-buttons">
+                        <button class="button-full" onclick="showDiscountSummary()">📊 Ver Resumen Descuentos</button>
+                        <button class="button-full" onclick="showGiftModal()">Regalar Contenidos</button>
+                        <button class="button-full" onclick="confirmPurchase()">Comprar Ahora</button>
                     </div>
-                    <div class="resumen-item total">
-                        <span>Total:</span>
-                        <span id="total">$0.00</span>
-                    </div>
-                    <button onclick="procesarCompra()" class="btn btn-primary btn-large" id="btn-comprar">
-                        Proceder al Pago
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <!-- Modal de confirmación -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('confirmationModal')">&times;</span>
+            <h2 class="small-title">Confirmar Compra</h2>
+            <p id="confirmation-message">¿Estás seguro que deseas proceder con la compra?</p>
+            <div class="price-section">
+                <div class="total-price">
+                    <span>Total: </span>
+                    <span id="modal-total-price">S/.0.00</span>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="button-full" id="confirm-action-btn">Confirmar</button>
+                <button class="button-full" onclick="closeModal('confirmationModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de regalo -->
+    <div id="giftModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('giftModal')">&times;</span>
+            <h2 class="small-title">Regalar Contenidos</h2>
+            
+            <div class="gift-summary">
+                <p>Estás a punto de regalar <strong id="gift-items-count">0</strong> contenido(s) por un total de <strong id="gift-total-price">S/.0.00</strong></p>
+            </div>
+
+            <div class="form-group">
+                <label for="gift-recipient-username" class="form-label">Username del destinatario:</label>
+                <input type="text" id="gift-recipient-username" class="form-input" placeholder="Ingresa el username del destinatario">
+                <small class="form-hint">El usuario recibirá una notificación cuando envíes el regalo</small>
+            </div>
+
+            <div class="gift-items-preview">
+                <h4>Contenidos a regalar:</h4>
+                <div id="gift-items-list" class="gift-items-list">
+                    <!-- Los items se cargarán dinámicamente -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="button-full" onclick="processGift()">Enviar Regalo</button>
+                <button class="button-full" onclick="closeModal('giftModal')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarCarrito();
+        // Datos del carrito (se cargarán desde la API)
+        let cartItems = {
+            videos: [],
+            images: [],
+            audios: []
+        };
+
+        let availableDiscounts = 0;
+        let currentAction = 'purchase'; // 'purchase' o 'gift'
+        let recipientUsername = '';
+
+        // Cargar el carrito al iniciar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCart();
+            cargarNotificacionesRegalos();
         });
 
-        function cargarCarrito() {
-            fetch('/api/carrito')
-                .then(response => response.json())
-                .then(data => {
-                    mostrarItemsCarrito(data.items);
-                    actualizarResumen(data);
-                })
-                .catch(error => console.error('Error:', error));
+        // Función para cargar los items del carrito desde la API
+        async function loadCart() {
+            try {
+                console.log('Cargando carrito...');
+                const response = await fetch('/api/carrito');
+                console.log('Respuesta del servidor:', response);
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar el carrito');
+                }
+
+                const data = await response.json();
+                console.log('Datos recibidos del carrito:', data);
+                
+                if (data.success && data.items) {
+                    console.log('Items del carrito:', data.items);
+                    // Reiniciar y clasificar los items
+                    cartItems = { videos: [], images: [], audios: [] };
+                    
+                    data.items.forEach(item => {
+                        console.log('Procesando item:', item);
+                        const tipo = item.tipo.toLowerCase();
+                        console.log('Tipo de contenido:', tipo);
+                        
+                        // Inicializar propiedades de descuento para cada item
+                        const processedItem = {
+                            ...item,
+                            precio_original: parseFloat(item.precio_original) || 0,
+                            precio_final: parseFloat(item.precio_final) || parseFloat(item.precio_original) || 0,
+                            descuento_aplicado: item.descuento_aplicado || false,
+                            descuento_monto: item.descuento_aplicado ? (parseFloat(item.precio_original) - parseFloat(item.precio_final)) : 0
+                        };
+                        
+                        if (tipo.includes('video')) {
+                            cartItems.videos.push(processedItem);
+                        } else if (tipo.includes('imagen')) {
+                            cartItems.images.push(processedItem);
+                        } else if (tipo.includes('audio')) {
+                            cartItems.audios.push(processedItem);
+                        }
+                    });
+
+                    console.log('Carrito clasificado:', cartItems);
+                    // Calcular descuentos disponibles basado en el total original
+                    const totalOriginal = calculateTotalOriginal();
+                    availableDiscounts = Math.floor(totalOriginal / 30);
+                    updateCartDisplay();
+                } else {
+                    console.log('No hay items en el carrito o error en la respuesta');
+                    updateCartDisplay(); // Actualiza la vista incluso si el carrito está vacío
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar el carrito: ' + error.message);
+            }
         }
 
-        function mostrarItemsCarrito(items) {
-            const container = document.getElementById('carrito-items');
+        // Función para calcular el total original (sin descuentos)
+        function calculateTotalOriginal() {
+            let total = 0;
+            for (const key in cartItems) {
+                cartItems[key].forEach(item => {
+                    total += item.precio_original;
+                });
+            }
+            return total;
+        }
+
+        // Función para actualizar la visualización del carrito
+        function updateCartDisplay() {
+            // Actualizar cada sección usando las claves correctas
+            updateSection('videos');
+            updateSection('images');
+            updateSection('audios');
+
+            // Actualizar resumen
+            document.getElementById('available-discounts').textContent = availableDiscounts;
+            document.getElementById('total-price').textContent = `S/.${calculateTotal().toFixed(2)}`;
+        }
+
+        // Función para actualizar una sección específica
+        function updateSection(sectionKey) {
+            const items = cartItems[sectionKey];
+            const sectionDiv = document.getElementById(`${sectionKey}-section`);
+            const tbody = document.getElementById(`${sectionKey}-table-body`);
+            const subtotalElement = document.getElementById(`${sectionKey}-subtotal`);
+            const discountBadge = document.getElementById(`${sectionKey}-discounts`);
             
+            if (!sectionDiv || !tbody || !subtotalElement || !discountBadge) {
+                console.warn(`Elementos para la sección '${sectionKey}' no encontrados.`);
+                return;
+            }
+
             if (items.length === 0) {
-                container.innerHTML = `
-                    <div class="carrito-vacio">
-                        <i class="fas fa-shopping-cart"></i>
-                        <h3>Tu carrito está vacío</h3>
-                        <p>Agrega algunos contenidos para comenzar</p>
-                        <a href="UIInicioCliente(MK-012).html" class="btn btn-primary">Explorar Contenidos</a>
-                    </div>
-                `;
+                sectionDiv.style.display = 'none';
                 return;
             }
             
-            container.innerHTML = items.map(item => `
-                <div class="carrito-item">
-                    <div class="item-preview">
-                        <i class="fas fa-file-${obtenerIconoFormato(item.formato)}"></i>
-                    </div>
-                    <div class="item-info">
-                        <h3>${item.nombre}</h3>
-                        <p class="autor">Por: ${item.autor}</p>
-                        <p class="categoria">${item.categoria}</p>
-                        <div class="rating">
-                            <span class="stars">${generarEstrellas(item.calificacion_promedio)}</span>
-                            <span class="rating-text">(${item.calificacion_promedio})</span>
-                        </div>
-                    </div>
-                    <div class="item-precio">
-                        ${item.precio_descuento ? 
-                            `<span class="precio-original">$${item.precio}</span>
-                             <span class="precio-actual">$${item.precio_descuento}</span>
-                             <span class="descuento-badge">-${item.porcentaje_descuento}%</span>` :
-                            `<span class="precio-actual">$${item.precio}</span>`
-                        }
-                    </div>
-                    <div class="item-acciones">
-                        <button onclick="eliminarDelCarrito(${item.id_contenido})" class="btn btn-danger">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            sectionDiv.style.display = 'block';
+
+            let subtotal = 0;
+            let appliedDiscounts = 0;
+
+            tbody.innerHTML = items.map((item, index) => {
+                subtotal += item.precio_final;
+                if (item.descuento_aplicado) appliedDiscounts++;
+
+                const rowClass = item.descuento_aplicado ? 'item-with-discount' : '';
+                const checkboxClass = item.descuento_aplicado ? 'discount-checkbox' : 'discount-checkbox';
+
+                return `
+                    <tr class="${rowClass}">
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" 
+                                       class="${checkboxClass}"
+                                       id="discount-${sectionKey}-${index}" 
+                                       ${item.descuento_aplicado ? 'checked disabled' : ''} 
+                                       onchange="toggleDiscount('${sectionKey}', ${index}, this.checked)"
+                                       style="margin: 0;">
+                                <label for="discount-${sectionKey}-${index}" class="item-name" style="margin: 0; cursor: pointer;">
+                                    ${item.nombre}
+                                    ${item.descuento_aplicado ? ' <span style="color: #28a745; font-weight: bold;">✓</span>' : ''}
+                                </label>
+                            </div>
+                        </td>
+                        <td>S/.${item.precio_original.toFixed(2)}</td>
+                        <td>${item.descuento_aplicado ? 'S/.' + item.descuento_monto.toFixed(2) : 'S/.0.00'}</td>
+                        <td>S/.${item.precio_final.toFixed(2)}</td>
+                        <td>
+                            <button class="button-full-gray small-btn" onclick="removeFromCart('${sectionKey}', ${item.id})">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            subtotalElement.textContent = `S/.${subtotal.toFixed(2)}`;
+            discountBadge.textContent = `${appliedDiscounts} descuentos aplicados`;
         }
 
-        function obtenerIconoFormato(formato) {
-            if (!formato) return 'alt';
-            const formatoLower = formato.toLowerCase();
-            if (formatoLower.includes('mp4') || formatoLower.includes('avi') || formatoLower.includes('mov')) return 'video';
-            if (formatoLower.includes('mp3') || formatoLower.includes('wav') || formatoLower.includes('ogg')) return 'audio';
-            if (formatoLower.includes('jpg') || formatoLower.includes('png') || formatoLower.includes('gif')) return 'image';
-            if (formatoLower.includes('pdf') || formatoLower.includes('doc')) return 'pdf';
-            return 'alt';
+        // Función para calcular el total
+        function calculateTotal() {
+            let total = 0;
+            for (const key in cartItems) {
+                cartItems[key].forEach(item => {
+                    total += item.precio_final;
+                });
+            }
+            return total;
         }
 
-        function generarEstrellas(calificacion) {
-            const estrellasLlenas = Math.floor(calificacion / 2);
-            const estrellaMedia = calificacion % 2 >= 1;
-            const estrellasVacias = 5 - estrellasLlenas - (estrellaMedia ? 1 : 0);
+        // Función para aplicar/remover descuento a un item específico
+        function toggleDiscount(section, itemIndex, applyDiscount) {
+            const item = cartItems[section][itemIndex];
             
-            return '★'.repeat(estrellasLlenas) + 
-                   (estrellaMedia ? '☆' : '') + 
-                   '☆'.repeat(estrellasVacias);
-        }
-
-        function actualizarResumen(data) {
-            document.getElementById('subtotal').textContent = `$${data.subtotal.toFixed(2)}`;
-            document.getElementById('descuentos').textContent = `-$${data.descuentos.toFixed(2)}`;
-            document.getElementById('total').textContent = `$${data.total.toFixed(2)}`;
+            if (applyDiscount) {
+                // Aplicar descuento
+                if (availableDiscounts <= 0) {
+                    alert('No tienes descuentos disponibles');
+                    // Desmarcar el checkbox
+                    document.getElementById(`discount-${section}-${itemIndex}`).checked = false;
+                    return;
+                }
+                
+                if (item.descuento_aplicado) {
+                    alert('Este item ya tiene descuento aplicado');
+                    return;
+                }
+                
+                // Aplicar descuento del 10%
+                item.descuento_monto = item.precio_original * 0.10;
+                item.precio_final = item.precio_original - item.descuento_monto;
+                item.descuento_aplicado = true;
+                availableDiscounts--;
+                
+            } else {
+                // Remover descuento
+                if (!item.descuento_aplicado) {
+                    alert('Este item no tiene descuento aplicado');
+                    return;
+                }
+                
+                item.precio_final = item.precio_original;
+                item.descuento_monto = 0;
+                item.descuento_aplicado = false;
+                availableDiscounts++;
+            }
             
-            const btnComprar = document.getElementById('btn-comprar');
-            btnComprar.disabled = data.items.length === 0;
+            updateCartDisplay();
         }
 
-        function eliminarDelCarrito(idContenido) {
-            if (confirm('¿Estás seguro de que quieres eliminar este contenido del carrito?')) {
-                fetch(`/api/carrito/eliminar/${idContenido}`, { method: 'DELETE' })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            cargarCarrito();
-                        } else {
-                            alert('Error: ' + result.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error al eliminar del carrito');
-                    });
+        // Función para aplicar descuento a una sección (mantener compatibilidad)
+        function applyDiscount(section) {
+            const items = cartItems[section];
+            if (items.length === 0) {
+                alert('No hay items en esta sección para aplicar descuento');
+                return;
+            }
+
+            // Encontrar el primer item sin descuento
+            const itemSinDescuento = items.find(item => !item.descuento_aplicado);
+            if (!itemSinDescuento) {
+                alert('Todos los items en esta sección ya tienen descuento aplicado');
+                return;
+            }
+
+            // Aplicar descuento al primer item sin descuento
+            const itemIndex = items.indexOf(itemSinDescuento);
+            toggleDiscount(section, itemIndex, true);
+        }
+
+        // Función para aplicar descuentos a múltiples items seleccionados
+        function applyMultipleDiscounts(section) {
+            const items = cartItems[section];
+            if (items.length === 0) {
+                alert('No hay items en esta sección para aplicar descuento');
+                return;
+            }
+
+            // Contar cuántos items sin descuento hay
+            const itemsSinDescuento = items.filter(item => !item.descuento_aplicado);
+            if (itemsSinDescuento.length === 0) {
+                alert('Todos los items en esta sección ya tienen descuento aplicado');
+                return;
+            }
+
+            // Verificar si hay suficientes descuentos disponibles
+            if (availableDiscounts < itemsSinDescuento.length) {
+                alert(`Solo tienes ${availableDiscounts} descuentos disponibles, pero hay ${itemsSinDescuento.length} items sin descuento.\n\nSe aplicarán descuentos hasta agotar los disponibles.`);
+            }
+
+            // Aplicar descuentos hasta agotar los disponibles
+            let descuentosAplicados = 0;
+            for (let i = 0; i < items.length && availableDiscounts > 0; i++) {
+                if (!items[i].descuento_aplicado) {
+                    toggleDiscount(section, i, true);
+                    descuentosAplicados++;
+                }
+            }
+
+            if (descuentosAplicados > 0) {
+                alert(`Se aplicaron ${descuentosAplicados} descuentos exitosamente a esta sección.`);
             }
         }
 
-        function procesarCompra() {
-            fetch('/api/carrito/comprar', { method: 'POST' })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('¡Compra realizada exitosamente!');
-                        window.location.href = 'UIMisContenidos(MK-005).html';
-                    } else {
-                        alert('Error: ' + result.error);
+        // Función para remover todos los descuentos de una sección
+        function removeAllDiscounts(section) {
+            const items = cartItems[section];
+            if (items.length === 0) {
+                alert('No hay items en esta sección');
+                return;
+            }
+
+            const itemsConDescuento = items.filter(item => item.descuento_aplicado);
+            if (itemsConDescuento.length === 0) {
+                alert('No hay descuentos aplicados en esta sección');
+                return;
+            }
+
+            if (confirm(`¿Estás seguro que deseas remover todos los descuentos de esta sección?\n\nSe removerán ${itemsConDescuento.length} descuentos aplicados.\n\nLos items permanecerán en el carrito, solo se quitarán los descuentos.`)) {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].descuento_aplicado) {
+                        toggleDiscount(section, i, false);
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al procesar la compra');
-                });
+                }
+                alert('Todos los descuentos han sido removidos de esta sección.');
+            }
         }
 
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => {
-                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
-                })
-                .catch(error => console.error('Error:', error));
+        // Función para mostrar resumen de descuentos
+        function showDiscountSummary() {
+            let totalOriginal = calculateTotalOriginal();
+            let totalConDescuento = calculateTotal();
+            let totalDescuentos = totalOriginal - totalConDescuento;
+            let descuentosAplicados = 0;
+            let itemsConDescuento = 0;
+
+            for (const key in cartItems) {
+                cartItems[key].forEach(item => {
+                    if (item.descuento_aplicado) {
+                        descuentosAplicados++;
+                        itemsConDescuento++;
+                    }
+                });
+            }
+
+            const summary = `
+                <div class="discount-summary">
+                    <h4>Resumen de Descuentos</h4>
+                    <p><strong>Total original:</strong> S/.${totalOriginal.toFixed(2)}</p>
+                    <p><strong>Total con descuentos:</strong> S/.${totalConDescuento.toFixed(2)}</p>
+                    <p><strong>Ahorro total:</strong> S/.${totalDescuentos.toFixed(2)}</p>
+                    <p><strong>Descuentos aplicados:</strong> ${descuentosAplicados}</p>
+                    <p><strong>Items con descuento:</strong> ${itemsConDescuento}</p>
+                    <p><strong>Descuentos disponibles:</strong> ${availableDiscounts}</p>
+                </div>
+            `;
+
+            // Mostrar en un modal o alert
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <h2 class="small-title">Resumen de Descuentos</h2>
+                    ${summary}
+                    <div class="action-buttons">
+                        <button class="button-full" onclick="this.parentElement.parentElement.parentElement.remove()">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Función para eliminar un item del carrito
+        async function removeFromCart(section, itemId) {
+            try {
+                const response = await fetch(`/api/carrito/${itemId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al eliminar del carrito');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    // Recargar el carrito
+                    loadCart();
+                } else {
+                    alert('Error al eliminar del carrito: ' + (data.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar del carrito: ' + error.message);
+            }
+        }
+
+        // Función para mostrar el modal de regalo
+        function showGiftModal() {
+            // Obtener todos los items del carrito
+            const allItems = [];
+            for (const section in cartItems) {
+                cartItems[section].forEach(item => {
+                    allItems.push({
+                        id_contenido: item.id,
+                        nombre: item.nombre,
+                        precio: item.precio_final,
+                        tipo: item.tipo
+                    });
+                });
+            }
+
+            if (allItems.length === 0) {
+                alert('No hay items en el carrito para regalar');
+                return;
+            }
+
+            // Actualizar información del modal
+            document.getElementById('gift-items-count').textContent = allItems.length;
+            document.getElementById('gift-total-price').textContent = `S/.${calculateTotal().toFixed(2)}`;
+            
+            // Limpiar campo de username
+            document.getElementById('gift-recipient-username').value = '';
+            
+            // Cargar lista de items
+            const itemsList = document.getElementById('gift-items-list');
+            itemsList.innerHTML = allItems.map(item => `
+                <div class="gift-item">
+                    <span class="gift-item-name">${item.nombre}</span>
+                    <span class="gift-item-price">S/.${item.precio.toFixed(2)}</span>
+                </div>
+            `).join('');
+
+            // Mostrar modal
+            document.getElementById('giftModal').style.display = 'block';
+        }
+
+        // Función para procesar el regalo
+        async function processGift() {
+            const recipientUsername = document.getElementById('gift-recipient-username').value.trim();
+            if (!recipientUsername) {
+                alert('Por favor ingresa el username del destinatario');
+                return;
+            }
+
+            try {
+                // Primero verificar que el usuario existe
+                const userResponse = await fetch(`/api/usuario/buscar?username=${encodeURIComponent(recipientUsername)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!userResponse.ok) {
+                    throw new Error('Error al buscar usuario');
+                }
+
+                const userData = await userResponse.json();
+                if (!userData.success) {
+                    alert('Usuario no encontrado: ' + userData.error);
+                    return;
+                }
+
+                const recipientUser = userData.data;
+                
+                // Obtener todos los items del carrito
+                const allItems = [];
+                for (const section in cartItems) {
+                    cartItems[section].forEach(item => {
+                        allItems.push({
+                            id_contenido: item.id,
+                            nombre: item.nombre,
+                            precio: item.precio_final
+                        });
+                    });
+                }
+
+                if (allItems.length === 0) {
+                    alert('No hay items en el carrito para regalar');
+                    return;
+                }
+
+                // Confirmar el regalo
+                const confirmMessage = `¿Estás seguro que deseas regalar ${allItems.length} contenido(s) a ${recipientUser.nombre_completo} (${recipientUser.username}) por un total de S/.${calculateTotal().toFixed(2)}?`;
+                
+                if (!confirm(confirmMessage)) {
+                    return;
+                }
+
+                // Procesar cada regalo individualmente
+                let successCount = 0;
+                let errorCount = 0;
+                const errors = [];
+
+                for (const item of allItems) {
+                    try {
+                        const giftResponse = await fetch('/api/regalos/enviar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                id_usuario_recibe: recipientUser.id_usuario,
+                                id_contenido: item.id_contenido
+                            })
+                        });
+
+                        const giftData = await giftResponse.json();
+                        
+                        if (giftData.success) {
+                            successCount++;
+                        } else {
+                            errorCount++;
+                            errors.push(`${item.nombre}: ${giftData.error}`);
+                        }
+                    } catch (error) {
+                        errorCount++;
+                        errors.push(`${item.nombre}: Error de conexión`);
+                    }
+                }
+
+                // Mostrar resultados
+                let resultMessage = '';
+                if (successCount > 0) {
+                    resultMessage += `${successCount} regalo(s) enviado(s) exitosamente.\n`;
+                }
+                if (errorCount > 0) {
+                    resultMessage += `${errorCount} regalo(s) fallaron:\n${errors.join('\n')}`;
+                }
+
+                alert(resultMessage);
+
+                // Si al menos un regalo fue exitoso, cerrar modal y recargar carrito
+                if (successCount > 0) {
+                    closeModal('giftModal');
+                    // Recargar el carrito para mostrar el estado actualizado
+                    loadCart();
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al procesar el regalo: ' + error.message);
+            }
+        }
+
+        // Función para confirmar compra
+        function confirmPurchase() {
+            currentAction = 'purchase';
+            document.getElementById('confirmation-message').textContent = '¿Estás seguro que deseas proceder con la compra?';
+            document.getElementById('modal-total-price').textContent = `S/.${calculateTotal().toFixed(2)}`;
+            document.getElementById('confirm-action-btn').textContent = 'Confirmar Compra';
+            document.getElementById('confirm-action-btn').onclick = processPurchase;
+            document.getElementById('confirmationModal').style.display = 'block';
+        }
+
+        // Función para procesar la compra
+        async function processPurchase() {
+            try {
+                const response = await fetch('/api/carrito/comprar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al procesar la compra');
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    alert(data.message);
+                    closeModal('confirmationModal');
+                    // Redirigir a mis contenidos
+                    window.location.href = '/cliente/mis-contenidos';
+                } else {
+                    alert('Error en la compra: ' + (data.error || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al procesar la compra: ' + error.message);
+            }
+        }
+
+        // Función para cerrar modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            
+            // Si es el modal de regalo, limpiar el campo de username
+            if (modalId === 'giftModal') {
+                document.getElementById('gift-recipient-username').value = '';
+            }
+        }
+
+        // Función para cargar notificaciones de regalos
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Mostrar notificación elegante
+                        showGiftNotification(data.data.length, data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
+        }
+
+        // Función para mostrar notificación elegante de regalos
+        function showGiftNotification(giftCount, regalos) {
+            // Crear contenedor de notificaciones si no existe
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-cerrar después de 10 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        // Función para cerrar notificación y marcar como leída
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+                
+                // Marcar todas las notificaciones como leídas
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        // Función para marcar notificaciones como leídas
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        // Función para ir a Mis Contenidos y marcar como leída
+        async function goToMyContents(giftCount) {
+            // Marcar notificaciones como leídas antes de redirigir
+            await marcarNotificacionesLeidas();
+            
+            // Redirigir a la página correcta
+            window.location.href = '/cliente/mis-contenidos';
         }
     </script>
 </body>

@@ -1,9 +1,9 @@
-# Clase que maneja la interfaz para el carrito de compras, mostrando la interfaz principal y mensajes de error cuando ocurren problemas.
+# UI-CARR-001: Clase que maneja la interfaz del carrito de compras, incluyendo visualización de productos y manejo de errores
 class InterfazCarrito:
 
+    # FUNC-UI-CARR-001: Sirve el archivo HTML de la página principal del carrito de compras
     @staticmethod
     def servir_pagina_carrito():
-        """Sirve la página del carrito"""
         try:
             with open('static/html/UICarrito(MK-015).html', 'r', encoding='utf-8') as file:
                 return file.read()
@@ -11,12 +11,8 @@ class InterfazCarrito:
             print(f"Error leyendo archivo de carrito: {e}")
             return None
 
+    # FUNC-UI-CARR-002: Genera página de error personalizada con opciones para volver al carrito o al inicio
     def mostrar_error(self, mensaje):
-        """Genera y retorna una página HTML de error con un mensaje personalizado y un botón para volver.
-
-        Args:
-            mensaje (str): Mensaje de error que se mostrará al usuario.
-        """
         return f"""
         <html>
         <head>

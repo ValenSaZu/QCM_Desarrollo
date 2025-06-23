@@ -1,317 +1,732 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio - QCM</title>
-    <link rel="stylesheet" href="../css/style.css">
+  <meta charset="UTF-8">
+  <title>Inicio - QuickContentMedia</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>QCM</h2>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options active">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-link active" data-view="inicio">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="#" class="nav-link" data-view="promociones">
-                    <i class="fas fa-percentage"></i>
-                    <span>Promociones</span>
-                </a>
-                <a href="#" class="nav-link" data-view="ranking">
-                    <i class="fas fa-trophy"></i>
-                    <span>Ranking</span>
-                </a>
-                <a href="UICarrito(MK-015).html" class="nav-link">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Carrito</span>
-                </a>
-                <a href="UIMisContenidos(MK-005).html" class="nav-link">
-                    <i class="fas fa-download"></i>
-                    <span>Mis Contenidos</span>
-                </a>
-                <a href="UIPerfilCliente (MK-006).html" class="nav-link">
-                    <i class="fas fa-user"></i>
-                    <span>Mi Perfil</span>
-                </a>
-                <a href="#" class="nav-link" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
+            <div class="side-bar-options active">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
         </div>
-        
+
         <div class="main-content">
-            <div id="inicio-view" class="view active">
-                <h1>Bienvenido a QCM</h1>
-                <p>Descubre contenido digital de calidad</p>
-                
-                <div class="search-section">
-                    <input type="text" id="search-input" placeholder="Buscar contenido..." class="search-input">
-                    <button onclick="buscarContenido()" class="btn btn-primary">Buscar</button>
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <h2 class="page-title">Explora Nuestros Contenidos</h2>
+                    <div class="search-container">
+                        <input type="text" id="search-content" class="search-input" placeholder="Buscar por autor o categoría...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
                 </div>
-                
-                <div class="filters-section">
-                    <select id="categoria-filter" class="filter-select">
-                        <option value="">Todas las categorías</option>
-                    </select>
-                    <select id="formato-filter" class="filter-select">
-                        <option value="">Todos los formatos</option>
-                        <option value="imagen">Imágenes</option>
-                        <option value="video">Videos</option>
-                        <option value="audio">Audio</option>
-                        <option value="documento">Documentos</option>
-                    </select>
-                    <button onclick="aplicarFiltros()" class="btn">Filtrar</button>
-                </div>
-                
-                <div class="contenidos-grid" id="contenidos-grid">
-                </div>
-            </div>
-            
-            <div id="promociones-view" class="view">
-                <h2>Promociones Activas</h2>
-                <div class="promociones-grid" id="promociones-grid">
-                </div>
-            </div>
-            
-            <div id="ranking-view" class="view">
-                <h2>Ranking de Contenidos</h2>
-                <div class="ranking-list" id="ranking-list">
+
+                <!-- Contenedor principal con tres columnas -->
+                <div class="content-layout">
+                    <!-- Columna de Videos -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-video"></i>
+                            <h3>Videos</h3>
+                        </div>
+                        <div class="content-cards" id="videos-container">
+                            <!-- Las tarjetas de video se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Columna de Imágenes -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-image"></i>
+                            <h3>Imágenes</h3>
+                        </div>
+                        <div class="content-cards" id="images-container">
+                            <!-- Las tarjetas de imagen se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Columna de Audios -->
+                    <div class="content-column">
+                        <div class="column-header">
+                            <i class="fas fa-music"></i>
+                            <h3>Audios</h3>
+                        </div>
+                        <div class="content-cards" id="audios-container">
+                            <!-- Las tarjetas de audio se cargarán dinámicamente -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
+    <!-- Modal para ver detalles del contenido -->
+    <div id="contentDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeContentModal">&times;</span>
+            <div class="modal-grid">
+                <div class="left-grid">
+                    <div id="contentPreview" class="preview-area">
+                        <!-- Vista previa del contenido (imagen, video o audio) -->
+                    </div>
+                </div>
+                <div class="right-grid">
+                    <h2 id="contentTitle" class="small-title"></h2>
+                    <p id="contentAuthor" class="content-meta"><i class="fas fa-user"></i> <span></span></p>
+                    <p id="contentCategory" class="content-meta"><i class="fas fa-tag"></i> <span></span></p>
+                    <div class="rating-container">
+                        <div id="contentRating" class="rating">
+                            <!-- Estrellas de calificación -->
+                        </div>
+                        <span id="ratingValue" class="rating-text"></span>
+                    </div>
+                    <p id="contentDescription" class="content-description"></p>
+
+                    <div class="file-info">
+                        <div class="file-box" id="contentSize">Peso: -</div>
+                        <div class="file-box" id="contentExtension">Extensión: -</div>
+                        <div class="file-box" id="contentMime">MIME-Type: -</div>
+                    </div>
+
+                    <div class="price-container">
+                        <span id="contentPrice" class="price"></span>
+                        <span id="contentDiscountPrice" class="discount-price"></span>
+                    </div>
+
+                    <button id="addToCartBtn" class="button-full">
+                        <i class="fas fa-cart-plus"></i> Añadir al carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // Variables globales
+        let allContents = [];
+        let currentContent = null;
+
+        // Elementos del DOM
+        const searchInput = document.getElementById('search-content');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const videosContainer = document.getElementById('videos-container');
+        const imagesContainer = document.getElementById('images-container');
+        const audiosContainer = document.getElementById('audios-container');
+        const contentDetailModal = document.getElementById('contentDetailModal');
+        const closeContentModal = document.getElementById('closeContentModal');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+
+        // Cargar contenidos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
             cargarContenidos();
-            cargarCategorias();
-            cargarPromociones();
-            cargarRanking();
-            
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (this.getAttribute('data-view')) {
-                        e.preventDefault();
-                        mostrarVista(this.getAttribute('data-view'));
-                    }
+            cargarNotificacionesRegalos();
+        });
+
+        // Función para cargar contenidos desde la API
+        async function cargarContenidos() {
+            try {
+                showLoader();
+                const response = await fetch('/api/inicio');
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || 'Error al cargar contenidos');
+                }
+
+                const result = await response.json();
+
+                // Asegurarse de que allContents sea un array
+                allContents = Array.isArray(result) ? result :
+                            (result.success ? result.data : []);
+
+                actualizarContenidos(allContents);
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Función para actualizar las tarjetas de contenido
+        function actualizarContenidos(contenidos) {
+            // Limpiar contenedores
+            videosContainer.innerHTML = '';
+            imagesContainer.innerHTML = '';
+            audiosContainer.innerHTML = '';
+
+            // Verificar si contenidos es un array y tiene elementos
+            if (!Array.isArray(contenidos) || contenidos.length === 0) {
+                const noContentMsg = '<div class="no-content">No se encontraron contenidos</div>';
+                videosContainer.innerHTML = noContentMsg;
+                imagesContainer.innerHTML = noContentMsg;
+                audiosContainer.innerHTML = noContentMsg;
+                return;
+            }
+
+            // Filtrar y mostrar contenidos por tipo
+            const videos = contenidos.filter(c => c.tipo_contenido === 'video');
+            const imagenes = contenidos.filter(c => c.tipo_contenido === 'imagen');
+            const audios = contenidos.filter(c => c.tipo_contenido === 'audio');
+
+            // Mostrar videos
+            if (videos.length > 0) {
+                videos.forEach(video => {
+                    videosContainer.appendChild(crearTarjetaContenido(video));
                 });
+            } else {
+                videosContainer.innerHTML = '<div class="no-content">No hay videos disponibles</div>';
+            }
+
+            // Mostrar imágenes
+            if (imagenes.length > 0) {
+                imagenes.forEach(imagen => {
+                    imagesContainer.appendChild(crearTarjetaContenido(imagen));
+                });
+            } else {
+                imagesContainer.innerHTML = '<div class="no-content">No hay imágenes disponibles</div>';
+            }
+
+            // Mostrar audios
+            if (audios.length > 0) {
+                audios.forEach(audio => {
+                    audiosContainer.appendChild(crearTarjetaContenido(audio));
+                });
+            } else {
+                audiosContainer.innerHTML = '<div class="no-content">No hay audios disponibles</div>';
+            }
+        }
+
+        // Función para crear una tarjeta de contenido
+        function crearTarjetaContenido(contenido) {
+            const card = document.createElement('div');
+            card.className = 'content-card';
+            card.dataset.id = contenido.id_contenido;
+            card.dataset.type = contenido.tipo_contenido;
+            card.dataset.author = contenido.autor?.toLowerCase() || '';
+            card.dataset.category = contenido.categoria?.toLowerCase() || '';
+
+            // Crear elemento de vista previa
+            const preview = document.createElement('div');
+            preview.className = 'content-preview';
+
+            if (contenido.tipo_contenido === 'video') {
+                // Preview para videos con miniatura real
+                preview.innerHTML = `
+                    <div class="video-preview">
+                        <img src="${contenido.url_preview || '/placeholder-video.jpg'}" 
+                             alt="${contenido.nombre || 'Video'}" 
+                             class="preview-thumbnail"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="video-placeholder" style="display: none;">
+                            <i class="fas fa-video video-icon"></i>
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                        </div>
+                    </div>
+                `;
+            } else if (contenido.tipo_contenido === 'imagen') {
+                // Preview para imágenes con miniatura real
+                preview.innerHTML = `
+                    <div class="image-preview">
+                        <img src="${contenido.url_preview || '/placeholder-image.jpg'}" 
+                             alt="${contenido.nombre || 'Imagen'}" 
+                             class="preview-thumbnail"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="image-placeholder" style="display: none;">
+                            <i class="fas fa-image image-icon"></i>
+                            <div class="image-overlay">
+                                <span class="image-text">${contenido.nombre || 'Imagen'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else { // audio
+                // Preview para audios con miniatura real
+                preview.innerHTML = `
+                    <div class="audio-preview">
+                        <img src="${contenido.url_preview || '/placeholder-audio.jpg'}" 
+                             alt="${contenido.nombre || 'Audio'}" 
+                             class="preview-thumbnail"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="audio-placeholder" style="display: none;">
+                            <i class="fas fa-music audio-icon"></i>
+                            <div class="audio-wave">
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                                <div class="wave-bar"></div>
+                            </div>
+                            <div class="audio-info">
+                                <span class="audio-name">${contenido.nombre || 'Audio'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Crear elemento de información
+            const info = document.createElement('div');
+            info.className = 'content-info';
+
+            // Calificación con estrellas
+            const ratingStars = crearEstrellasCalificacion(contenido.calificacion || 0);
+
+            // Precio con posible descuento
+            let precioHTML = '';
+            if (contenido.precio_descuento && contenido.precio_descuento < contenido.precio) {
+                const ahorro = contenido.precio - contenido.precio_descuento;
+                const porcentaje = contenido.porcentaje_descuento || Math.round((ahorro / contenido.precio) * 100);
+                
+                const preciosHTML = `
+                    <div style="background: linear-gradient(135deg, #fff5f5, #ffe8e8); border: 2px solid #ff6b6b; border-radius: 12px; padding: 15px; margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #666; font-size: 1em; font-weight: 500;">Precio original:</span>
+                            <span style="text-decoration: line-through; color: #999; font-size: 1.1em; font-weight: 500;">S/.${contenido.precio.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="color: #28a745; font-weight: bold; font-size: 1em;">Precio con descuento:</span>
+                            <span style="color: #ff6b6b; font-weight: bold; font-size: 1.4em;">S/.${contenido.precio_descuento.toFixed(2)}</span>
+                        </div>
+                        <div style="text-align: center; padding: 8px; background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; border-radius: 8px; margin-top: 10px;">
+                            <i class="fas fa-percent"></i> ¡${porcentaje}% de descuento! Ahorras S/.${ahorro.toFixed(2)}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('contentPrice').innerHTML = preciosHTML;
+                document.getElementById('contentDiscountPrice').style.display = 'none';
+            } else {
+                const preciosHTML = `
+                    <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #333; font-weight: bold; font-size: 1.1em;">Precio:</span>
+                            <span style="color: #007bff; font-weight: bold; font-size: 1.3em;">S/.${contenido.precio.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('contentPrice').innerHTML = preciosHTML;
+                document.getElementById('contentDiscountPrice').style.display = 'none';
+            }
+
+            info.innerHTML = `
+                <h4 class="content-name">${contenido.nombre || 'Sin nombre'}</h4>
+                <p class="content-description">${contenido.descripcion || 'Sin descripción'}</p>
+                
+                <!-- Información del autor mejorada -->
+                <div class="content-meta" style="margin: 8px 0; display: flex; align-items: center; gap: 15px;">
+                    <span class="author" style="display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-user" style="color: #666; font-size: 0.9em;"></i>
+                        <span style="color: #333; font-weight: 500; font-size: 0.9em;">${contenido.autor || 'Anónimo'}</span>
+                    </span>
+                    <span class="category" style="display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-tag" style="color: #666; font-size: 0.9em;"></i>
+                        <span style="color: #333; font-size: 0.9em;">${contenido.categoria || 'Sin categoría'}</span>
+                    </span>
+                </div>
+                
+                <!-- Calificación mejorada -->
+                <div class="content-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${ratingStars}
+                    </div>
+                    <button class="add-to-cart-btn" data-id="${contenido.id_contenido}" title="Añadir al carrito" style="background: linear-gradient(45deg, #007bff, #0056b3); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
+                        <i class="fas fa-plus" style="font-size: 0.9em;"></i>
+                    </button>
+                </div>
+                
+                <!-- Precios -->
+                ${precioHTML}
+            `;
+
+            card.appendChild(preview);
+            card.appendChild(info);
+
+            // Evento para abrir modal de detalles
+            card.addEventListener('click', (e) => {
+                // Evitar que se active cuando se hace clic en el botón de añadir al carrito
+                if (!e.target.closest('.add-to-cart-btn')) {
+                    mostrarDetallesContenido(contenido);
+                }
+            });
+
+            // Evento para añadir al carrito desde la tarjeta
+            const addBtn = card.querySelector('.add-to-cart-btn');
+            if (addBtn) {
+                addBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    agregarAlCarrito(contenido.id_contenido);
+                });
+            }
+
+            return card;
+        }
+
+        // Función para crear estrellas de calificación
+        function crearEstrellasCalificacion(calificacion) {
+            if (!calificacion || calificacion <= 0) {
+                return '<div class="rating no-rating">Sin calificaciones</div>';
+            }
+
+            const estrellasLlenas = Math.floor(calificacion);
+            const tieneMediaEstrella = calificacion % 1 >= 0.5;
+            const estrellasVacias = 5 - estrellasLlenas - (tieneMediaEstrella ? 1 : 0);
+
+            let html = '<div class="rating">';
+
+            // Estrellas llenas
+            for (let i = 0; i < estrellasLlenas; i++) {
+                html += '<i class="fas fa-star filled"></i>';
+            }
+
+            // Media estrella
+            if (tieneMediaEstrella) {
+                html += '<i class="fas fa-star-half-alt half-filled"></i>';
+            }
+
+            // Estrellas vacías
+            for (let i = 0; i < estrellasVacias; i++) {
+                html += '<i class="far fa-star"></i>';
+            }
+
+            html += `<span class="rating-value">${calificacion.toFixed(1)}</span>`;
+            html += '</div>';
+
+            return html;
+        }
+
+        // Función para mostrar detalles del contenido en el modal
+        function mostrarDetallesContenido(contenido) {
+            currentContent = contenido;
+            
+            // Debug: mostrar los datos que llegan
+            console.log('Datos del contenido:', contenido);
+            console.log('tamanio_bytes:', contenido.tamanio_bytes);
+            console.log('extension:', contenido.extension);
+            console.log('mime_type:', contenido.mime_type);
+
+            // Actualizar título
+            document.getElementById('contentTitle').textContent = contenido.nombre || 'Sin nombre';
+
+            // Actualizar autor y categoría
+            document.getElementById('contentAuthor').querySelector('span').textContent = contenido.autor || 'Anónimo';
+            document.getElementById('contentCategory').querySelector('span').textContent = contenido.categoria || 'Sin categoría';
+
+            // Actualizar descripción
+            document.getElementById('contentDescription').textContent = contenido.descripcion || 'Sin descripción';
+
+            // Actualizar calificación
+            const ratingContainer = document.getElementById('contentRating');
+            ratingContainer.innerHTML = crearEstrellasCalificacion(contenido.calificacion || 0);
+            document.getElementById('ratingValue').textContent = contenido.calificacion ? contenido.calificacion.toFixed(1) : '0.0';
+
+            // Actualizar información del archivo con mejor manejo de valores nulos
+            const tamanio = contenido.tamanio_bytes || contenido.tamano || 0;
+            const extension = contenido.extension || contenido.formato || 'N/A';
+            const mimeType = contenido.mime_type || 'N/A';
+            
+            document.getElementById('contentSize').textContent = `Peso: ${formatearTamano(tamanio)}`;
+            document.getElementById('contentExtension').textContent = `Extensión: ${extension}`;
+            document.getElementById('contentMime').textContent = `MIME-Type: ${mimeType}`;
+
+            // Actualizar vista previa
+            const previewContainer = document.getElementById('contentPreview');
+            previewContainer.innerHTML = '';
+
+            if (contenido.tipo_contenido === 'video') {
+                const video = document.createElement('video');
+                video.src = contenido.url_preview || '/placeholder-video.mp4';
+                video.controls = true;
+                video.className = 'preview-media modal-preview';
+                previewContainer.appendChild(video);
+            } else if (contenido.tipo_contenido === 'imagen') {
+                const img = document.createElement('img');
+                img.src = contenido.url_preview || '/placeholder-image.jpg';
+                img.alt = contenido.nombre || 'Imagen';
+                img.className = 'preview-media modal-preview';
+                previewContainer.appendChild(img);
+            } else { // audio
+                const audioContainer = document.createElement('div');
+                audioContainer.className = 'audio-preview modal-preview';
+                audioContainer.innerHTML = `
+                    <i class="fas fa-music audio-icon"></i>
+                    <audio src="${contenido.url_preview || '/placeholder-audio.mp3'}" controls></audio>
+                    <div class="audio-wave">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+                `;
+                previewContainer.appendChild(audioContainer);
+            }
+
+            // Mostrar modal
+            contentDetailModal.style.display = 'flex';
+        }
+
+        // Función para formatear el tamaño del archivo
+        function formatearTamano(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Función para agregar contenido al carrito
+        async function agregarAlCarrito(contentId) {
+            try {
+                showLoader();
+
+                const response = await fetch('/api/carrito/agregar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contenido_id: contentId,
+                        cantidad: 1
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error?.error || 'Error al agregar al carrito');
+                }
+
+                const result = await response.json();
+                showSuccess(result.message || 'Contenido agregado al carrito');
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || 'Error al agregar al carrito');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Evento para búsqueda
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.trim().toLowerCase();
+            filtrarContenidos(term);
+        });
+
+        // Evento para filtros
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                filtrarContenidos(searchInput.value.trim().toLowerCase(), button.dataset.filter);
             });
         });
 
-        function mostrarVista(vista) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            
-            document.getElementById(vista + '-view').classList.add('active');
-            document.querySelector(`[data-view="${vista}"]`).classList.add('active');
+        // Función para filtrar contenidos
+        function filtrarContenidos(searchTerm = '', filterType = 'all') {
+            let filtered = allContents;
+
+            // Aplicar filtro de búsqueda
+            if (searchTerm) {
+                filtered = filtered.filter(content =>
+                    content.autor?.toLowerCase().includes(searchTerm) ||
+                    content.categoria?.toLowerCase().includes(searchTerm) ||
+                    content.nombre?.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Aplicar filtro por tipo
+            if (filterType !== 'all') {
+                filtered = filtered.filter(content => content.tipo_contenido === filterType);
+            }
+
+            actualizarContenidos(filtered);
         }
 
-        function cargarContenidos() {
-            fetch('/api/contenidos')
-                .then(response => response.json())
-                .then(data => {
-                    mostrarContenidos(data);
-                })
-                .catch(error => console.error('Error:', error));
+        // Evento para añadir al carrito desde el modal
+        addToCartBtn.addEventListener('click', () => {
+            if (currentContent) {
+                agregarAlCarrito(currentContent.id_contenido);
+            }
+        });
+
+        // Cerrar modal
+        closeContentModal.onclick = () => contentDetailModal.style.display = "none";
+        window.onclick = (event) => {
+            if (event.target == contentDetailModal) contentDetailModal.style.display = "none";
+        };
+
+        // Funciones de utilidad (similares a las de los otros archivos)
+        function showLoader() {
+            console.log("Loading...");
+            // Implementar lógica para mostrar spinner/loader
         }
 
-        function mostrarContenidos(contenidos) {
-            const grid = document.getElementById('contenidos-grid');
-            grid.innerHTML = contenidos.map(contenido => `
-                <div class="contenido-card">
-                    <div class="contenido-preview">
-                        <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
-                    </div>
-                    <div class="contenido-info">
-                        <h3>${contenido.nombre}</h3>
-                        <p class="autor">Por: ${contenido.autor}</p>
-                        <p class="categoria">${contenido.categoria}</p>
-                        <div class="precio-section">
-                            ${contenido.precio_descuento ? 
-                                `<span class="precio-original">$${contenido.precio}</span>
-                                 <span class="precio-descuento">$${contenido.precio_descuento}</span>
-                                 <span class="descuento-badge">-${contenido.porcentaje_descuento}%</span>` :
-                                `<span class="precio">$${contenido.precio}</span>`
-                            }
-                        </div>
-                        <div class="rating">
-                            <span class="stars">${generarEstrellas(contenido.calificacion_promedio)}</span>
-                            <span class="rating-text">(${contenido.calificacion_promedio})</span>
-                        </div>
-                        <button onclick="agregarAlCarrito(${contenido.id_contenido})" class="btn btn-primary">
-                            <i class="fas fa-cart-plus"></i> Agregar al Carrito
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+        function hideLoader() {
+            console.log("Loading complete");
+            // Implementar lógica para ocultar spinner/loader
         }
 
-        function obtenerIconoFormato(formato) {
-            if (!formato) return 'alt';
-            const formatoLower = formato.toLowerCase();
-            if (formatoLower.includes('mp4') || formatoLower.includes('avi') || formatoLower.includes('mov')) return 'video';
-            if (formatoLower.includes('mp3') || formatoLower.includes('wav') || formatoLower.includes('ogg')) return 'audio';
-            if (formatoLower.includes('jpg') || formatoLower.includes('png') || formatoLower.includes('gif')) return 'image';
-            if (formatoLower.includes('pdf') || formatoLower.includes('doc')) return 'pdf';
-            return 'alt';
+        function showError(message) {
+            alert("Error: " + message);
         }
 
-        function generarEstrellas(calificacion) {
-            const estrellasLlenas = Math.floor(calificacion / 2);
-            const estrellaMedia = calificacion % 2 >= 1;
-            const estrellasVacias = 5 - estrellasLlenas - (estrellaMedia ? 1 : 0);
-            
-            return '★'.repeat(estrellasLlenas) + 
-                   (estrellaMedia ? '☆' : '') + 
-                   '☆'.repeat(estrellasVacias);
+        function showSuccess(message) {
+            alert("Éxito: " + message);
         }
 
-        function cargarCategorias() {
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    const select = document.getElementById('categoria-filter');
-                    data.forEach(categoria => {
-                        const option = document.createElement('option');
-                        option.value = categoria.id_categoria;
-                        option.textContent = categoria.nombre;
-                        select.appendChild(option);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarPromociones() {
-            fetch('/api/contenidos/promociones')
-                .then(response => response.json())
-                .then(data => {
-                    const grid = document.getElementById('promociones-grid');
-                    grid.innerHTML = data.map(contenido => `
-                        <div class="promocion-card">
-                            <div class="promocion-badge">-${contenido.descuento}%</div>
-                            <div class="contenido-preview">
-                                <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
-                            </div>
-                            <div class="contenido-info">
-                                <h3>${contenido.nombre}</h3>
-                                <p class="autor">Por: ${contenido.autor}</p>
-                                <p class="categoria">${contenido.categoria}</p>
-                                <div class="precio-section">
-                                    <span class="precio-original">$${contenido.precio}</span>
-                                    <span class="precio-descuento">$${Math.round(contenido.precio * (1 - contenido.descuento / 100) * 100) / 100}</span>
-                                </div>
-                                <div class="rating">
-                                    <span class="stars">${generarEstrellas(contenido.calificacion)}</span>
-                                    <span class="rating-text">(${contenido.calificacion})</span>
-                                </div>
-                                <button onclick="agregarAlCarrito(${contenido.id_contenido})" class="btn btn-primary">
-                                    <i class="fas fa-cart-plus"></i> Agregar al Carrito
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarRanking() {
-            fetch('/api/ranking')
-                .then(response => response.json())
-                .then(data => {
-                    const lista = document.getElementById('ranking-list');
-                    lista.innerHTML = data.map((contenido, index) => `
-                        <div class="ranking-item">
-                            <div class="ranking-position">#${index + 1}</div>
-                            <div class="contenido-preview">
-                                <i class="fas fa-file-${obtenerIconoFormato(contenido.formato)}"></i>
-                            </div>
-                            <div class="contenido-info">
-                                <h3>${contenido.nombre}</h3>
-                                <p class="autor">Por: ${contenido.autor}</p>
-                                <p class="categoria">${contenido.categoria}</p>
-                                <div class="rating">
-                                    <span class="stars">${generarEstrellas(contenido.calificacion_promedio)}</span>
-                                    <span class="rating-text">(${contenido.calificacion_promedio})</span>
-                                </div>
-                            </div>
-                            <div class="ranking-stats">
-                                <span class="ventas">${contenido.total_ventas} ventas</span>
-                                <span class="descargas">${contenido.total_descargas} descargas</span>
-                            </div>
-                        </div>
-                    `).join('');
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function buscarContenido() {
-            const termino = document.getElementById('search-input').value;
-            if (termino.trim()) {
-                fetch(`/api/contenidos/buscar?q=${encodeURIComponent(termino)}`)
+        // Manejar cierre de sesión
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutLink = document.getElementById('logout-link');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    fetch('/api/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    })
                     .then(response => response.json())
                     .then(data => {
-                        mostrarContenidos(data);
+                        if (data.success) {
+                            window.location.href = '/';
+                        } else {
+                            console.error('Error al cerrar sesión:', data.error);
+                            window.location.href = '/';
+                        }
                     })
-                    .catch(error => console.error('Error:', error));
-            } else {
-                cargarContenidos();
+                    .catch(error => {
+                        console.error('Error al cerrar sesión:', error);
+                        window.location.href = '/';
+                    });
+                });
             }
-        }
+        });
 
-        function aplicarFiltros() {
-            const categoria = document.getElementById('categoria-filter').value;
-            const formato = document.getElementById('formato-filter').value;
-            
-            let url = '/api/contenidos';
-            const params = [];
-            
-            if (categoria) params.push(`categoria=${categoria}`);
-            if (formato) params.push(`formato=${formato}`);
-            
-            if (params.length > 0) {
-                url += '?' + params.join('&');
-            }
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    mostrarContenidos(data);
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function agregarAlCarrito(idContenido) {
-            fetch('/api/carrito/agregar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_contenido: idContenido })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert('Contenido agregado al carrito');
-                } else {
-                    alert('Error: ' + result.error);
+        // Función para cargar notificaciones de regalos
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Mostrar notificación elegante
+                        showGiftNotification(data.data.length, data.data);
+                    }
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al agregar al carrito');
-            });
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
         }
 
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => {
-                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
-                })
-                .catch(error => console.error('Error:', error));
+        // Función para mostrar notificación elegante de regalos
+        function showGiftNotification(giftCount, regalos) {
+            // Crear contenedor de notificaciones si no existe
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-cerrar después de 10 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        // Función para cerrar notificación y marcar como leída
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+                
+                // Marcar todas las notificaciones como leídas
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        // Función para marcar notificaciones como leídas
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        // Función para ir a Mis Contenidos y marcar como leída
+        async function goToMyContents(giftCount) {
+            // Marcar notificaciones como leídas antes de redirigir
+            await marcarNotificacionesLeidas();
+            
+            // Redirigir a la página correcta
+            window.location.href = '/cliente/mis-contenidos';
         }
     </script>
 </body>

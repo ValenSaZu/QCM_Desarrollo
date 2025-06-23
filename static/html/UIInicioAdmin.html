@@ -3,449 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - QCM</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <title>Panel de Administración - QuickContentMedia</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>QCM Admin</h2>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-link active" data-view="inicio">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="#" class="nav-link" data-view="categorias">
-                    <i class="fas fa-tags"></i>
-                    <span>Administrar Categorías</span>
-                </a>
-                <a href="#" class="nav-link" data-view="contenidos">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Administrar Contenidos</span>
-                </a>
-                <a href="#" class="nav-link" data-view="clientes">
-                    <i class="fas fa-users"></i>
-                    <span>Administrar Clientes</span>
-                </a>
-                <a href="#" class="nav-link" data-view="promociones">
-                    <i class="fas fa-percentage"></i>
-                    <span>Administrar Promociones</span>
-                </a>
-                <a href="#" class="nav-link" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
+    <div class="app-container">
+    <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options active">
+            <a href="/admin"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
         </div>
-        
+        <div class="side-bar-options">
+                <a href="/admin/promociones"><i class="fa-solid fa-tags"></i><span>Administrar Promociones</span></a>
+        </div>
+        <div class="side-bar-options">
+                <a href="/admin/contenidos"><i class="fa-solid fa-plus"></i><span>Administrar Contenido</span></a>
+        </div>
+        <div class="side-bar-options">
+                <a href="/admin/categorias"><i class="fa-solid fa-layer-group"></i><span>Administrar Categoría</span></a>
+        </div>
+        <div class="side-bar-options">
+                <a href="/admin/clientes"><i class="fa-solid fa-users"></i><span>Administrar Clientes</span></a>
+        </div>
+        <div class="side-bar-options">
+                <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
+        </div>
+    </div>
+
+        <!-- Contenido principal -->
         <div class="main-content">
-            <div id="inicio-view" class="view active">
-                <h1>Panel de Administración</h1>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Total de Contenidos</h3>
-                        <p id="total-contenidos">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Total de Clientes</h3>
-                        <p id="total-clientes">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Total de Categorías</h3>
-                        <p id="total-categorias">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Promociones Activas</h3>
-                        <p id="promociones-activas">0</p>
+            <div class="content-wrapper">
+            <div class="welcome-container">
+                <h1>Bienvenido, <span id="admin-name">Administrador</span></h1>
+                <div class="admin-info">
+                    <div class="info-card">
+                        <i class="fas fa-user-circle"></i>
+                        <div class="info-details">
+                            <h3>Información de la Cuenta</h3>
+                            <p><strong>Usuario:</strong> <span id="admin-username"></span></p>
+                            <p><strong>Rol:</strong> Administrador</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div id="categorias-view" class="view">
-                <h2>Administrar Categorías</h2>
-                <div class="admin-actions">
-                    <button onclick="mostrarFormularioCategoria()" class="btn btn-primary">Agregar Categoría</button>
-                </div>
-                <div id="categorias-lista"></div>
-            </div>
-            
-            <div id="contenidos-view" class="view">
-                <h2>Administrar Contenidos</h2>
-                <div class="admin-actions">
-                    <button onclick="mostrarFormularioContenido()" class="btn btn-primary">Agregar Contenido</button>
-                </div>
-                <div id="contenidos-lista"></div>
-            </div>
-            
-            <div id="clientes-view" class="view">
-                <h2>Administrar Clientes</h2>
-                <div id="clientes-lista"></div>
-            </div>
-            
-            <div id="promociones-view" class="view">
-                <h2>Administrar Promociones</h2>
-                <div class="admin-actions">
-                    <button onclick="mostrarFormularioPromocion()" class="btn btn-primary">Agregar Promoción</button>
-                </div>
-                <div id="promociones-lista"></div>
             </div>
         </div>
     </div>
 
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
     <script>
+        // Cargar información del administrador al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
-            cargarEstadisticas();
-            cargarCategorias();
-            cargarContenidos();
-            cargarClientes();
-            cargarPromociones();
-            
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    if (this.getAttribute('data-view')) {
-                        e.preventDefault();
-                        mostrarVista(this.getAttribute('data-view'));
-                    }
+            // Obtener información de la sesión
+            fetch('/api/sesion', {
+                credentials: 'include'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    window.location.href = '/';
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.nombre) {
+                    document.getElementById('admin-name').textContent = data.nombre;
+                    document.getElementById('admin-username').textContent = data.username || 'Admin';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar la sesión:', error);
+                window.location.href = '/';
+            });
+
+            // Manejar cierre de sesión
+            document.getElementById('logout-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(() => {
+                    window.location.href = '/';
                 });
             });
         });
-
-        function mostrarVista(vista) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            
-            document.getElementById(vista + '-view').classList.add('active');
-            document.querySelector(`[data-view="${vista}"]`).classList.add('active');
-        }
-
-        function cargarEstadisticas() {
-            fetch('/api/contenidos')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-contenidos').textContent = data.length || 0;
-                })
-                .catch(error => console.error('Error:', error));
-
-            fetch('/api/usuarios')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-clientes').textContent = data.length || 0;
-                })
-                .catch(error => console.error('Error:', error));
-
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-categorias').textContent = data.length || 0;
-                })
-                .catch(error => console.error('Error:', error));
-
-            fetch('/api/promociones')
-                .then(response => response.json())
-                .then(data => {
-                    const activas = data.filter(p => new Date(p.fecha_fin) >= new Date()).length;
-                    document.getElementById('promociones-activas').textContent = activas;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarCategorias() {
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    const lista = document.getElementById('categorias-lista');
-                    lista.innerHTML = `
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Categoría Padre</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(cat => `
-                                    <tr>
-                                        <td>${cat.id_categoria}</td>
-                                        <td>${cat.nombre}</td>
-                                        <td>${cat.id_categoria_padre || 'Principal'}</td>
-                                        <td>
-                                            <button onclick="editarCategoria(${cat.id_categoria})" class="btn btn-small">Editar</button>
-                                            <button onclick="eliminarCategoria(${cat.id_categoria})" class="btn btn-small btn-danger">Eliminar</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarContenidos() {
-            fetch('/api/contenidos')
-                .then(response => response.json())
-                .then(data => {
-                    const lista = document.getElementById('contenidos-lista');
-                    lista.innerHTML = `
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Autor</th>
-                                    <th>Precio</th>
-                                    <th>Categoría</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(cont => `
-                                    <tr>
-                                        <td>${cont.id_contenido}</td>
-                                        <td>${cont.nombre}</td>
-                                        <td>${cont.autor}</td>
-                                        <td>$${cont.precio}</td>
-                                        <td>${cont.categoria}</td>
-                                        <td>
-                                            <button onclick="editarContenido(${cont.id_contenido})" class="btn btn-small">Editar</button>
-                                            <button onclick="eliminarContenido(${cont.id_contenido})" class="btn btn-small btn-danger">Eliminar</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarClientes() {
-            fetch('/api/usuarios')
-                .then(response => response.json())
-                .then(data => {
-                    const lista = document.getElementById('clientes-lista');
-                    lista.innerHTML = `
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Teléfono</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(cliente => `
-                                    <tr>
-                                        <td>${cliente.id_usuario}</td>
-                                        <td>${cliente.nombre} ${cliente.apellido}</td>
-                                        <td>${cliente.email}</td>
-                                        <td>${cliente.telefono || 'N/A'}</td>
-                                        <td>
-                                            <button onclick="verCliente(${cliente.id_usuario})" class="btn btn-small">Ver</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function cargarPromociones() {
-            fetch('/api/promociones')
-                .then(response => response.json())
-                .then(data => {
-                    const lista = document.getElementById('promociones-lista');
-                    lista.innerHTML = `
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Descuento</th>
-                                    <th>Fecha Inicio</th>
-                                    <th>Fecha Fin</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.map(promo => `
-                                    <tr>
-                                        <td>${promo.id_promocion}</td>
-                                        <td>${promo.nombre}</td>
-                                        <td>${promo.descuento}%</td>
-                                        <td>${promo.fecha_inicio}</td>
-                                        <td>${promo.fecha_fin}</td>
-                                        <td>
-                                            <button onclick="editarPromocion(${promo.id_promocion})" class="btn btn-small">Editar</button>
-                                            <button onclick="eliminarPromocion(${promo.id_promocion})" class="btn btn-small btn-danger">Eliminar</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => {
-                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        function mostrarFormularioCategoria() {
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h3>Agregar Categoría</h3>
-                    <form id="form-categoria">
-                        <div class="form-group">
-                            <label>Nombre:</label>
-                            <input type="text" name="nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Categoría Padre (opcional):</label>
-                            <select name="id_categoria_padre">
-                                <option value="">Sin categoría padre</option>
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                            <button type="button" onclick="cerrarModal()" class="btn">Cancelar</button>
-                        </div>
-                    </form>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            
-            fetch('/api/categorias')
-                .then(response => response.json())
-                .then(data => {
-                    const select = modal.querySelector('select[name="id_categoria_padre"]');
-                    data.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat.id_categoria;
-                        option.textContent = cat.nombre;
-                        select.appendChild(option);
-                    });
-                });
-            
-            document.getElementById('form-categoria').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const data = {
-                    nombre: formData.get('nombre'),
-                    id_categoria_padre: formData.get('id_categoria_padre') || null
-                };
-                
-                fetch('/api/categorias', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        cerrarModal();
-                        cargarCategorias();
-                        cargarEstadisticas();
-                    } else {
-                        alert('Error: ' + result.error);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-
-        function cerrarModal() {
-            const modal = document.querySelector('.modal');
-            if (modal) modal.remove();
-        }
-
-        function editarCategoria(id) {
-            console.log('Editar categoría:', id);
-        }
-
-        function eliminarCategoria(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
-                fetch(`/api/categorias/${id}`, { method: 'DELETE' })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            cargarCategorias();
-                            cargarEstadisticas();
-                        } else {
-                            alert('Error: ' + result.error);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
-        }
-
-        function mostrarFormularioContenido() {
-            console.log('Mostrar formulario contenido');
-        }
-
-        function editarContenido(id) {
-            console.log('Editar contenido:', id);
-        }
-
-        function eliminarContenido(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar este contenido?')) {
-                fetch(`/api/contenidos/${id}`, { method: 'DELETE' })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            cargarContenidos();
-                            cargarEstadisticas();
-                        } else {
-                            alert('Error: ' + result.error);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
-        }
-
-        function verCliente(id) {
-            console.log('Ver cliente:', id);
-        }
-
-        function mostrarFormularioPromocion() {
-            console.log('Mostrar formulario promoción');
-        }
-
-        function editarPromocion(id) {
-            console.log('Editar promoción:', id);
-        }
-
-        function eliminarPromocion(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta promoción?')) {
-                fetch(`/api/promociones/${id}`, { method: 'DELETE' })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            cargarPromociones();
-                            cargarEstadisticas();
-                        } else {
-                            alert('Error: ' + result.error);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
-        }
     </script>
 </body>
 </html>

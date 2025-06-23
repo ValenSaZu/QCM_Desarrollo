@@ -14,13 +14,13 @@
 
     <div class="form-group">
       <label for="username" class="form-label">Username</label>
-      <input type="text" id="username" name="username" class="form-input" 
+      <input type="text" id="username" name="username" class="form-input"
              placeholder="Enter your username" autocomplete="username" required>
     </div>
 
     <div class="form-group">
       <label for="password" class="form-label">Password</label>
-      <input type="password" id="password" name="password" class="form-input" 
+      <input type="password" id="password" name="password" class="form-input"
              placeholder="Enter your password" autocomplete="current-password" required>
     </div>
 
@@ -46,6 +46,7 @@
         margin-bottom: 15px;
         font-size: 14px;
     }
+
     .button-text, .button-loader {
         display: inline-block;
     }
@@ -64,58 +65,54 @@
     document.getElementById('loginForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        console.log('Enviando login:', { username, password });
-        
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/login', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                console.log('Status:', xhr.status);
-                console.log('Response:', xhr.responseText);
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
 
-                if (xhr.status === 200) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        console.log('Datos parseados:', data);
-                        
-                        if (data.success) {
-                            if (data.session_id) {
-                                document.cookie = `session_id=${data.session_id}; path=/`;
-                            }
-                            
-                            console.log('Redirigiendo a:', data.redirect);
-                            window.location.href = data.redirect;
-                        } else {
-                            alert(data.message || 'Error en la autenticación');
-                        }
-                    } catch (e) {
-                        console.error('Error parseando JSON:', e);
-                        alert('Error procesando respuesta del servidor');
-                    }
-          } else {
-                    console.error('Error HTTP:', xhr.status);
-                    alert('Error de conexión: ' + xhr.status);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/login', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+
+      xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                  try {
+                      const data = JSON.parse(xhr.responseText);
+
+                      if (data.success) {
+                          if (data.session_id) {
+                              document.cookie = `session_id=${data.session_id}; path=/`;
+                          }
+                          window.location.href = data.redirect;
+                      } else {
+                          const errorElement = document.getElementById('error-message');
+                          errorElement.textContent = data.message || 'Error en la autenticación';
+                          errorElement.style.display = 'block';
+                      }
+                  } catch (e) {
+                      const errorElement = document.getElementById('error-message');
+                      errorElement.textContent = 'Error procesando respuesta del servidor';
+                      errorElement.style.display = 'block';
+                  }
+              } else {
+                  const errorElement = document.getElementById('error-message');
+                  errorElement.textContent = 'Error de conexión: ' + xhr.status;
+                  errorElement.style.display = 'block';
+              }
           }
-            }
-        };
-        
-        xhr.onerror = function() {
-            console.error('Error de red');
-            alert('Error de conexión');
-        };
-        
-        const requestData = JSON.stringify({
-            username: username,
-            password: password
-        });
-        
-        console.log('Enviando datos:', requestData);
-        xhr.send(requestData);
+      };
+
+      xhr.onerror = function() {
+          const errorElement = document.getElementById('error-message');
+          errorElement.textContent = 'Error de conexión con el servidor';
+          errorElement.style.display = 'block';
+      };
+
+      const requestData = JSON.stringify({
+          username: username,
+          password: password
+      });
+
+      xhr.send(requestData);
     });
 </script>
 </body>

@@ -1,36 +1,18 @@
-# Clase que maneja la interfaz de login del sistema, incluyendo formulario de acceso, mensaje de bienvenida y errores de autenticación
+# UI-LOGIN-001: Clase para manejar la interfaz de autenticación del sistema, incluyendo formulario de acceso, bienvenida y manejo de errores
 class InterfazLogin:
 
+    # FUNC-UI-LOGIN-001: Muestra el formulario principal de inicio de sesión
     def mostrar_formulario(self):
-        """Muestra el formulario de inicio de sesión del sistema.
-
-        Returns:
-            str: HTML completo del formulario de login
-        """
         with open('static/html/UIAccesoAlPortal(MK-001).html', 'r', encoding='utf-8') as f:
             return f.read()
 
+    # FUNC-UI-LOGIN-002: Muestra la pantalla de bienvenida post-autenticación exitosa
     def mostrar_bienvenida(self, datos):
-        """Muestra la interfaz de administración de promociones tras un login exitoso.
-
-        Args:
-            datos: Información del usuario autenticado (no utilizado actualmente)
-
-        Returns:
-            str: HTML de la interfaz de administración de promociones
-        """
         with open('static/html/UIAdministrarPromocion(MK-025).html', 'r', encoding='utf-8') as f:
             return f.read()
 
+    # FUNC-UI-LOGIN-003: Genera página de error personalizada para fallos de autenticación
     def mostrar_error(self, mensaje_error):
-        """Genera una página de error personalizada cuando falla el login.
-
-        Args:
-            mensaje_error (str): Descripción del error a mostrar al usuario
-
-        Returns:
-            str: HTML completo de la página de error con opción para reintentar
-        """
         return f"""
         <html>
         <head>
@@ -49,9 +31,9 @@ class InterfazLogin:
         </html>
         """
 
+    # FUNC-UI-LOGIN-004: Sirve la página estática de login del sistema
     @staticmethod
     def servir_pagina_login():
-        """Sirve la página de login"""
         try:
             with open('static/html/UIAccesoAlPortal(MK-001).html', 'r', encoding='utf-8') as file:
                 return file.read()

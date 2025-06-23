@@ -1,20 +1,16 @@
-# Clase que maneja la interfaz de inicio del cliente, mostrando la página principal y mensajes de error cuando ocurren problemas.
+# UI-INIC-001: Clase para manejar la interfaz de inicio del sistema, incluyendo páginas para clientes, administradores y manejo de errores
 class InterfazInicio:
 
+    # FUNC-UI-INIC-001: Carga y muestra la interfaz principal del cliente
     def mostrar_interfaz(self):
-        """Carga y retorna el contenido del archivo HTML de la interfaz de inicio del cliente."""
         try:
             with open('static/html/UIInicioCliente(MK-012).html', 'r', encoding='utf-8') as f:
                 return f.read()
         except FileNotFoundError:
             return self.mostrar_error("No se pudo cargar la página de inicio.")
 
+    # FUNC-UI-INIC-002: Genera página de error personalizada con opciones de navegación
     def mostrar_error(self, mensaje):
-        """Genera y retorna una página HTML de error con un mensaje personalizado y un botón para volver.
-
-        Args:
-            mensaje (str): Mensaje de error que se mostrará al usuario.
-        """
         return f"""
         <html>
         <head>
@@ -34,9 +30,9 @@ class InterfazInicio:
         </html>
         """
 
+    # FUNC-UI-INIC-003: Sirve la página principal de acceso al portal
     @staticmethod
     def servir_pagina_inicio():
-        """Sirve la página de inicio"""
         try:
             with open('static/html/UIAccesoAlPortal(MK-001).html', 'r', encoding='utf-8') as file:
                 return file.read()
@@ -44,9 +40,9 @@ class InterfazInicio:
             print(f"Error leyendo archivo de inicio: {e}")
             return None
 
+    # FUNC-UI-INIC-004: Sirve la página de inicio del administrador
     @staticmethod
     def servir_pagina_admin():
-        """Sirve la página de inicio del administrador"""
         try:
             with open('static/html/UIInicioAdmin.html', 'r', encoding='utf-8') as file:
                 return file.read()
@@ -54,9 +50,9 @@ class InterfazInicio:
             print(f"Error leyendo archivo de admin: {e}")
             return None
 
+    # FUNC-UI-INIC-005: Sirve la página de inicio del cliente
     @staticmethod
     def servir_pagina_cliente():
-        """Sirve la página de inicio del cliente"""
         try:
             with open('static/html/UIInicioCliente(MK-012).html', 'r', encoding='utf-8') as file:
                 return file.read()

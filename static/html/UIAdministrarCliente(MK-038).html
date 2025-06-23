@@ -53,7 +53,6 @@
                         </tr>
                     </thead>
                     <tbody id="clientesTableBody">
-                        <!-- Los datos se cargarán dinámicamente -->
                     </tbody>
                 </table>
                 </div>
@@ -61,7 +60,6 @@
         </div>
     </div>
 
-    <!-- Ventana modal para Gestionar saldo -->
     <div id="saldoModal" class="modal">
         <form id="saldoForm">
         <div class="modal-content">
@@ -75,7 +73,6 @@
         </form>
     </div>
 
-    <!-- Ventana modal para Historial de Descargas -->
     <div id="historialModal" class="modal">
         <div class="modal-content">
         <span id="closeHistorial" class="close">&times;</span>
@@ -92,7 +89,6 @@
                 </tr>
             </thead>
             <tbody id="historialTableBody">
-                <!-- Los datos se cargarán dinámicamente -->
             </tbody>
             </table>
         </div>
@@ -100,11 +96,9 @@
     </div>
 
     <script>
-        // Variables globales
         let clientesData = [];
         let clienteSeleccionado = null;
 
-        // Elementos del DOM
         const modal = document.getElementById("saldoModal");
         const historialModal = document.getElementById("historialModal");
         const saldoForm = document.getElementById("saldoForm");
@@ -114,34 +108,23 @@
         const closeModal = document.getElementById("closeModal");
         const closeHistorial = document.getElementById("closeHistorial");
 
-        // Cargar clientes al iniciar
         document.addEventListener('DOMContentLoaded', cargarClientes);
 
-        // Función para cargar clientes desde la API
         async function cargarClientes() {
             try {
                 showLoader();
-                console.log('Haciendo petición a /api/clientes...');
                 const response = await fetch('/api/clientes');
 
-                console.log('Respuesta recibida:', response);
                 if (!response.ok) {
                     const error = await response.json().catch(() => null);
-                    console.error('Error en la respuesta:', error);
                     throw new Error(error?.error || 'Error al cargar clientes');
                 }
 
                 const result = await response.json();
-                console.log('Datos recibidos:', result);
-                
-                // Extraer el array de clientes de la propiedad 'data' del resultado
                 const clientes = result.success && Array.isArray(result.data) ? result.data : [];
-                console.log('Datos procesados:', clientes);
                 actualizarTablaClientes(clientes);
             } catch (error) {
-                console.error('Error:', error);
                 showError(error.message);
-                // Inicializar como array vacío en caso de error
                 clientesData = [];
                 actualizarTablaClientes([]);
             } finally {
@@ -149,23 +132,20 @@
             }
         }
 
-        // Función para actualizar la tabla de clientes
         function actualizarTablaClientes(clientes) {
             const tbody = document.getElementById('clientesTableBody');
-            
-            // Verificar si clientes es un array y tiene elementos
-            if (!Array.isArray(clientes) || clientes.length === 0) {
+
+            if (!Array.isArray(clientes) {
                 tbody.innerHTML = '<tr><td colspan="6" class="no-data">No se encontraron clientes</td></tr>';
                 return;
             }
 
             tbody.innerHTML = clientes.map(cliente => {
-                // Asegurarse de que los campos requeridos tengan valores por defecto
                 const id = cliente?.id_usuario?.toString()?.padStart(3, '0') || 'N/A';
                 const nombre = cliente?.nombre || 'Sin nombre';
                 const apellido = cliente?.apellido || '';
                 const username = cliente?.username || 'Sin usuario';
-                const saldo = typeof cliente?.saldo === 'number' ? 
+                const saldo = typeof cliente?.saldo === 'number' ?
                     `S/.${cliente.saldo.toFixed(2)}` : 'S/.0.00';
                 const excluido = cliente?.excliente ? 'disabled title="Cliente excluido"' : '';
 
@@ -192,7 +172,6 @@
                 `;
             }).join('');
 
-            // Agregar event listeners a los botones
             document.querySelectorAll('.gestionar-saldo:not([disabled])').forEach(btn => {
                 btn.addEventListener('click', abrirModalSaldo);
             });
@@ -202,7 +181,6 @@
             });
         }
 
-        // Función para abrir modal de saldo
         function abrirModalSaldo(e) {
             const clienteId = e.target.getAttribute('data-id');
             const saldoActual = parseFloat(e.target.getAttribute('data-saldo'));
@@ -213,7 +191,6 @@
             modal.style.display = "flex";
         }
 
-        // Función para abrir modal de historial
         async function abrirModalHistorial(e) {
             const clienteId = e.target.getAttribute('data-id');
             const url = `/api/clientes/${clienteId}/historial`;
@@ -228,14 +205,11 @@
                 }
 
                 const resultado = await response.json();
-                
-                // El backend devuelve {success: true, data: historial}
                 const historial = resultado.data || [];
-                
+
                 actualizarTablaHistorial(historial);
                 historialModal.style.display = "flex";
             } catch (error) {
-                console.error('Error:', error);
                 showError(error.message);
                 actualizarTablaHistorial([]);
             } finally {
@@ -243,7 +217,6 @@
             }
         }
 
-        // Función para actualizar tabla de historial
         function actualizarTablaHistorial(historial) {
             const tbody = document.getElementById('historialTableBody');
             tbody.innerHTML = historial.length > 0
@@ -259,7 +232,6 @@
                 : `<tr><td colspan="5" class="no-data">No hay registros de descargas</td></tr>`;
         }
 
-        // Evento para enviar formulario de saldo
         saldoForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -285,14 +257,12 @@
                 modal.style.display = "none";
                 await cargarClientes();
             } catch (error) {
-                console.error('Error:', error);
                 showError(error.message);
             } finally {
                 hideLoader();
             }
         });
 
-        // Evento para búsqueda
         let searchTimeout;
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.trim().toLowerCase();
@@ -305,7 +275,6 @@
             }, 300);
         });
 
-        // Función para buscar clientes
         async function buscarClientes(termino) {
             try {
                 showLoader();
@@ -319,22 +288,16 @@
                 const resultados = await response.json();
                 actualizarTablaClientes(resultados);
             } catch (error) {
-                console.error('Error:', error);
                 showError('Error en búsqueda: ' + error.message);
             } finally {
                 hideLoader();
             }
         }
 
-        // Funciones de utilidad
         function showLoader() {
-            // Implementar lógica para mostrar spinner/loader
-            console.log("Loading...");
         }
 
         function hideLoader() {
-            // Implementar lógica para ocultar spinner/loader
-            console.log("Loading complete");
         }
 
         function showError(message) {
@@ -345,7 +308,6 @@
             alert("Éxito: " + message);
         }
 
-        // Cerrar modales
         closeModal.onclick = () => modal.style.display = "none";
         closeHistorial.onclick = () => historialModal.style.display = "none";
 

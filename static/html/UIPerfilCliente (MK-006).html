@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - QCM</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <title>Mi Perfil - QuickContentMedia</title>
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         /* Estilos para el modal */
         .modal {
@@ -75,137 +74,106 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <h2>QCM</h2>
+    <div class="app-container">
+        <div class="side-bar">
+            <div class="name">QCM</div>
+            <div class="side-bar-options">
+                <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
-            <nav class="sidebar-nav">
-                <a href="UIInicioCliente(MK-012).html" class="nav-link">
-                    <i class="fas fa-home"></i>
-                    <span>Inicio</span>
-                </a>
-                <a href="UIInicioCliente(MK-012).html#promociones" class="nav-link">
-                    <i class="fas fa-percentage"></i>
-                    <span>Promociones</span>
-                </a>
-                <a href="UIInicioCliente(MK-012).html#ranking" class="nav-link">
-                    <i class="fas fa-trophy"></i>
-                    <span>Ranking</span>
-                </a>
-                <a href="UICarrito(MK-015).html" class="nav-link">
-                    <i class="fas fa-shopping-cart"></i>
-                    <span>Carrito</span>
-                </a>
-                <a href="UIMisContenidos(MK-005).html" class="nav-link">
-                    <i class="fas fa-download"></i>
-                    <span>Mis Contenidos</span>
-                </a>
-                <a href="#" class="nav-link active">
-                    <i class="fas fa-user"></i>
-                    <span>Mi Perfil</span>
-                </a>
-                <a href="#" class="nav-link" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </nav>
+            <div class="side-bar-options">
+                <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/ofertas"><i class="fa-solid fa-percent"></i><span>Ofertas</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
+            </div>
+            <div class="side-bar-options">
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+            </div>
+            <div class="side-bar-options active">
+                <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
+            </div>
+            <div class="side-bar-options">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
+            </div>
         </div>
-        
+
         <div class="main-content">
-            <h1>Mi Perfil</h1>
-            
-            <div class="perfil-container">
-                <div class="perfil-info">
-                    <div class="perfil-avatar">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="perfil-datos">
-                        <h2 id="nombre-usuario">Cargando...</h2>
-                        <p id="email-usuario">cargando@email.com</p>
-                        <p id="telefono-usuario">Cargando...</p>
-                    </div>
-                </div>
-                
-                <div class="perfil-stats">
-                    <div class="stat-card">
-                        <i class="fas fa-shopping-bag"></i>
-                        <h3>Compras Realizadas</h3>
-                        <p id="total-compras">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-download"></i>
-                        <h3>Descargas</h3>
-                        <p id="total-descargas">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-star"></i>
-                        <h3>Valoraciones</h3>
-                        <p id="total-valoraciones">0</p>
+            <div class="content-wrapper">
+                <div class="content-header">
+                    <h2 class="small-title">Mi Perfil</h2>
+                    <div class="tabs">
+                        <button class="tab-button active" data-tab="perfil">
+                            <i class="fa-solid fa-user"></i> Perfil
+                        </button>
+                        <button class="tab-button" data-tab="historial">
+                            <i class="fa-solid fa-history"></i> Historial
+                        </button>
                     </div>
                 </div>
-                
-                <div class="perfil-secciones">
-                    <div class="seccion-tabs">
-                        <button class="tab-btn active" onclick="mostrarSeccion('datos')">Datos Personales</button>
-                        <button class="tab-btn" onclick="mostrarSeccion('seguridad')">Seguridad</button>
-                        <button class="tab-btn" onclick="mostrarSeccion('historial')">Historial</button>
-                    </div>
-                    
-                    <div id="datos-seccion" class="seccion-contenido active">
-                        <h3>Editar Datos Personales</h3>
-                        <form id="form-datos" class="perfil-form">
-                            <div class="form-group">
-                                <label>Nombre:</label>
-                                <input type="text" name="nombre" id="input-nombre" required>
+
+                <!-- Pestaña de Perfil -->
+                <div id="perfil" class="tab-content active">
+                    <div class="profile-card">
+                        <div class="saldo-container">
+                            <h3><i class="fa-solid fa-wallet"></i> Saldo disponible</h3>
+                            <div class="saldo-display">
+                                <span id="saldo-actual">S/. 0.00</span>
+                                <button id="recargar-saldo" class="button-full">Recargar</button>
                             </div>
-                            <div class="form-group">
-                                <label>Apellido:</label>
-                                <input type="text" name="apellido" id="input-apellido" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Email:</label>
-                                <input type="email" name="email" id="input-email" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Teléfono:</label>
-                                <input type="tel" name="telefono" id="input-telefono">
-                            </div>
-                            <button type="submit" class="btn btn-primary">Actualizar Datos</button>
-                        </form>
-                    </div>
-                    
-                    <div id="seguridad-seccion" class="seccion-contenido">
-                        <h3>Cambiar Contraseña</h3>
-                        <form id="form-password" class="perfil-form">
-                            <div class="form-group">
-                                <label>Contraseña Actual:</label>
-                                <input type="password" name="password_actual" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Nueva Contraseña:</label>
-                                <input type="password" name="password_nueva" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Confirmar Nueva Contraseña:</label>
-                                <input type="password" name="password_confirmar" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
-                        </form>
-                    </div>
-                    
-                    <div id="historial-seccion" class="seccion-contenido">
-                        <h3>Historial de Actividad</h3>
-                        <div class="historial-filtros">
-                            <select id="filtro-actividad">
-                                <option value="todas">Todas las actividades</option>
-                                <option value="compras">Compras</option>
-                                <option value="descargas">Descargas</option>
-                                <option value="valoraciones">Valoraciones</option>
-                            </select>
                         </div>
-                        <div class="historial-lista" id="historial-lista">
+
+                        <div class="detalles-container">
+                            <h3><i class="fa-solid fa-info-circle"></i> Detalles de la cuenta</h3>
+                            <div class="detalles-info">
+                                <p><strong>Nombre:</strong> <span id="user-nombre"></span></p>
+                                <p><strong>Apellido:</strong> <span id="user-apellido"></span></p>
+                                <p><strong>Username:</strong> <span id="user-username"></span></p>
+                            </div>
+
+                            <div class="account-actions">
+                                <button id="cambiar-contrasena" class="button-full-gray">
+                                    <i class="fa-solid fa-key"></i> Cambiar contraseña
+                                </button>
+                                <button id="eliminar-cuenta" class="button-full-gray">
+                                    <i class="fa-solid fa-trash"></i> Eliminar cuenta
+                                </button>
+                                <div id="eliminar-cuenta-info" class="eliminar-cuenta-info" style="display: none;">
+                                    <small style="color: #ff4444;">
+                                        <i class="fa-solid fa-info-circle"></i> 
+                                        Solo puedes eliminar tu cuenta cuando tu saldo sea S/. 0.00
+                                    </small>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Pestaña de Historial -->
+                <div id="historial" class="tab-content">
+                    <div class="historial-header">
+                        <h3><i class="fa-solid fa-clock"></i> Historial de Compras</h3>
+                        <p>Aquí puedes ver todas las compras que has realizado</p>
+                    </div>
+                    <div class="table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Contenido</th>
+                                    <th>Calificación</th>
+                                    <th>Formato</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historialTableBody">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -256,179 +224,590 @@
         </div>
     </div>
 
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            cargarPerfil();
-            cargarEstadisticas();
+        // Variables globales
+        let userData = {};
+        let historialData = [];
+
+        // Elementos del DOM
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const recargaModal = document.getElementById('recargaModal');
+        const contrasenaModal = document.getElementById('contrasenaModal');
+        const closeButtons = document.querySelectorAll('.close');
+
+        // Cargar datos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDatosUsuario();
             cargarHistorial();
-            
-            document.getElementById('form-datos').addEventListener('submit', actualizarDatos);
-            document.getElementById('form-password').addEventListener('submit', cambiarPassword);
-            document.getElementById('filtro-actividad').addEventListener('change', filtrarHistorial);
+            cargarNotificacionesRegalos();
+            setupTabs();
+            setupEventListeners();
         });
 
-        function cargarPerfil() {
-            fetch('/api/perfil')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('nombre-usuario').textContent = `${data.nombre} ${data.apellido}`;
-                    document.getElementById('email-usuario').textContent = data.email;
-                    document.getElementById('telefono-usuario').textContent = data.telefono || 'No especificado';
-                    
-                    document.getElementById('input-nombre').value = data.nombre;
-                    document.getElementById('input-apellido').value = data.apellido;
-                    document.getElementById('input-email').value = data.email;
-                    document.getElementById('input-telefono').value = data.telefono || '';
-                })
-                .catch(error => console.error('Error:', error));
+        // Configurar pestañas
+        function setupTabs() {
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.getAttribute('data-tab');
+
+                    // Cambiar pestaña activa
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
         }
 
-        function cargarEstadisticas() {
-            fetch('/api/perfil/estadisticas')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total-compras').textContent = data.total_compras;
-                    document.getElementById('total-descargas').textContent = data.total_descargas;
-                    document.getElementById('total-valoraciones').textContent = data.total_valoraciones;
-                })
-                .catch(error => console.error('Error:', error));
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Recargar saldo
+            document.getElementById('recargar-saldo').addEventListener('click', () => {
+                recargaModal.style.display = 'flex';
+            });
+
+            // Cambiar contraseña
+            document.getElementById('cambiar-contrasena').addEventListener('click', () => {
+                contrasenaModal.style.display = 'flex';
+                // Limpiar validaciones al abrir el modal
+                limpiarValidacionesContrasena();
+            });
+
+            // Eliminar cuenta
+            document.getElementById('eliminar-cuenta').addEventListener('click', confirmarEliminarCuenta);
+
+            // Confirmar recarga
+            document.getElementById('confirmar-recarga').addEventListener('click', procesarRecarga);
+
+            // Confirmar cambio de contraseña
+            document.getElementById('confirmar-contrasena-btn').addEventListener('click', cambiarContrasena);
+
+            // Validaciones en tiempo real para contraseñas
+            document.getElementById('nueva-contrasena').addEventListener('input', validarNuevaContrasena);
+            document.getElementById('confirmar-contrasena').addEventListener('input', validarConfirmacionContrasena);
+
+            // Cerrar modales
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    recargaModal.style.display = 'none';
+                    contrasenaModal.style.display = 'none';
+                    limpiarValidacionesContrasena();
+                });
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target === recargaModal) recargaModal.style.display = 'none';
+                if (event.target === contrasenaModal) {
+                    contrasenaModal.style.display = 'none';
+                    limpiarValidacionesContrasena();
+                }
+            });
         }
 
-        function cargarHistorial() {
-            fetch('/api/perfil/historial')
-                .then(response => response.json())
-                .then(data => {
-                    mostrarHistorial(data);
-                })
-                .catch(error => console.error('Error:', error));
-        }
+        // Cargar datos del usuario
+        async function cargarDatosUsuario() {
+            try {
+                showLoader();
+                const response = await fetch('/api/usuario/perfil');
 
-        function mostrarHistorial(actividades) {
-            const lista = document.getElementById('historial-lista');
-            lista.innerHTML = actividades.map(actividad => `
-                <div class="actividad-item">
-                    <div class="actividad-icono">
-                        <i class="fas fa-${obtenerIconoActividad(actividad.tipo)}"></i>
-                    </div>
-                    <div class="actividad-info">
-                        <h4>${actividad.titulo}</h4>
-                        <p>${actividad.descripcion}</p>
-                        <span class="actividad-fecha">${formatearFecha(actividad.fecha)}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
+                if (!response.ok) {
+                    throw new Error('Error al cargar datos del usuario');
+                }
 
-        function obtenerIconoActividad(tipo) {
-            switch(tipo) {
-                case 'compra': return 'shopping-bag';
-                case 'descarga': return 'download';
-                case 'valoracion': return 'star';
-                default: return 'circle';
+                const result = await response.json();
+                userData = result.data || {};
+                actualizarDatosPerfil();
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
             }
         }
 
-        function formatearFecha(fecha) {
-            return new Date(fecha).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+        // Actualizar la vista con los datos del perfil
+        function actualizarDatosPerfil() {
+            document.getElementById('saldo-actual').textContent = `S/. ${userData.saldo?.toFixed(2) || '0.00'}`;
+            document.getElementById('user-nombre').textContent = userData.nombre || 'No disponible';
+            document.getElementById('user-apellido').textContent = userData.apellido || 'No disponible';
+            document.getElementById('user-username').textContent = userData.username || 'No disponible';
+            
+            // Actualizar estado del botón de eliminar cuenta basado en el saldo
+            actualizarEstadoEliminarCuenta();
         }
 
-        function mostrarSeccion(seccion) {
-            document.querySelectorAll('.seccion-contenido').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        // Actualizar estado del botón de eliminar cuenta
+        function actualizarEstadoEliminarCuenta() {
+            const eliminarBtn = document.getElementById('eliminar-cuenta');
+            const eliminarInfo = document.getElementById('eliminar-cuenta-info');
+            const saldo = userData.saldo || 0;
             
-            document.getElementById(seccion + '-seccion').classList.add('active');
-            event.target.classList.add('active');
+            if (saldo > 0) {
+                // Deshabilitar botón si hay saldo
+                eliminarBtn.disabled = true;
+                eliminarBtn.style.opacity = '0.6';
+                eliminarBtn.style.cursor = 'not-allowed';
+                eliminarBtn.title = `No puedes eliminar tu cuenta con un saldo de S/. ${saldo.toFixed(2)}`;
+                
+                // Mostrar mensaje informativo
+                eliminarInfo.style.display = 'block';
+            } else {
+                // Habilitar botón si no hay saldo
+                eliminarBtn.disabled = false;
+                eliminarBtn.style.opacity = '1';
+                eliminarBtn.style.cursor = 'pointer';
+                eliminarBtn.title = 'Eliminar cuenta';
+                
+                // Ocultar mensaje informativo
+                eliminarInfo.style.display = 'none';
+            }
         }
 
-        function actualizarDatos(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = {
-                nombre: formData.get('nombre'),
-                apellido: formData.get('apellido'),
-                email: formData.get('email'),
-                telefono: formData.get('telefono')
-            };
-            
-            fetch('/api/perfil/actualizar', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert('Datos actualizados exitosamente');
-                    cargarPerfil();
-                } else {
-                    alert('Error: ' + result.error);
+        // Cargar historial
+        async function cargarHistorial() {
+            try {
+                showLoader();
+                
+                const response = await fetch('/api/usuario/historial-compras', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Error al cargar el historial');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al actualizar los datos');
-            });
+                
+                const data = await response.json();
+                console.log('Datos del historial recibidos:', data);
+                
+                historialData = data.data || [];
+                console.log('Historial procesado:', historialData);
+                
+                // Verificar calificaciones
+                historialData.forEach(item => {
+                    console.log(`Contenido: ${item.nombre_contenido}, Calificación: ${item.calificacion}`);
+                });
+                
+                actualizarTablaHistorial();
+                
+            } catch (error) {
+                console.error('Error al cargar historial:', error);
+                showError('Error al cargar el historial');
+            } finally {
+                hideLoader();
+            }
         }
 
-        function cambiarPassword(e) {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const passwordNueva = formData.get('password_nueva');
-            const passwordConfirmar = formData.get('password_confirmar');
+        // Actualizar tabla de historial
+        function actualizarTablaHistorial() {
+            const tbody = document.getElementById('historialTableBody');
+
+            if (!Array.isArray(historialData)) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">Error al cargar datos</td></tr>';
+                return;
+            }
+
+            if (historialData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="no-data">
+                            <div style="text-align: center; padding: 2rem;">
+                                <i class="fa-solid fa-shopping-cart" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+                                <p style="margin: 0; color: #666;">No tienes compras registradas</p>
+                                <small style="color: #999;">Cuando realices tu primera compra, aparecerá aquí</small>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = historialData.map(item => {
+                // Debug log para verificar la fecha recibida
+                console.log(`Procesando fecha para ${item.nombre_contenido}:`, item.fecha_compra, item.fecha_compra_raw);
+                
+                // Formatear fecha
+                let fechaFormateada = 'Sin fecha';
+                if (item.fecha_compra) {
+                    try {
+                        // Intentar parsear la fecha
+                        let fecha;
+                        if (item.fecha_compra_raw) {
+                            // Usar la fecha raw si está disponible
+                            fecha = new Date(item.fecha_compra_raw);
+                        } else {
+                            // Usar la fecha formateada
+                            fecha = new Date(item.fecha_compra);
+                        }
+                        
+                        // Verificar si la fecha es válida
+                        if (isNaN(fecha.getTime())) {
+                            console.warn(`Fecha inválida para ${item.nombre_contenido}:`, item.fecha_compra);
+                            fechaFormateada = item.fecha_compra || 'Fecha inválida';
+                        } else {
+                            fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            });
+                            console.log(`Fecha formateada para ${item.nombre_contenido}:`, fechaFormateada);
+                        }
+                    } catch (e) {
+                        console.error(`Error formateando fecha para ${item.nombre_contenido}:`, e);
+                        fechaFormateada = item.fecha_compra || 'Error en fecha';
+                    }
+                }
+
+                // Formatear calificación con estrellas
+                const calificacion = item.calificacion || 0;
+                const estrellasLlenas = '★'.repeat(calificacion);
+                const estrellasVacias = '☆'.repeat(10 - calificacion);
+                const estrellas = calificacion > 0 ? estrellasLlenas + estrellasVacias : 'Sin calificar';
+                const textoCalificacion = calificacion > 0 ? `${calificacion}/10` : 'Sin calificar';
+
+                return `
+                    <tr>
+                        <td>
+                            <strong>${item.nombre_contenido || 'Sin nombre'}</strong><br>
+                            <small style="color: #666;">Autor: ${item.autor || 'Desconocido'}</small>
+                        </td>
+                        <td>
+                            <div class="rating-stars-historial">
+                                <span style="color: #FFD700;">${estrellas}</span><br>
+                                <small class="rating-text">${textoCalificacion}</small>
+                            </div>
+                        </td>
+                        <td>${item.formato || 'N/A'}</td>
+                        <td>${item.categoria || 'N/A'}</td>
+                        <td><strong>S/. ${item.precio?.toFixed(2) || '0.00'}</strong></td>
+                        <td>${fechaFormateada}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Cambiar contraseña
+        async function cambiarContrasena() {
+            const actual = document.getElementById('contrasena-actual').value;
+            const nueva = document.getElementById('nueva-contrasena').value;
+            const confirmacion = document.getElementById('confirmar-contrasena').value;
+
+            // Validaciones en el frontend
+            if (!actual || !nueva || !confirmacion) {
+                showError('Todos los campos son requeridos');
+                return;
+            }
+
+            // Validar longitud mínima de la nueva contraseña
+            if (nueva.length < 8) {
+                showError('La nueva contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+
+            // Validar que la nueva contraseña no sea igual a la actual
+            if (actual === nueva) {
+                showError('La nueva contraseña no puede ser igual a la actual');
+                return;
+            }
+
+            if (nueva !== confirmacion) {
+                showError('Las contraseñas no coinciden');
+                return;
+            }
+
+            try {
+                showLoader();
+                const response = await fetch('/api/usuario/cambiar-contrasena', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contrasena_actual: actual,
+                        nueva_contrasena: nueva
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Error al cambiar contraseña');
+                }
+
+                if (!result.success) {
+                    throw new Error(result.error || 'Error al cambiar contraseña');
+                }
+
+                showSuccess('Contraseña actualizada correctamente');
+                contrasenaModal.style.display = 'none';
+                // Limpiar campos
+                document.getElementById('contrasena-actual').value = '';
+                document.getElementById('nueva-contrasena').value = '';
+                document.getElementById('confirmar-contrasena').value = '';
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Confirmar eliminación de cuenta
+        function confirmarEliminarCuenta() {
+            // Verificar saldo antes de mostrar confirmación
+            const saldo = userData.saldo || 0;
             
-            if (passwordNueva !== passwordConfirmar) {
-                alert('Las contraseñas no coinciden');
+            if (saldo > 0) {
+                showError(`No puedes eliminar tu cuenta mientras tengas un saldo de S/. ${saldo.toFixed(2)}. Debes gastar todo tu saldo antes de eliminar la cuenta.`);
                 return;
             }
             
-            const data = {
-                password_actual: formData.get('password_actual'),
-                password_nueva: passwordNueva
-            };
-            
-            fetch('/api/perfil/cambiar-password', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert('Contraseña cambiada exitosamente');
-                    e.target.reset();
-                } else {
-                    alert('Error: ' + result.error);
+            if (confirm('¿Estás seguro que deseas eliminar tu cuenta? Esta acción no se puede deshacer.')) {
+                eliminarCuenta();
+            }
+        }
+
+        // Eliminar cuenta
+        async function eliminarCuenta() {
+            try {
+                showLoader();
+                const response = await fetch('/api/usuario/eliminar-cuenta', {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Error al eliminar cuenta');
                 }
-            })
-            .catch(error => {
+
+                showSuccess('Cuenta eliminada correctamente');
+                // Redirigir al logout o página principal
+                window.location.href = '/logout';
+            } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cambiar la contraseña');
-            });
+                showError(error.message);
+            } finally {
+                hideLoader();
+            }
         }
 
-        function filtrarHistorial() {
-            const filtro = document.getElementById('filtro-actividad').value;
-            fetch(`/api/perfil/historial?filtro=${filtro}`)
-                .then(response => response.json())
-                .then(data => {
-                    mostrarHistorial(data);
-                })
-                .catch(error => console.error('Error:', error));
+        // Funciones de utilidad
+        function showLoader() {
+            // Implementar lógica para mostrar spinner/loader
+            console.log("Loading...");
         }
 
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => {
-                    window.location.href = 'UIAccesoAlPortal(MK-001).html';
-                })
-                .catch(error => console.error('Error:', error));
+        function hideLoader() {
+            // Implementar lógica para ocultar spinner/loader
+            console.log("Loading complete");
+        }
+
+        function showError(message) {
+            alert("Error: " + message);
+        }
+
+        function showSuccess(message) {
+            alert("Éxito: " + message);
+        }
+
+        // Confirmar recarga
+        function procesarRecarga() {
+            recargaModal.style.display = 'none';
+            showSuccess('Recarga solicitada. El saldo se actualizará en 24 horas.');
+        }
+
+        // Validar nueva contraseña en tiempo real
+        function validarNuevaContrasena() {
+            const nuevaContrasena = document.getElementById('nueva-contrasena').value;
+            const strengthDiv = document.getElementById('password-strength');
+            const confirmacion = document.getElementById('confirmar-contrasena').value;
+            
+            // Limpiar validación anterior
+            strengthDiv.innerHTML = '';
+            strengthDiv.className = 'password-strength';
+            
+            if (nuevaContrasena.length === 0) {
+                return;
+            }
+            
+            // Validar longitud mínima
+            if (nuevaContrasena.length < 8) {
+                strengthDiv.innerHTML = '<span style="color: #ff4444;"> Mínimo 8 caracteres</span>';
+                strengthDiv.className = 'password-strength error';
+                return;
+            }
+            
+            // Evaluar fortaleza de la contraseña
+            let strength = 0;
+            let feedback = [];
+            
+            if (nuevaContrasena.length >= 8) strength++;
+            if (/[a-z]/.test(nuevaContrasena)) strength++;
+            if (/[A-Z]/.test(nuevaContrasena)) strength++;
+            if (/[0-9]/.test(nuevaContrasena)) strength++;
+            if (/[^A-Za-z0-9]/.test(nuevaContrasena)) strength++;
+            
+            let color, message;
+            if (strength <= 2) {
+                color = '#ff4444';
+                message = 'Débil';
+            } else if (strength <= 3) {
+                color = '#ffaa00';
+                message = 'Media';
+            } else {
+                color = '#00aa00';
+                message = 'Fuerte';
+            }
+            
+            strengthDiv.innerHTML = `<span style="color: ${color};">${message}</span>`;
+            strengthDiv.className = 'password-strength valid';
+            
+            // Validar confirmación si ya hay texto
+            if (confirmacion) {
+                validarConfirmacionContrasena();
+            }
+        }
+
+        // Validar confirmación de contraseña en tiempo real
+        function validarConfirmacionContrasena() {
+            const nuevaContrasena = document.getElementById('nueva-contrasena').value;
+            const confirmacion = document.getElementById('confirmar-contrasena').value;
+            const matchDiv = document.getElementById('password-match');
+            
+            matchDiv.innerHTML = '';
+            matchDiv.className = 'password-match';
+            
+            if (confirmacion.length === 0) {
+                return;
+            }
+            
+            if (nuevaContrasena === confirmacion) {
+                matchDiv.innerHTML = '<span style="color: #00aa00;">Las contraseñas coinciden</span>';
+                matchDiv.className = 'password-match valid';
+            } else {
+                matchDiv.innerHTML = '<span style="color: #ff4444;">Las contraseñas no coinciden</span>';
+                matchDiv.className = 'password-match error';
+            }
+        }
+
+        // Limpiar validaciones de contraseña
+        function limpiarValidacionesContrasena() {
+            document.getElementById('password-strength').innerHTML = '';
+            document.getElementById('password-strength').className = 'password-strength';
+            document.getElementById('password-match').innerHTML = '';
+            document.getElementById('password-match').className = 'password-match';
+        }
+
+        // Función para cargar notificaciones de regalos
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Mostrar notificación elegante
+                        showGiftNotification(data.data.length, data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
+        }
+
+        // Función para mostrar notificación elegante de regalos
+        function showGiftNotification(giftCount, regalos) {
+            // Crear contenedor de notificaciones si no existe
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-cerrar después de 10 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        // Función para cerrar notificación y marcar como leída
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+                
+                // Marcar todas las notificaciones como leídas
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        // Función para marcar notificaciones como leídas
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        // Función para ir a Mis Contenidos y marcar como leída
+        async function goToMyContents(giftCount) {
+            // Marcar notificaciones como leídas antes de redirigir
+            await marcarNotificacionesLeidas();
+            
+            // Redirigir a la página correcta
+            window.location.href = '/cliente/mis-contenidos';
         }
     </script>
 </body>

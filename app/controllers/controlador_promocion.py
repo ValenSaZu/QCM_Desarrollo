@@ -1,35 +1,30 @@
-# Controlador para gestionar las operaciones relacionadas con promociones
 from domain.entities.promocion import Promocion
 from datetime import datetime
 from domain.entities.contenido import Contenido
 
-
+# G-008: Controlador para gestionar todas las operaciones de promociones
 class ControladorPromocion:
 
+    # CTRL-PROM-001: Obtiene todas las promociones activas del sistema
     def obtener_todas_promociones(self):
-        """Obtiene todas las promociones disponibles"""
         try:
             promociones = Promocion.obtener_todas_promociones()
-            if not promociones:
-                return []
-                
             return [{
                 "id": promocion.id_promocion,
                 "nombre": promocion.nombre,
                 "porcentaje": float(promocion.descuento) if promocion.descuento is not None else 0.0,
-                "fecha_inicio": promocion.fecha_inicio.isoformat() if hasattr(promocion.fecha_inicio, 'isoformat') else str(promocion.fecha_inicio),
-                "fecha_fin": promocion.fecha_fin.isoformat() if hasattr(promocion.fecha_fin, 'isoformat') else str(promocion.fecha_fin)
-            } for promocion in promociones]
-        except Exception as e:
-            print(f"Error en obtener_todas_promociones: {str(e)}")
-            raise Exception(f"Error al obtener promociones: {str(e)}")
+                "fecha_inicio": promocion.fecha_inicio.isoformat(),
+                "fecha_fin": promocion.fecha_fin.isoformat()
+            } for promocion in promociones] if promociones else []
+        except Exception:
+            raise Exception("Error al obtener promociones")
 
+    # CTRL-PROM-002: Obtiene los detalles completos de una promoción específica
     def obtener_promocion_por_id(self, id_promocion):
-        """Obtiene los detalles de una promoción específica por su ID"""
         try:
             if not id_promocion:
-                raise ValueError("ID de promoción no proporcionado")
-                
+                return {"error": "ID de promoción requerido", "success": False}
+
             promocion = Promocion.obtener_promocion_por_id(id_promocion)
             if not promocion:
                 return {"error": "Promoción no encontrada", "success": False}
@@ -38,106 +33,50 @@ class ControladorPromocion:
             return {
                 "id": promocion.id_promocion,
                 "nombre": promocion.nombre,
-                "porcentaje": float(promocion.descuento) if promocion.descuento is not None else 0.0,
-                "fecha_inicio": promocion.fecha_inicio.isoformat() if hasattr(promocion.fecha_inicio, 'isoformat') else str(promocion.fecha_inicio),
-                "fecha_fin": promocion.fecha_fin.isoformat() if hasattr(promocion.fecha_fin, 'isoformat') else str(promocion.fecha_fin),
+                "porcentaje": float(promocion.descuento),
+                "fecha_inicio": promocion.fecha_inicio.isoformat(),
+                "fecha_fin": promocion.fecha_fin.isoformat(),
                 "contenidos": [{
-                    "id": contenido.get('id_contenido'),
-                    "nombre": contenido.get('nombre', 'Sin nombre'),
-                    "codigo": str(contenido.get('id_contenido', '')),
-                    "formato": contenido.get('formato', 'Desconocido'),
-                    "precio": float(contenido.get('precio', 0.0))
-                } for contenido in (contenidos or []) if contenido],
+                    "id": c.get('id_contenido'),
+                    "nombre": c.get('nombre', 'Sin nombre'),
+                    "precio": float(c.get('precio', 0.0))
+                } for c in (contenidos or []) if c],
                 "success": True
             }
-        except ValueError as ve:
-            print(f"Error de validación en obtener_promocion_por_id: {str(ve)}")
-            return {"error": f"Error de validación: {str(ve)}", "success": False}
-        except Exception as e:
-            print(f"Error en obtener_promocion_por_id: {str(e)}")
-            return {"error": f"Error al obtener la promoción: {str(e)}", "success": False}
+        except Exception:
+            return {"error": "Error al obtener promoción", "success": False}
 
+    # CTRL-PROM-003: Crea una nueva promoción con sus contenidos asociados
     def agregar_promocion(self, form_data):
-        """Crea una nueva promoción con sus contenidos asociados"""
         try:
-            print(f"Datos recibidos en agregar_promocion: {form_data}")
-            
-            # Obtener datos básicos de la promoción
             nombre = form_data.get('nombre')
             porcentaje = float(form_data.get('porcentaje'))
             fecha_inicio = datetime.strptime(form_data.get('fecha_inicio'), '%Y-%m-%d').date()
             fecha_fin = datetime.strptime(form_data.get('fecha_fin'), '%Y-%m-%d').date()
 
-            # Crear la promoción
             id_promocion = Promocion.agregar_promocion(
                 nombre=nombre,
                 descuento=porcentaje,
                 fecha_inicio=fecha_inicio,
                 fecha_fin=fecha_fin
             )
-            
-            print(f"Promoción creada con ID: {id_promocion}")
 
-            # Obtener los contenidos a asociar
-            contenidos = form_data.get('contenidos', [])
-            print(f"Contenidos a asociar: {contenidos}")
-            
-            # Procesar los IDs de contenido
-            contenidos_unicos = set()
-            if isinstance(contenidos, list):
-                # Convertir a enteros para eliminar duplicados
-                try:
-                    contenidos_unicos = {int(id) for id in contenidos if id and str(id).strip()}
-                except (ValueError, TypeError) as e:
-                    print(f"Error al procesar IDs de contenido: {e}")
-            elif contenidos:
-                try:
-                    id_str = str(contenidos).strip()
-                    if id_str:
-                        contenidos_unicos = {int(id_str)}
-                except (ValueError, TypeError) as e:
-                    print(f"ID de contenido no válido: {contenidos}")
-            
-            print(f"Contenidos únicos a asociar: {contenidos_unicos}")
-            
-            # Procesar cada contenido único
-            for id_contenido in contenidos_unicos:
-                try:
-                    print(f"Asociando contenido {id_contenido} a la promoción {id_promocion}")
-                    Promocion.agregar_contenido_a_promocion(id_promocion, id_contenido)
-                except Exception as e:
-                    print(f"Error al asociar contenido {id_contenido} a la promoción: {str(e)}")
-                    continue  # Continuar con el siguiente contenido si hay un error
+            contenidos = {int(id) for id in form_data.get('contenidos', []) if id}
+            for id_contenido in contenidos:
+                Promocion.agregar_contenido_a_promocion(id_promocion, id_contenido)
 
-            return {
-                "success": True, 
-                "message": "Promoción agregada correctamente", 
-                "id_promocion": id_promocion
-            }
-            
-        except Exception as e:
-            print(f"Error en agregar_promocion: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return {"success": False, "error": str(e)}
+            return {"success": True, "message": "Promoción creada", "id_promocion": id_promocion}
+        except Exception:
+            return {"success": False, "error": "Error al crear promoción"}
 
+    # CTRL-PROM-004: Actualiza los datos de una promoción existente
     def editar_promocion(self, id_promocion, promocion_data):
-        """Actualiza una promoción existente y sus contenidos asociados"""
         try:
-            print(f"Editando promoción {id_promocion} con datos: {promocion_data}")
+            nombre = promocion_data['nombre']
+            porcentaje = float(promocion_data['porcentaje'])
+            fecha_inicio = datetime.strptime(promocion_data['fecha_inicio'], '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(promocion_data['fecha_fin'], '%Y-%m-%d').date()
 
-            # Validar y obtener datos básicos
-            try:
-                nombre = promocion_data['nombre']
-                porcentaje = float(promocion_data['porcentaje'])
-                fecha_inicio = datetime.strptime(promocion_data['fecha_inicio'], '%Y-%m-%d').date()
-                fecha_fin = datetime.strptime(promocion_data['fecha_fin'], '%Y-%m-%d').date()
-            except (ValueError, TypeError) as e:
-                error_msg = f"Error al procesar datos: {str(e)}"
-                print(error_msg)
-                return {"success": False, "error": error_msg}
-
-            # Actualizar datos básicos
             Promocion.actualizar_promocion(
                 id_promocion=id_promocion,
                 nombre=nombre,
@@ -146,149 +85,55 @@ class ControladorPromocion:
                 fecha_fin=fecha_fin
             )
 
-            # Procesar contenidos
-            contenidos_raw = promocion_data.get('contenidos', []) or promocion_data.get('contenidos[]', [])
-            print(f"[DEBUG] Contenidos raw: {contenidos_raw}")
-            
-            # Convertir a lista si no lo es
-            if not isinstance(contenidos_raw, list):
-                contenidos_raw = [contenidos_raw] if contenidos_raw else []
-            
-            contenidos_nuevos = set(map(str, contenidos_raw))
-            print(f"[DEBUG] Contenidos nuevos procesados: {contenidos_nuevos}")
+            contenidos_nuevos = {str(id) for id in promocion_data.get('contenidos', [])}
+            contenidos_actuales = {str(c.get('id_contenido')) for c in
+                                   Promocion.obtener_contenido_promocion(id_promocion) or [] if c}
 
-            # Obtener contenidos actuales
-            contenidos_actuales = set()
-            contenidos_db = Promocion.obtener_contenido_promocion(id_promocion) or []
-            for c in contenidos_db:
-                if c and c.get('id_contenido'):
-                    contenidos_actuales.add(str(c.get('id_contenido')))
-
-            print(f"Contenidos actuales: {contenidos_actuales}")
-            print(f"Contenidos nuevos: {contenidos_nuevos}")
-
-            # Eliminar contenidos que ya no están
             for id_contenido in (contenidos_actuales - contenidos_nuevos):
-                try:
-                    print(f"[DEBUG] Eliminando contenido {id_contenido}")
-                    Promocion.eliminar_contenido_de_promocion(id_promocion, id_contenido)
-                except Exception as e:
-                    print(f"Error al eliminar contenido {id_contenido}: {str(e)}")
+                Promocion.eliminar_contenido_de_promocion(id_promocion, id_contenido)
 
-            # Agregar nuevos contenidos
             for id_contenido in (contenidos_nuevos - contenidos_actuales):
-                try:
-                    print(f"[DEBUG] Agregando contenido {id_contenido}")
-                    Promocion.agregar_contenido_a_promocion(id_promocion, id_contenido)
-                except Exception as e:
-                    print(f"Error al agregar contenido {id_contenido}: {str(e)}")
+                Promocion.agregar_contenido_a_promocion(id_promocion, id_contenido)
 
-            return {
-                "success": True,
-                "message": "Promoción actualizada correctamente",
-                "id_promocion": id_promocion
-            }
-        except Exception as e:
-            error_msg = f"Error inesperado: {str(e)}"
-            print(error_msg)
-            return {"success": False, "error": error_msg}
+            return {"success": True, "message": "Promoción actualizada"}
+        except Exception:
+            return {"success": False, "error": "Error al actualizar promoción"}
 
+    # CTRL-PROM-005: Elimina permanentemente una promoción
     def eliminar_promocion(self, id_promocion):
-        """Elimina una promoción del sistema"""
         try:
             Promocion.eliminar_promocion(id_promocion)
-            return {"success": True, "message": "Promoción eliminada correctamente"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
+            return {"success": True, "message": "Promoción eliminada"}
+        except Exception:
+            return {"success": False, "error": "Error al eliminar promoción"}
 
-    def obtener_contenidos_promocion(self, id_promocion):
-        """Obtiene los contenidos asociados a una promoción específica"""
-        try:
-            promocion = self.obtener_promocion_por_id(id_promocion)
-            if not promocion or not promocion.get("success", True):
-                return {"success": False, "error": "Promoción no encontrada"}, 404
-
-            return {
-                "success": True,
-                "contenidos": promocion.get("contenidos", []),
-                "promocion": {
-                    "porcentaje": promocion.get("porcentaje", 0)
-                }
-            }
-        except Exception as e:
-            print(f"Error en obtener_contenidos_promocion: {e}")
-            return {"success": False, "error": str(e)}, 500
-
+    # CTRL-PROM-006: Obtiene los contenidos con promociones activas
     def obtener_contenidos_con_promociones(self):
-        """Obtiene todos los contenidos que tienen promociones activas"""
         try:
-            # Obtener contenidos con promociones activas
-            contenidos_con_promociones = Contenido.obtener_contenidos_con_promociones()
-            
-            if not contenidos_con_promociones:
-                return {
-                    "success": True,
-                    "data": []
-                }
-            
-            # Formatear los datos para la respuesta
-            contenidos_formateados = []
-            for contenido in contenidos_con_promociones:
-                # Determinar el tipo de contenido basado en el formato
-                formato = contenido.get('formato', 'desconocido')
-                tipo_contenido = self._determinar_tipo_contenido(formato)
-                
-                contenidos_formateados.append({
-                    "id_contenido": contenido.get('id_contenido'),
-                    "nombre": contenido.get('nombre'),
-                    "autor": contenido.get('autor'),
-                    "descripcion": contenido.get('descripcion'),
-                    "formato": contenido.get('formato'),
-                    "tipo_contenido": tipo_contenido,
-                    "categoria": contenido.get('categoria'),
-                    "precio": float(contenido.get('precio', 0)) if contenido.get('precio') is not None else 0.0,
-                    "tamano": contenido.get('tamano'),
-                    "calificacion": float(contenido.get('calificacion', 0)) if contenido.get('calificacion') is not None else 0.0,
-                    "descuento": float(contenido.get('descuento', 0)) if contenido.get('descuento') is not None else 0.0,
-                    "fecha_descarga": contenido.get('fecha_descarga')
-                })
-            
+            contenidos = Contenido.obtener_contenidos_con_promociones()
             return {
                 "success": True,
-                "data": contenidos_formateados
+                "data": [{
+                    "id_contenido": c.get('id_contenido'),
+                    "nombre": c.get('nombre'),
+                    "precio": float(c.get('precio', 0.0)),
+                    "descuento": float(c.get('descuento', 0.0)),
+                    "tipo_contenido": self._determinar_tipo_contenido(c.get('formato'))
+                } for c in (contenidos or [])] if contenidos else []
             }
-            
-        except Exception as e:
-            print(f"Error en obtener_contenidos_con_promociones: {str(e)}")
-            return {
-                "success": False,
-                "error": f"Error al obtener contenidos con promociones: {str(e)}",
-                "data": []
-            }
+        except Exception:
+            return {"success": False, "error": "Error al obtener contenidos", "data": []}
 
+    # CTRL-PROM-007: Determina el tipo de contenido basado en su formato
     def _determinar_tipo_contenido(self, formato):
-        """
-        Determina el tipo de contenido basado en su formato.
-        
-        Args:
-            formato (str): Formato del archivo
-            
-        Returns:
-            str: 'video', 'imagen', 'audio' o 'otro'
-        """
-        if not formato or formato == 'desconocido':
+        if not formato:
             return 'otro'
-            
-        formato_lower = formato.lower().strip()
-        
-        formatos_video = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm']
-        formatos_imagen = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'imagen']
-        formatos_audio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac']
-        
-        if formato_lower in formatos_video:
+
+        formato = formato.lower()
+        if any(ext in formato for ext in ['mp4', 'avi', 'mov']):
             return 'video'
-        elif formato_lower in formatos_imagen:
+        elif any(ext in formato for ext in ['jpg', 'png', 'gif']):
             return 'imagen'
-        elif formato_lower in formatos_audio:
+        elif any(ext in formato for ext in ['mp3', 'wav', 'ogg']):
             return 'audio'
         return 'otro'

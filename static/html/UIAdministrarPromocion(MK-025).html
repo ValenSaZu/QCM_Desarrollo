@@ -104,7 +104,7 @@
                                         </tr>
                                     </thead>
                                     <tbody id="contenidosPromocionBody">
-                                        <!-- Contenidos agregados a la promoción -->
+                                        <!-- Los contenidos se cargarán aquí -->
                                     </tbody>
                                 </table>
                             </div>
@@ -186,22 +186,52 @@
         <div id="verContenidosPromocionModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal('verContenidosPromocionModal')">&times;</span>
-                <h2 class="small-title">Contenidos incluidos en la promoción</h2>
-                <div class="table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Código</th>
-                                <th>Formato</th>
-                                <th>Precio Original</th>
-                                <th>Precio con Descuento</th>
-                            </tr>
-                        </thead>
-                        <tbody id="contenidosPromocionModalBody">
-                            <!-- Contenidos de la promoción -->
-                        </tbody>
-                    </table>
+                <h2 class="small-title">Contenidos de la Promoción: <span id="nombrePromocion"></span></h2>
+                <div class="table-wrapper">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 25%;">Nombre</th>
+                                    <th style="width: 15%;">Código</th>
+                                    <th style="width: 15%;">Formato</th>
+                                    <th style="width: 20%;">Precio Original</th>
+                                    <th style="width: 25%;">Precio con Descuento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contenidosPromocionBody">
+                                <!-- Los contenidos se cargarán aquí -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="button-full" onclick="closeModal('verContenidosPromocionModal')">Cerrar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NUEVO Modal para ver contenidos de promoción (FUNCIONAL) -->
+        <div id="modalContenidosNuevo" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 1000px; max-height: 80vh; overflow-y: auto;">
+                <span style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('modalContenidosNuevo').style.display='none'">&times;</span>
+                <h2>Contenidos de la Promoción: <span id="nombrePromocionNuevo"></span></h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 25%;">Nombre</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 15%;">Código</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 15%;">Formato</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 20%;">Precio Original</th>
+                            <th style="border: 1px solid #ddd; padding: 12px; text-align: left; width: 25%;">Precio con Descuento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contenidosPromocionBodyNuevo">
+                        <!-- Los contenidos se cargarán aquí -->
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="document.getElementById('modalContenidosNuevo').style.display='none'" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -282,12 +312,12 @@
                                 const tr = document.createElement("tr");
                                 tr.innerHTML =
                                     `<td><strong>${promocion.nombre}</strong></td>
-                                    <td>${new Date(promocion.fecha_inicio).toLocaleDateString()}</td>
-                                    <td>${new Date(promocion.fecha_fin).toLocaleDateString()}</td>
+                                    <td>${formatearFecha(promocion.fecha_inicio)}</td>
+                                    <td>${formatearFecha(promocion.fecha_fin)}</td>
                                     <td>${promocion.porcentaje}%</td>
                                     <td>
                                         <button onclick="openEditModal(${promocion.id})">Editar</button>
-                                        <button onclick="openVerContenidosModal(${promocion.id})">Ver Contenidos</button>
+                                        <button onclick="openVerContenidosModalNuevo(${promocion.id})">Ver Contenidos</button>
                                         <button onclick="openDeleteModal(${promocion.id})">Eliminar</button>
                                     </td>`;
                                 tbody.appendChild(tr);
@@ -363,7 +393,7 @@
                                     .modal .table tr:hover {
                                         background-color: #f9f9f9;
                                     }
-                                    
+
                                     /* Asegurar que el modal tenga un tamaño adecuado */
                                     .modal-content {
                                         display: flex;
@@ -373,49 +403,35 @@
                                         width: 90%;
                                         max-width: 1000px;
                                     }
-                                    
+
                                     /* Asegurar que la tabla sea desplazable */
                                     .modal .table-wrapper {
                                         flex: 1;
                                         overflow: auto;
-                                        width: 100%;
                                     }
-                                    
-                                    /* Estilo para el mensaje cuando no hay contenidos */
+
+                                    /* Estilos específicos para las filas de contenidos */
+                                    #contenidosPromocionBody tr {
+                                        display: table-row !important;
+                                        visibility: visible !important;
+                                        opacity: 1 !important;
+                                        background-color: #fff !important;
+                                    }
+
+                                    #contenidosPromocionBody td {
+                                        display: table-cell !important;
+                                        visibility: visible !important;
+                                        opacity: 1 !important;
+                                        padding: 12px !important;
+                                        border-bottom: 1px solid #ddd !important;
+                                    }
+
+                                    /* Estilos para el mensaje de no resultados */
                                     .no-results {
-                                        text-align: center;
-                                        padding: 20px;
-                                        color: #666;
-                                        font-style: italic;
-                                        grid-column: 1 / -1;
-                                    }
-
-                                    .no-results {
-                                        text-align: center;
-                                        padding: 20px;
-                                        color: #666;
-                                        font-style: italic;
-                                    }
-
-                                    /* Estilos generales */
-                                    * {
-                                        box-sizing: border-box;
-                                    }
-
-                                    .pagination button {
-                                        margin: 2px;
-                                        padding: 5px 10px;
-                                        border: 1px solid #ddd;
-                                        border-radius: 4px;
-                                        cursor: pointer;
-                                    }
-                                    .pagination button.active {
-                                        background-color: #007bff;
-                                        color: white;
-                                        border-color: #007bff;
-                                    }
-                                    .pagination button:hover:not(.active) {
-                                        background-color: #e9ecef;
+                                        text-align: center !important;
+                                        padding: 20px !important;
+                                        color: #666 !important;
+                                        font-style: italic !important;
                                     }
                                 </style>
                             `;
@@ -435,21 +451,31 @@
             // Función para formatear fecha (solo fecha, sin hora)
             function formatearFecha(fechaString) {
                 if (!fechaString) return '';
-                
-                // Crear la fecha ajustando por la zona horaria
-                // Añadimos 'T00:00:00' para evitar problemas de zona horaria
-                const fecha = new Date(fechaString + 'T00:00:00');
-                
-                // Si la fecha no es válida, devolver un valor por defecto
-                if (isNaN(fecha.getTime())) return 'Fecha inválida';
-                
-                // Obtener los componentes de la fecha local
-                // Usamos getUTCDate() para evitar problemas de zona horaria
-                const dia = fecha.getUTCDate().toString().padStart(2, '0');
-                const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
-                const anio = fecha.getUTCFullYear();
-                
-                return `${dia}/${mes}/${anio}`;
+
+                // Si la fecha ya está en formato YYYY-MM-DD, procesarla directamente
+                if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
+                    const [year, month, day] = fechaString.split('-');
+                    return `${day}/${month}/${year}`;
+                }
+
+                // Para otros formatos, usar el método anterior
+                try {
+                    // Crear la fecha ajustando por la zona horaria
+                    const fecha = new Date(fechaString + 'T00:00:00');
+
+                    // Si la fecha no es válida, devolver un valor por defecto
+                    if (isNaN(fecha.getTime())) return 'Fecha inválida';
+
+                    // Obtener los componentes de la fecha usando UTC para evitar problemas de zona horaria
+                    const dia = fecha.getUTCDate().toString().padStart(2, '0');
+                    const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+                    const anio = fecha.getUTCFullYear();
+
+                    return `${dia}/${mes}/${anio}`;
+                } catch (e) {
+                    console.error('Error al formatear fecha:', e);
+                    return 'Fecha inválida';
+                }
             }
 
             // Función para formatear fecha al formato YYYY-MM-DD (sin hora)
@@ -461,7 +487,6 @@
                     return fechaString;
                 }
 
-
                 try {
                     // Intentar crear una fecha a partir del string
                     const fecha = new Date(fechaString);
@@ -470,11 +495,11 @@
                         return '';
                     }
 
-                    // Formatear como YYYY-MM-DD
-                    const year = fecha.getFullYear();
-                    const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
-                    const day = fecha.getDate().toString().padStart(2, '0');
-                    
+                    // Formatear como YYYY-MM-DD usando UTC para evitar problemas de zona horaria
+                    const year = fecha.getUTCFullYear();
+                    const month = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
+                    const day = fecha.getUTCDate().toString().padStart(2, '0');
+
                     return `${year}-${month}-${day}`;
                 } catch (e) {
                     console.error('Error al formatear fecha:', e);
@@ -487,31 +512,32 @@
                 document.getElementById('editPromocionId').value = id;
                 document.getElementById('editNombrePromocion').value = nombre;
                 document.getElementById('editPorcentaje').value = porcentaje;
-                
+
                 // Formatear fechas para el input type="date"
                 const fechaInicioObj = new Date(fechaInicio);
                 const fechaFinObj = new Date(fechaFin);
-                
-                // Formatear a YYYY-MM-DD
+
+                // Formatear a YYYY-MM-DD usando UTC para evitar problemas de zona horaria
                 const formatDate = (date) => {
                     const d = new Date(date);
-                    let month = '' + (d.getMonth() + 1);
-                    let day = '' + d.getDate();
-                    const year = d.getFullYear();
+                    // Usar UTC para evitar problemas de zona horaria
+                    let month = '' + (d.getUTCMonth() + 1);
+                    let day = '' + d.getUTCDate();
+                    const year = d.getUTCFullYear();
 
                     if (month.length < 2) month = '0' + month;
                     if (day.length < 2) day = '0' + day;
 
                     return [year, month, day].join('-');
                 };
-                
+
                 document.getElementById('editFechaInicio').value = formatDate(fechaInicioObj);
                 document.getElementById('editFechaFin').value = formatDate(fechaFinObj);
-                
+
                 // Limpiar tabla de contenidos
                 const tbody = document.getElementById('editContenidosPromocionBody');
                 tbody.innerHTML = '';
-                
+
                 // Cargar contenidos de la promoción
                 fetch(`/api/promociones/${id}/contenidos`)
                     .then(response => response.json())
@@ -536,7 +562,7 @@
                     .catch(error => {
                         console.error('Error al cargar contenidos:', error);
                     });
-                
+
                 openModal('editarPromocionModal');
             }
 
@@ -570,52 +596,70 @@
                 }
             }
 
-            // Función para ver contenidos de una promoción
-            function openVerContenidosModal(promocionId) {
-                const modal = document.getElementById('verContenidosPromocionModal');
-                const tbody = document.getElementById('contenidosPromocionModalBody');
+            // Función para ver contenidos de una promoción (NUEVA - FUNCIONAL)
+            async function openVerContenidosModalNuevo(promocionId) {
+                try {
+                    console.log('Abriendo NUEVO modal para promoción ID:', promocionId);
+                    const response = await fetch(`/api/promociones/${promocionId}/contenidos`);
+                    const data = await response.json();
 
-                if (!modal || !tbody) {
-                    console.error('Modal o Tbody no encontrados');
-                    return;
-                }
+                    console.log('Respuesta completa de la API:', data);
 
-                tbody.innerHTML = ''; // Limpiar contenido anterior
+                    if (data.success) {
+                        const promocionData = data.data;
+                        const contenidos = promocionData.contenidos || [];
 
-                fetch(`/api/promociones/${promocionId}/contenidos`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            const { contenidos, promocion } = data;
+                        console.log('Datos de la promoción:', promocionData);
+                        console.log('Contenidos encontrados:', contenidos);
+                        console.log('Número de contenidos:', contenidos.length);
 
-                            if (contenidos.length === 0) {
-                                const row = tbody.insertRow();
-                                const cell = row.insertCell();
-                                cell.colSpan = 5;
-                                cell.textContent = 'No hay contenidos asociados a esta promoción.';
-                                cell.style.textAlign = 'center';
-                            } else {
-                                const porcentajeDescuento = promocion.porcentaje;
-                                contenidos.forEach(contenido => {
-                                    const precioOriginal = contenido.precio;
-                                    const precioConDescuento = precioOriginal * (1 - porcentajeDescuento / 100);
-                                    const row = tbody.insertRow();
-                                    row.insertCell().textContent = contenido.nombre;
-                                    row.insertCell().textContent = contenido.codigo;
-                                    row.insertCell().textContent = contenido.formato;
-                                    row.insertCell().textContent = `S/ ${precioOriginal.toFixed(2)}`;
-                                    row.insertCell().textContent = `S/ ${precioConDescuento.toFixed(2)}`;
-                                });
-                            }
-                            modal.style.display = 'block';
+                        // Actualizar el título del modal
+                        document.getElementById('nombrePromocionNuevo').textContent = promocionData.nombre || 'Promoción';
+
+                        // Llenar la tabla de contenidos
+                        const tbody = document.getElementById('contenidosPromocionBodyNuevo');
+                        tbody.innerHTML = '';
+
+                        if (contenidos.length === 0) {
+                            console.log('No hay contenidos, mostrando mensaje');
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #666; font-style: italic; border: 1px solid #ddd;">No hay contenidos asociados a esta promoción.</td></tr>';
                         } else {
-                            alert('Error: ' + data.message);
+                            console.log('Agregando contenidos a la tabla...');
+                            contenidos.forEach((contenido, index) => {
+                                console.log(`Procesando contenido ${index + 1}:`, contenido);
+                                const precioOriginal = parseFloat(contenido.precio) || 0;
+                                const porcentaje = parseFloat(promocionData.porcentaje) || 0;
+                                const precioConDescuento = precioOriginal * (1 - (porcentaje / 100));
+
+                                console.log(`Precio original: ${precioOriginal}, Porcentaje: ${porcentaje}, Precio con descuento: ${precioConDescuento}`);
+
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td style="border: 1px solid #ddd; padding: 12px;">${contenido.nombre || 'Sin nombre'}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px;">${contenido.codigo || contenido.id || 'N/A'}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px;">${contenido.formato || 'N/A'}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px;">S/.${precioOriginal.toFixed(2)}</td>
+                                    <td style="border: 1px solid #ddd; padding: 12px;">S/.${precioConDescuento.toFixed(2)}</td>
+                                `;
+                                console.log('Fila HTML creada:', tr.outerHTML);
+                                tbody.appendChild(tr);
+                                console.log('Fila agregada al DOM');
+                            });
+                            console.log('Contenidos agregados a la tabla');
+                            console.log('Número total de filas en la tabla:', tbody.children.length);
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error al cargar contenidos de la promoción:', error);
-                        alert('Error al conectar con el servidor.');
-                    });
+
+                        console.log('Abriendo NUEVO modal...');
+                        document.getElementById('modalContenidosNuevo').style.display = 'block';
+                        console.log('NUEVO Modal abierto');
+                    } else {
+                        console.error('Error en la respuesta de la API:', data);
+                        alert('Error al cargar los contenidos de la promoción');
+                    }
+                } catch (error) {
+                    console.error('Error en openVerContenidosModalNuevo:', error);
+                    alert('Error al cargar los contenidos de la promoción');
+                }
             }
 
             // Función para agregar contenido a promoción nueva
@@ -747,7 +791,7 @@
             document.getElementById("agregarPromocionForm").addEventListener("submit", async function(e) {
                 e.preventDefault();
                 const formData = new FormData(this);
-                
+
                 // Obtener IDs de contenidos de la tabla
                 const contenidos = [];
                 const filasContenidos = document.querySelectorAll('#contenidosPromocionBody tr');
@@ -757,7 +801,7 @@
                         contenidos.push(idContenido);
                     }
                 });
-                
+
                 // Agregar contenidos al formData
                 contenidos.forEach((id, index) => {
                     formData.append('contenidos[]', id);
@@ -779,7 +823,7 @@
 
                     // Log the data being sent
                     console.log('Sending data to server:', JSON.stringify(formDataObj, null, 2));
-                    
+
                     try {
                         const response = await fetch('/api/promociones', {
                             method: 'POST',
@@ -788,11 +832,11 @@
                             },
                             body: JSON.stringify(formDataObj)
                         });
-                        
+
                         console.log('Response status:', response.status);
                         const responseText = await response.text();
                         console.log('Response text:', responseText);
-                        
+
                         if (!response.ok) {
                             let errorMessage = 'Error al procesar la solicitud';
                             try {
@@ -803,9 +847,9 @@
                             }
                             throw new Error(errorMessage);
                         }
-                        
+
                         const data = responseText ? JSON.parse(responseText) : {};
-                        
+
                         if (data.success) {
                             alert('Promoción agregada correctamente');
                             closeModal('agregarPromocionModal');
@@ -875,7 +919,7 @@
                 const formData = new FormData(this);
 
                 try {
-                    const response = await fetch('/eliminar_promocion', {
+                    const response = await fetch('/api/promociones/eliminar', {
                         method: 'POST',
                         body: formData
                     });
@@ -905,15 +949,15 @@
                     overlay.className = 'modal-overlay';
                     overlay.onclick = () => closeModal(modalId);
                     document.body.appendChild(overlay);
-                    
-                    // Solo limpiar el formulario si no es el modal de edición
-                    if (!modalId.includes('editar')) {
+
+                    // Solo limpiar el formulario si no es el modal de edición ni el de ver contenidos
+                    if (!modalId.includes('editar') && !modalId.includes('verContenidos')) {
                         const form = modal.querySelector('form');
                         if (form) {
                             form.reset();
-                            // Limpiar la tabla de contenidos
+                            // Limpiar la tabla de contenidos solo si no es el modal de ver contenidos
                             const tablaContenidos = modal.querySelector('#contenidosPromocionBody');
-                            if (tablaContenidos) {
+                            if (tablaContenidos && !modalId.includes('verContenidos')) {
                                 tablaContenidos.innerHTML = '';
                             }
                         }
@@ -934,6 +978,61 @@
                 }
             }
 
+            // Función para abrir modal de eliminar promoción
+            function openDeleteModal(promocionId) {
+                document.getElementById('promocionIdEliminar').value = promocionId;
+                openModal('eliminarPromocionModal');
+            }
+
+            // Función para abrir modal de editar promoción
+            async function openEditModal(promocionId) {
+                try {
+                    const response = await fetch(`/api/promociones/${promocionId}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const promocion = data.data;
+
+                        // Llenar el formulario con los datos de la promoción
+                        document.getElementById('editPromocionId').value = promocion.id;
+                        document.getElementById('editNombrePromocion').value = promocion.nombre;
+                        document.getElementById('editPorcentaje').value = promocion.porcentaje;
+                        document.getElementById('editFechaInicio').value = formatearFechaParaInput(promocion.fecha_inicio);
+                        document.getElementById('editFechaFin').value = formatearFechaParaInput(promocion.fecha_fin);
+
+                        // Limpiar tabla de contenidos
+                        const tbody = document.getElementById('editContenidosPromocionBody');
+                        tbody.innerHTML = '';
+
+                        // Cargar contenidos de la promoción si existen
+                        if (promocion.contenidos && promocion.contenidos.length > 0) {
+                            promocion.contenidos.forEach(contenido => {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td>${contenido.nombre || 'Sin nombre'}</td>
+                                    <td>${contenido.codigo || contenido.id_contenido || 'N/A'}</td>
+                                    <td>${contenido.formato || 'N/A'}</td>
+                                    <td>
+                                        <input type="hidden" name="contenidos[]" value="${contenido.id_contenido}">
+                                        <button type="button" class="button-icon deletebtn" onclick="eliminarContenidoDeTabla(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                `;
+                                tbody.appendChild(tr);
+                            });
+                        }
+
+                        openModal('editarPromocionModal');
+                    } else {
+                        alert('Error al cargar los datos de la promoción');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al cargar los datos de la promoción');
+                }
+            }
+
             // Cargar promociones al iniciar
             document.addEventListener('DOMContentLoaded', function() {
                 cargarPromociones();
@@ -941,150 +1040,5 @@
         </script>
     </div>
 </div>
-
-<!-- Modal para ver contenidos de promoción -->
-<div id="verContenidosPromocionModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeModal('verContenidosPromocionModal')">&times;</span>
-        <h2 class="small-title">Contenidos de la Promoción: <span id="nombrePromocion"></span></h2>
-        <div class="table-wrapper">
-            <div class="table-container">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th style="width: 25%;">Nombre</th>
-                            <th style="width: 15%;">Código</th>
-                            <th style="width: 15%;">Formato</th>
-                            <th style="width: 20%;">Precio Original</th>
-                            <th style="width: 25%;">Precio con Descuento</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contenidosPromocionBody">
-                        <!-- Los contenidos se cargarán aquí -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="button-full" onclick="closeModal('verContenidosPromocionModal')">Cerrar</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Función para abrir el modal de ver contenidos
-    async function verContenidosPromocion(promocionId, nombrePromocion) {
-        console.log('Ver contenidos para promoción ID:', promocionId, 'Nombre:', nombrePromocion);
-        
-        try {
-            // Actualizar el título de la promoción en el modal
-            const tituloPromocion = document.getElementById('nombrePromocion');
-            if (tituloPromocion) {
-                tituloPromocion.textContent = nombrePromocion;
-            } else {
-                console.error('No se encontró el elemento con ID nombrePromocion');
-            }
-            
-            // Obtener referencia a la tabla
-            const tbody = document.getElementById('contenidosPromocionBody');
-            if (!tbody) {
-                console.error('No se encontró el elemento tbody con ID contenidosPromocionBody');
-                return;
-            }
-            
-            // Mostrar mensaje de carga
-            tbody.innerHTML = '<tr><td colspan="3" class="no-results">Cargando contenidos...</td></tr>';
-            
-            // Abrir el modal
-            const modal = document.getElementById('verContenidosPromocionModal');
-            if (modal) {
-                console.log('Mostrando modal de contenidos');
-                modal.style.display = 'block';
-                modal.classList.add('show');
-                
-                // Agregar overlay
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                document.body.appendChild(overlay);
-                
-                // Cerrar al hacer clic fuera del modal
-                overlay.onclick = function() {
-                    closeModal('verContenidosPromocionModal');
-                };
-            } else {
-                console.error('No se encontró el modal con ID verContenidosPromocionModal');
-                return;
-            }
-            
-            try {
-                console.log('Haciendo petición a:', `/api/promociones/${promocionId}/contenidos`);
-                // Hacer la petición para obtener los contenidos
-                const response = await fetch(`/api/promociones/${promocionId}/contenidos`);
-                
-                if (!response.ok) {
-                    throw new Error(`Error en la petición: ${response.status} ${response.statusText}`);
-                }
-                
-                const result = await response.json();
-                console.log('Respuesta de la API:', result);
-                
-                // Procesar la respuesta
-                const responseData = result.data || result; // Manejar tanto result.data como respuesta directa
-                const contenidos = Array.isArray(responseData.contenidos) ? responseData.contenidos : [];
-                
-                console.log('Datos de respuesta procesados:', responseData);
-                console.log('Número de contenidos encontrados:', contenidos.length);
-                console.log('Contenidos:', contenidos);
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                // Limpiar la tabla
-                tbody.innerHTML = '';
-                
-                if (contenidos.length === 0) {
-                    console.log('No se encontraron contenidos para esta promoción');
-                    tbody.innerHTML = '<tr><td colspan="3" class="no-results">No hay contenidos asociados a esta promoción.</td></tr>';
-                } else {
-                    console.log('Agregando contenidos a la tabla...');
-                    // Agregar cada contenido a la tabla
-                    contenidos.forEach((contenido, index) => {
-                        console.log(`Procesando contenido ${index + 1}:`, contenido);
-                        if (contenido) {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${contenido.nombre || 'Sin nombre'}</td>
-                                <td>${contenido.codigo || contenido.id_contenido || 'N/A'}</td>
-                                <td>${contenido.formato || 'N/A'}</td>
-                                <td>${contenido.precio ? `$${parseFloat(contenido.precio).toFixed(2)}` : 'N/A'}</td>
-                                <td>${contenido.precio && responseData.promocion?.porcentaje 
-                                    ? `$${(parseFloat(contenido.precio) * (1 - parseFloat(responseData.promocion.porcentaje) / 100)).toFixed(2)}` 
-                                    : 'N/A'}</td>
-                            `;
-                            console.log('Fila HTML creada:', tr.outerHTML);
-                            tbody.appendChild(tr);
-                        }
-                    });
-                    console.log('Contenidos agregados a la tabla');
-                }
-            } catch (error) {
-                console.warn('Error al cargar contenidos:', error);
-                tbody.innerHTML = `<tr><td colspan="3" class="no-results">Error al cargar los contenidos: ${error.message || 'Error desconocido'}</td></tr>`;
-            }
-        } catch (error) {
-            console.error('Error al cargar contenidos:', error);
-            const tbody = document.getElementById('contenidosPromocionBody');
-            if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="3" class="no-results">No se pudieron cargar los contenidos. Intente nuevamente.</td></tr>';
-            }
-        }
-    }
-
-    // Cargar promociones al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        cargarPromociones();
-    });
-</script>
 </body>
 </html>

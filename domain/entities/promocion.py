@@ -1,5 +1,6 @@
 from infrastructure.bd.conexion import obtener_conexion
 
+# BD-007: Entidad para gestionar operaciones de promociones
 class Promocion:
     def __init__(self, id_promocion, nombre, descuento, fecha_inicio, fecha_fin):
         self.id_promocion = id_promocion
@@ -8,6 +9,7 @@ class Promocion:
         self.fecha_inicio = fecha_inicio
         self.fecha_fin = fecha_fin
 
+    # ENT-PROM-001: Obtiene una promoción específica por su ID
     @classmethod
     def obtener_promocion_por_id(cls, id_promocion):
         conexion = obtener_conexion()
@@ -31,6 +33,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-002: Obtiene todas las promociones ordenadas por fecha de fin
     @classmethod
     def obtener_todas_promociones(cls):
         conexion = obtener_conexion()
@@ -56,18 +59,17 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-003: Obtiene los contenidos asociados a una promoción
     @classmethod
     def obtener_contenido_promocion(cls, id_promocion):
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
         try:
-            # Verificar que la promoción existe
             cursor.execute("SELECT 1 FROM promocion WHERE id_promocion = %s", (id_promocion,))
             if not cursor.fetchone():
                 return []
 
-            # Obtener los contenidos asociados a la promoción
             query = """
                 SELECT c.id_contenido, c.nombre, t.formato, c.precio
                 FROM contenido c
@@ -77,7 +79,6 @@ class Promocion:
             """
             cursor.execute(query, (id_promocion,))
 
-            # Devolver los resultados como una lista de diccionarios
             return [{
                 'id_contenido': row[0],
                 'nombre': row[1] or 'Sin nombre',
@@ -91,6 +92,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-004: Agrega una nueva promoción al sistema
     @classmethod
     def agregar_promocion(cls, nombre, descuento, fecha_inicio, fecha_fin):
         conexion = obtener_conexion()
@@ -116,6 +118,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-005: Actualiza los datos de una promoción existente
     @classmethod
     def actualizar_promocion(cls, id_promocion, nombre, descuento, fecha_inicio, fecha_fin):
         conexion = obtener_conexion()
@@ -141,6 +144,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-006: Elimina una promoción del sistema
     @classmethod
     def eliminar_promocion(cls, id_promocion):
         conexion = obtener_conexion()
@@ -168,6 +172,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-007: Asocia un contenido a una promoción
     @classmethod
     def agregar_contenido_a_promocion(cls, id_promocion, id_contenido):
         conexion = obtener_conexion()
@@ -194,6 +199,7 @@ class Promocion:
             cursor.close()
             conexion.close()
 
+    # ENT-PROM-008: Elimina un contenido de una promoción
     @classmethod
     def eliminar_contenido_de_promocion(cls, id_promocion, id_contenido):
         conexion = obtener_conexion()

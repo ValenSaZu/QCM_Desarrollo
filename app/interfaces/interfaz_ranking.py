@@ -1,9 +1,9 @@
-# Clase que maneja la interfaz para la sección de rankings de contenidos.
+# UI-RANK-001: Clase para manejar la interfaz de rankings de contenidos, incluyendo visualización y manejo de errores
 class InterfazRanking:
 
+    # FUNC-UI-RANK-001: Sirve la página principal de rankings de contenidos
     @staticmethod
     def servir_pagina_ranking():
-        """Sirve la página de ranking"""
         try:
             with open('static/html/UIRankings(MK-054).html', 'r', encoding='utf-8') as file:
                 return file.read()
@@ -11,12 +11,8 @@ class InterfazRanking:
             print(f"Error leyendo archivo de ranking: {e}")
             return None
 
+    # FUNC-UI-RANK-002: Genera página de error personalizada con opciones de navegación
     def mostrar_error(self, mensaje):
-        """Genera y retorna una página HTML de error con un mensaje personalizado y un botón para volver.
-
-        Args:
-            mensaje (str): Mensaje de error que se mostrará al usuario.
-        """
         return f"""
         <html>
         <head>

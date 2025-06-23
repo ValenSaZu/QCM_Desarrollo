@@ -1,5 +1,6 @@
 from infrastructure.bd.conexion import obtener_conexion
 
+# BD-014: Entidad para gestionar tipos de archivo
 class TipoArchivo:
     def __init__(self, id_tipo_archivo, extension, mime_type, formato):
         self.id_tipo_archivo = id_tipo_archivo
@@ -7,9 +8,9 @@ class TipoArchivo:
         self.mime_type = mime_type
         self.formato = formato
 
+    # ENT-TARCH-001: Obtiene un tipo de archivo por su extensión
     @classmethod
     def obtener_por_extension(cls, extension):
-        """Obtiene un tipo de archivo por su extensión"""
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
@@ -30,15 +31,15 @@ class TipoArchivo:
                 mime_type=tipo_archivo[2],
                 formato=tipo_archivo[3]
             )
-        except Exception as e:
-            raise Exception(f"Error al obtener tipo de archivo: {str(e)}")
+        except Exception:
+            raise Exception("Error al obtener tipo de archivo")
         finally:
             cursor.close()
             conexion.close()
 
+    # ENT-TARCH-002: Obtiene todos los tipos de archivo disponibles
     @classmethod
     def obtener_todos(cls):
-        """Obtiene todos los tipos de archivo"""
         conexion = obtener_conexion()
         cursor = conexion.cursor()
 
@@ -59,8 +60,8 @@ class TipoArchivo:
                 )
                 tipos_archivo.append(tipo_archivo)
             return tipos_archivo
-        except Exception as e:
-            raise Exception(f"Error al obtener tipos de archivo: {str(e)}")
+        except Exception:
+            raise Exception("Error al obtener tipos de archivo")
         finally:
             cursor.close()
-            conexion.close() 
+            conexion.close()
