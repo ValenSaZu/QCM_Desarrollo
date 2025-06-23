@@ -85,14 +85,15 @@ class ControladorPromocion:
                 fecha_fin=fecha_fin
             )
 
-            contenidos_nuevos = {str(id) for id in promocion_data.get('contenidos', [])}
-            contenidos_actuales = {str(c.get('id_contenido')) for c in
-                                   Promocion.obtener_contenido_promocion(id_promocion) or [] if c}
+            # Desasociar todos los contenidos actuales de la promoción
+            for c in Promocion.obtener_contenido_promocion(id_promocion) or []:
+                if c and c.get('id_contenido') not in (None, ''):
+                    Promocion.eliminar_contenido_de_promocion(id_promocion, c.get('id_contenido'))
 
-            for id_contenido in (contenidos_actuales - contenidos_nuevos):
-                Promocion.eliminar_contenido_de_promocion(id_promocion, id_contenido)
+            ids_nuevos = [id for id in promocion_data.get('contenidos', []) if id not in (None, '')]
+            contenidos_nuevos = {int(id) for id in ids_nuevos}
 
-            for id_contenido in (contenidos_nuevos - contenidos_actuales):
+            for id_contenido in contenidos_nuevos:
                 Promocion.agregar_contenido_a_promocion(id_promocion, id_contenido)
 
             return {"success": True, "message": "Promoción actualizada"}
@@ -116,9 +117,17 @@ class ControladorPromocion:
                 "data": [{
                     "id_contenido": c.get('id_contenido'),
                     "nombre": c.get('nombre'),
-                    "precio": float(c.get('precio', 0.0)),
-                    "descuento": float(c.get('descuento', 0.0)),
-                    "tipo_contenido": self._determinar_tipo_contenido(c.get('formato'))
+                    "precio_original": float(c.get('precio', 0.0)),
+                    "porcentaje_descuento": float(c.get('descuento', 0.0)),
+                    "precio_descuento": round(float(c.get('precio', 0.0)) * (1 - float(c.get('descuento', 0.0)) / 100), 2) if c.get('descuento', 0.0) else float(c.get('precio', 0.0)),
+                    "tipo_contenido": self._determinar_tipo_contenido(c.get('formato')),
+                    "autor": c.get('autor', ''),
+                    "categoria": c.get('categoria', ''),
+                    "descripcion": c.get('descripcion', ''),
+                    "tamano": c.get('tamano', 0),
+                    "formato": c.get('formato', ''),
+                    "calificacion": c.get('calificacion', 0.0),
+                    "miniatura_url": f"/api/contenido/{c.get('id_contenido')}/miniatura"
                 } for c in (contenidos or [])] if contenidos else []
             }
         except Exception:
@@ -128,12 +137,11 @@ class ControladorPromocion:
     def _determinar_tipo_contenido(self, formato):
         if not formato:
             return 'otro'
-
         formato = formato.lower()
-        if any(ext in formato for ext in ['mp4', 'avi', 'mov']):
+        if any(ext in formato for ext in ['mp4', 'avi', 'mov', 'video']):
             return 'video'
-        elif any(ext in formato for ext in ['jpg', 'png', 'gif']):
+        elif any(ext in formato for ext in ['jpg', 'png', 'gif', 'jpeg', 'imagen', 'image']):
             return 'imagen'
-        elif any(ext in formato for ext in ['mp3', 'wav', 'ogg']):
+        elif any(ext in formato for ext in ['mp3', 'wav', 'ogg', 'audio']):
             return 'audio'
         return 'otro'

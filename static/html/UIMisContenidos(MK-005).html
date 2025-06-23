@@ -544,12 +544,51 @@
 
                 console.log('Vista previa actualizada');
 
-                actualizarCalificacionEnModal(content);
-                console.log('Calificación actualizada');
+                // Consultar la última descarga no valorada
+                let ultimaDescargaNoValorada = null;
+                try {
+                    const response = await fetch('/api/mis-contenidos/descargas-no-valoradas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ id_contenido: contentId })
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.data && data.data.length > 0) {
+                            // Tomar la última descarga no valorada
+                            ultimaDescargaNoValorada = data.data[data.data.length - 1];
+                        }
+                    }
+                } catch (e) { console.error('Error consultando descargas no valoradas', e); }
+                // Guardar en el objeto actual
+                currentViewedContent.ultimaDescargaNoValorada = ultimaDescargaNoValorada;
+                // Actualizar UI de calificación
+                actualizarCalificacionEnModal(currentViewedContent);
 
                 console.log('Mostrando modal...');
                 viewContentModal.classList.add('show');
                 console.log('Modal mostrado');
+
+                // Mostrar descargas disponibles
+                const descargasDisponibles = content.descargas_disponibles !== undefined ? content.descargas_disponibles : 0;
+                let downloadInfo = document.getElementById('downloadInfo');
+                if (!downloadInfo) {
+                    downloadInfo = document.createElement('div');
+                    downloadInfo.id = 'downloadInfo';
+                    downloadInfo.style.margin = '10px 0 5px 0';
+                    downloadInfo.style.fontWeight = 'bold';
+                    downloadInfo.style.color = '#007bff';
+                    downloadContentBtn.parentNode.insertBefore(downloadInfo, downloadContentBtn);
+                }
+                downloadInfo.textContent = `Descargas disponibles: ${descargasDisponibles}`;
+                // Deshabilitar botón si no quedan descargas
+                downloadContentBtn.disabled = descargasDisponibles <= 0;
+                if (descargasDisponibles <= 0) {
+                    downloadContentBtn.innerHTML = '<i class="fas fa-ban"></i> No puedes descargar más';
+                } else {
+                    downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+                }
 
             } catch (error) {
                 console.error('Error al ver contenido:', error);
@@ -576,73 +615,50 @@
             userRatingStars.innerHTML = '';
             const userRating = content.calificacion_usuario || 0;
             
+            // Solo permitir calificar si hay una descarga no valorada
+            const puedeValorar = !!content.ultimaDescargaNoValorada;
             for (let i = 1; i <= 10; i++) {
                 const star = document.createElement('span');
                 star.className = 'rating-star';
                 star.innerHTML = '★';
-                
                 if (i <= userRating) {
                     star.classList.add('active');
                 }
-                
                 star.addEventListener('click', () => {
-                    if (content.ya_descargado) {
-                        calificarContenido(content.id_contenido, i);
+                    if (puedeValorar) {
+                        calificarContenido(content.id_contenido, i, content.ultimaDescargaNoValorada.id_descarga);
                     }
                 });
-                
                 userRatingStars.appendChild(star);
             }
 
-            if (content.ya_descargado) {
-                ratingNote.textContent = 'Haz clic en las estrellas para calificar';
+            if (puedeValorar) {
+                ratingNote.textContent = 'Haz clic en las estrellas para calificar esta descarga';
                 ratingNote.style.color = '#666';
             } else {
-                ratingNote.textContent = 'Solo puedes calificar después de descargar el contenido';
+                ratingNote.textContent = 'Solo puedes calificar después de descargar y si no has valorado todas tus descargas.';
                 ratingNote.style.color = '#dc3545';
             }
             }
 
-        async function calificarContenido(contentId, rating) {
+        async function calificarContenido(id_contenido, puntuacion, id_descarga) {
             try {
                 const response = await fetch('/api/mis-contenidos/calificar', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contenido_id: contentId,
-                        calificacion: rating
-                    }),
-                    credentials: 'same-origin'
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ id_contenido, puntuacion, id_descarga })
                 });
-                
-                if (!response.ok) {
-                    throw new Error('Error al calificar el contenido');
-                }
-
                 const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'Error al calificar el contenido');
+                if (data.success) {
+                    showSuccess('¡Gracias por tu valoración!');
+                    // Refrescar la opción de valoración para permitir valorar la siguiente descarga no valorada
+                    await verContenido(id_contenido);
+                } else {
+                    showError(data.error || 'Error al calificar');
                 }
-                
-                if (currentViewedContent && currentViewedContent.id_contenido === contentId) {
-                    currentViewedContent.calificacion_usuario = rating;
-                    actualizarCalificacionEnModal(currentViewedContent);
-                }
-                
-                const ratingElement = document.getElementById(`rating-${contentId}`);
-                if (ratingElement) {
-                    ratingElement.innerHTML = generarEstrellas(rating);
-                }
-
-                showSuccess('Contenido calificado exitosamente');
-                
             } catch (error) {
-                console.error('Error al calificar:', error);
-                showError(error.message);
+                showError('Error al calificar: ' + error.message);
             }
         }
 
@@ -651,20 +667,20 @@
                 showError('No hay contenido seleccionado');
                 return;
             }
-
+            if (currentViewedContent.descargas_disponibles <= 0) {
+                showError('No tienes descargas disponibles para este contenido.');
+                return;
+            }
             try {
                 downloadContentBtn.disabled = true;
                 downloadContentBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Descargando...';
-
                 const response = await fetch(`/api/mis-contenidos/descargar/${currentViewedContent.id_contenido}`, {
                     method: 'GET',
                     credentials: 'same-origin'
                 });
-
                 if (!response.ok) {
                     throw new Error('Error al descargar el contenido');
                 }
-
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -674,28 +690,42 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-
+                // Actualizar descargas disponibles
+                if (typeof currentViewedContent.descargas_disponibles === 'number') {
+                    currentViewedContent.descargas_disponibles = Math.max(0, currentViewedContent.descargas_disponibles - 1);
+                    let downloadInfo = document.getElementById('downloadInfo');
+                    if (downloadInfo) {
+                        downloadInfo.textContent = `Descargas disponibles: ${currentViewedContent.descargas_disponibles}`;
+                    }
+                    if (currentViewedContent.descargas_disponibles <= 0) {
+                        downloadContentBtn.disabled = true;
+                        downloadContentBtn.innerHTML = '<i class="fas fa-ban"></i> No puedes descargar más';
+                    } else {
+                        downloadContentBtn.disabled = false;
+                        downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+                    }
+                }
                 currentViewedContent.ya_descargado = true;
-                
                 const downloadStatus = document.getElementById('downloadStatus');
                 downloadStatus.style.display = 'block';
                 downloadStatus.innerHTML = `
                     <i class="fas fa-check-circle" style="color: #28a745;"></i>
                     <span>Contenido descargado - Ya puedes calificar</span>
                 `;
-            
                 const ratingNote = document.getElementById('ratingNote');
                 ratingNote.textContent = 'Haz clic en las estrellas para calificar';
                 ratingNote.style.color = '#666';
-
                 showSuccess('Contenido descargado exitosamente');
-
+                // Al descargar, refrescar la opción de valoración
+                await verContenido(currentViewedContent.id_contenido);
             } catch (error) {
                 console.error('Error al descargar:', error);
                 showError(error.message);
             } finally {
-                downloadContentBtn.disabled = false;
-                downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+                if (currentViewedContent.descargas_disponibles > 0) {
+                    downloadContentBtn.disabled = false;
+                    downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+                }
             }
         });
             

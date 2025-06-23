@@ -23,6 +23,7 @@ class ControladorUsuarios:
 
         usuario = Usuario.registrar(username, contrasena_hash, nombre, apellido)
         return {
+            "success": True,
             "mensaje": f"¡Bienvenido {nombre}! Registro exitoso.",
             "nombre": nombre,
             "apellido": apellido

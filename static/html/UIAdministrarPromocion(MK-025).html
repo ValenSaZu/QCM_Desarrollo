@@ -872,26 +872,35 @@
                 e.preventDefault();
 
                 const promocionId = document.getElementById("editPromocionId").value;
-                const formData = new FormData(this);
+                const nombre = document.getElementById("editNombrePromocion").value;
+                const porcentaje = parseFloat(document.getElementById("editPorcentaje").value);
+                const fecha_inicio = document.getElementById("editFechaInicio").value;
+                const fecha_fin = document.getElementById("editFechaFin").value;
 
-                // Obtener todos los contenidos de la tabla
                 const contenidos = [];
                 document.querySelectorAll('#editContenidosPromocionBody tr').forEach(row => {
                     const input = row.querySelector('input[type="hidden"][name="contenidos[]"]');
                     if (input && input.value) {
-                        contenidos.push(input.value);
+                        contenidos.push(parseInt(input.value));
                     }
                 });
 
-                // Agregar cada contenido individualmente al FormData
-                contenidos.forEach(contenidoId => {
-                    formData.append('contenidos[]', contenidoId);
-                });
+                const data = {
+                    id: parseInt(promocionId),
+                    nombre: nombre,
+                    porcentaje: porcentaje,
+                    fecha_inicio: fecha_inicio,
+                    fecha_fin: fecha_fin,
+                    contenidos: contenidos
+                };
 
                 try {
                     const response = await fetch(`/api/promociones/${promocionId}`, {
                         method: 'PUT',
-                        body: formData
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
                     });
 
                     const result = await response.json();

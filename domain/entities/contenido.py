@@ -306,103 +306,103 @@ class Contenido:
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         try:
-            query_compras = """
-                SELECT DISTINCT
-                    c.id_contenido,
-                    c.nombre,
-                    c.autor,
-                    c.descripcion,
-                    t.formato AS tipo_formato,
-                    cat.nombre AS categoria,
-                    CASE WHEN d.id_descarga IS NOT NULL THEN true ELSE false END AS ya_descargado,
-                    co.fecha_y_hora AS fecha_adquisicion,
-                    d.fecha_y_hora AS fecha_descarga,
-                    false AS es_regalo,
-                    false AS regalo_abierto,
-                    NULL AS remitente_regalo,
-                    'compra' AS tipo_adquisicion
+            # Obtener compras
+            cursor.execute("""
+                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_comprado
                 FROM COMPRA co
                 JOIN CONTENIDO c ON co.id_contenido = c.id_contenido
                 LEFT JOIN TIPO_ARCHIVO t ON c.id_tipo_archivo = t.id_tipo_archivo
                 LEFT JOIN CATEGORIA cat ON c.id_categoria = cat.id_categoria
-                LEFT JOIN DESCARGA d ON c.id_contenido = d.id_contenido AND d.id_usuario = %s
                 WHERE co.id_usuario = %s
-            """
+                GROUP BY c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato, cat.nombre
+            """, (id_usuario,))
+            compras = {row[0]: {"veces_comprado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
 
-            query_regalos = """
-                SELECT DISTINCT
-                    c.id_contenido,
-                    c.nombre,
-                    c.autor,
-                    c.descripcion,
-                    t.formato AS tipo_formato,
-                    cat.nombre AS categoria,
-                    CASE WHEN d.id_descarga IS NOT NULL THEN true ELSE false END AS ya_descargado,
-                    comp.fecha_y_hora AS fecha_adquisicion,
-                    d.fecha_y_hora AS fecha_descarga,
-                    true AS es_regalo,
-                    r.abierto AS regalo_abierto,
-                    u.nombre || ' ' || u.apellido AS remitente_regalo,
-                    'regalo' AS tipo_adquisicion
+            # Obtener regalos
+            cursor.execute("""
+                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_regalado
                 FROM REGALO r
                 JOIN COMPRA comp ON r.id_compra = comp.id_compra
                 JOIN CONTENIDO c ON r.id_contenido = c.id_contenido
                 LEFT JOIN TIPO_ARCHIVO t ON c.id_tipo_archivo = t.id_tipo_archivo
                 LEFT JOIN CATEGORIA cat ON c.id_categoria = cat.id_categoria
-                LEFT JOIN DESCARGA d ON c.id_contenido = d.id_contenido AND d.id_usuario = %s
-                LEFT JOIN USUARIO u ON r.id_usuario_envia = u.id_usuario
                 WHERE r.id_usuario_recibe = %s
-            """
+                GROUP BY c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato, cat.nombre
+            """, (id_usuario,))
+            regalos = {row[0]: {"veces_regalado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
 
-            cursor.execute(query_compras, (id_usuario, id_usuario))
-            compras = cursor.fetchall()
+            # Unir compras y regalos
+            contenidos = {}
+            for id_contenido, data in compras.items():
+                contenidos[id_contenido] = {
+                    **data,
+                    "veces_comprado": data["veces_comprado"],
+                    "veces_regalado": 0
+                }
+            for id_contenido, data in regalos.items():
+                if id_contenido in contenidos:
+                    contenidos[id_contenido]["veces_regalado"] = data["veces_regalado"]
+                else:
+                    contenidos[id_contenido] = {
+                        **data,
+                        "veces_comprado": 0,
+                        "veces_regalado": data["veces_regalado"]
+                    }
 
-            cursor.execute(query_regalos, (id_usuario, id_usuario))
-            regalos = cursor.fetchall()
+            # Obtener descargas
+            cursor.execute("""
+                SELECT id_contenido, COUNT(*) as veces_descargado
+                FROM DESCARGA
+                WHERE id_usuario = %s
+                GROUP BY id_contenido
+            """, (id_usuario,))
+            descargas = {row[0]: row[1] for row in cursor.fetchall()}
 
-            todos_los_contenidos = compras + regalos
-            todos_los_contenidos.sort(key=lambda x: x[7] if x[7] else datetime.min, reverse=True)
-
-            contenidos_adquiridos = []
-            for row in todos_los_contenidos:
-                id_contenido = row[0]
-
+            # Preparar respuesta
+            resultado = []
+            for id_contenido, data in contenidos.items():
+                veces_comprado = data["veces_comprado"]
+                veces_regalado = data["veces_regalado"]
+                veces_adquirido = veces_comprado + veces_regalado
+                veces_descargado = descargas.get(id_contenido, 0)
                 from domain.entities.valoracion import Valoracion
                 calificacion_promedio = Valoracion.obtener_promedio_valoracion(id_contenido)
                 calificacion_usuario = Valoracion.obtener_valoracion_usuario(id_usuario, id_contenido)
-
-                fecha_adquisicion = None
-                fecha_descarga = None
-                if row[7]:
-                    fecha_adquisicion = row[7].strftime('%Y-%m-%d %H:%M:%S')
-                if row[8]:
-                    fecha_descarga = row[8].strftime('%Y-%m-%d %H:%M:%S')
-
-                contenidos_adquiridos.append({
+                resultado.append({
                     "id_contenido": id_contenido,
-                    "nombre": row[1],
-                    "autor": row[2],
-                    "descripcion": row[3],
-                    "formato": row[4] if row[4] else 'desconocido',
-                    "tipo_contenido": row[4].lower() if row[4] else 'desconocido',
-                    "categoria": row[5],
-                    "ya_descargado": row[6],
-                    "fecha_adquisicion": fecha_adquisicion,
-                    "fecha_descarga": fecha_descarga,
+                    "nombre": data["nombre"],
+                    "autor": data["autor"],
+                    "descripcion": data["descripcion"],
+                    "formato": data["formato"] if data["formato"] else 'desconocido',
+                    "tipo_contenido": cls._determinar_tipo_contenido(data["formato"]) if data["formato"] else 'desconocido',
+                    "categoria": data["categoria"],
+                    "veces_comprado": veces_comprado,
+                    "veces_regalado": veces_regalado,
+                    "veces_adquirido": veces_adquirido,
+                    "veces_descargado": veces_descargado,
+                    "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
                     "calificacion_promedio": round(calificacion_promedio, 1),
-                    "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
-                    "es_regalo": row[9] if row[9] is not None else False,
-                    "regalo_abierto": row[10] if row[10] is not None else False,
-                    "remitente_regalo": row[11] if row[11] else None,
-                    "tipo_adquisicion": row[12]
+                    "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0
                 })
-
-            return contenidos_adquiridos
+            return resultado
         except Exception as e:
             return []
         finally:
             cursor.close()
             conexion.close()
+
+    @staticmethod
+    def _determinar_tipo_contenido(formato):
+        if not formato:
+            return 'desconocido'
+        formato = formato.strip().lower()
+        if any(ext == formato or ext in formato for ext in ['mp4', 'avi', 'mov', 'video']):
+            return 'video'
+        elif any(ext == formato or ext in formato for ext in ['jpg', 'png', 'gif', 'jpeg', 'imagen', 'image']):
+            return 'imagen'
+        elif any(ext == formato or ext in formato for ext in ['mp3', 'wav', 'ogg', 'audio']):
+            return 'audio'
+        return 'otro'
 
     # ENT-CONT-008: Obtiene información necesaria para descargar un contenido
     @classmethod
@@ -441,24 +441,21 @@ class Contenido:
     def registrar_descarga(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
         cursor = conexion.cursor()
-
         try:
-            cursor.execute("""
-                SELECT id_descarga FROM DESCARGA 
-                WHERE id_usuario = %s AND id_contenido = %s
-            """, (id_usuario, id_contenido))
-
-            if cursor.fetchone():
+            # Contar compras y regalos
+            cursor.execute("SELECT COUNT(*) FROM COMPRA WHERE id_usuario = %s AND id_contenido = %s", (id_usuario, id_contenido))
+            compras = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM REGALO r WHERE r.id_usuario_recibe = %s AND r.id_contenido = %s", (id_usuario, id_contenido))
+            regalos = cursor.fetchone()[0]
+            total_adquirido = compras + regalos
+            # Contar descargas
+            cursor.execute("SELECT COUNT(*) FROM DESCARGA WHERE id_usuario = %s AND id_contenido = %s", (id_usuario, id_contenido))
+            descargas = cursor.fetchone()[0]
+            if descargas >= total_adquirido or total_adquirido == 0:
                 return False
-
-            cursor.execute("""
-                INSERT INTO DESCARGA (id_usuario, id_contenido, fecha_y_hora)
-                VALUES (%s, %s, CURRENT_TIMESTAMP)
-            """, (id_usuario, id_contenido))
-
+            cursor.execute("INSERT INTO DESCARGA (id_usuario, id_contenido, fecha_y_hora) VALUES (%s, %s, CURRENT_TIMESTAMP)", (id_usuario, id_contenido))
             conexion.commit()
             return True
-
         except Exception as e:
             conexion.rollback()
             return False

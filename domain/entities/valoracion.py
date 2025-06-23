@@ -59,17 +59,12 @@ class Valoracion:
     def verificar_adquisicion_contenido(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
         cursor = conexion.cursor()
-
         try:
+            # Solo puede valorar si ha descargado al menos una vez
             cursor.execute("""
-                           SELECT 1
-                           FROM COMPRA
-                           WHERE id_usuario = %s
-                             AND id_contenido = %s
-                           """, (id_usuario, id_contenido))
-
+                SELECT 1 FROM DESCARGA WHERE id_usuario = %s AND id_contenido = %s
+            """, (id_usuario, id_contenido))
             return cursor.fetchone() is not None
-
         except Exception:
             return False
         finally:
@@ -148,6 +143,67 @@ class Valoracion:
         except Exception:
             conexion.rollback()
             return {"success": False, "error": "Error al crear valoración"}
+        finally:
+            cursor.close()
+            conexion.close()
+
+    # Obtiene las descargas de un usuario para un contenido
+    @classmethod
+    def obtener_descargas_no_valoradas(cls, id_usuario, id_contenido):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute('''
+                SELECT d.id_descarga, d.fecha_y_hora
+                FROM DESCARGA d
+                LEFT JOIN VALORACION v ON d.id_descarga = v.id_descarga
+                WHERE d.id_usuario = %s AND d.id_contenido = %s AND v.id_valoracion IS NULL
+                ORDER BY d.fecha_y_hora
+            ''', (id_usuario, id_contenido))
+            return cursor.fetchall()  # [(id_descarga, fecha_y_hora), ...]
+        except Exception:
+            return []
+        finally:
+            cursor.close()
+            conexion.close()
+
+    # Obtiene la cantidad de valoraciones hechas por descarga
+    @classmethod
+    def obtener_valoraciones_por_descarga(cls, id_usuario, id_contenido):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute('''
+                SELECT d.id_descarga, v.puntuacion, v.fecha
+                FROM DESCARGA d
+                LEFT JOIN VALORACION v ON d.id_descarga = v.id_descarga
+                WHERE d.id_usuario = %s AND d.id_contenido = %s
+                ORDER BY d.fecha_y_hora
+            ''', (id_usuario, id_contenido))
+            return cursor.fetchall()  # [(id_descarga, puntuacion, fecha), ...]
+        except Exception:
+            return []
+        finally:
+            cursor.close()
+            conexion.close()
+
+    # Crea una valoración asociada a una descarga específica
+    @classmethod
+    def crear_valoracion_por_descarga(cls, id_usuario, id_contenido, id_descarga, puntuacion_normalizada):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO VALORACION (id_usuario, id_contenido, id_descarga, puntuacion, fecha)
+                VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+            ''', (id_usuario, id_contenido, id_descarga, puntuacion_normalizada))
+            conexion.commit()
+            if cursor.rowcount > 0:
+                return {"success": True, "message": "Valoración creada correctamente"}
+            return {"success": False, "error": "No se pudo crear la valoración"}
+        except Exception as e:
+            conexion.rollback()
+            return {"success": False, "error": f"Error al crear valoración: {str(e)}"}
         finally:
             cursor.close()
             conexion.close()

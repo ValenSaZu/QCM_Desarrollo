@@ -114,7 +114,11 @@ class Carrito:
                                INSERT INTO CARRITO (descuento_aplicado, id_usuario)
                                VALUES (0, %s) RETURNING id_carrito;
                                """, (id_usuario,))
-                id_carrito = cursor.fetchone()[0]
+                id_carrito_row = cursor.fetchone()
+                if id_carrito_row:
+                    id_carrito = id_carrito_row[0]
+                else:
+                    raise Exception("No se pudo crear el carrito")
             else:
                 id_carrito = resultado[0]
 
@@ -155,14 +159,16 @@ class Carrito:
 
         try:
             cursor.execute("SELECT saldo FROM CLIENTE WHERE id_usuario = %s FOR UPDATE", (id_usuario,))
-            if not (saldo := cursor.fetchone()):
+            saldo_row = cursor.fetchone()
+            if not saldo_row:
                 raise ValueError("Cliente no encontrado")
+            saldo = saldo_row[0]
 
-            if saldo[0] < total_compra:
+            if saldo < total_compra:
                 raise ValueError("Saldo insuficiente")
 
             cursor.execute("UPDATE CLIENTE SET saldo = %s WHERE id_usuario = %s",
-                           (saldo[0] - total_compra, id_usuario))
+                           (saldo - total_compra, id_usuario))
 
             for item in items_comprados:
                 cursor.executemany(
@@ -170,9 +176,11 @@ class Carrito:
                     [(id_usuario, item.id_contenido)] * item.cantidad
                 )
 
-            if (carrito := cls.obtener_carrito_por_usuario(id_usuario)[0]):
-                cursor.execute("DELETE FROM CONTENIDO_CARRITO WHERE id_carrito = %s",
-                               (carrito[0].id_carrito,))
+            cursor.execute("SELECT id_carrito FROM CARRITO WHERE id_usuario = %s", (id_usuario,))
+            resultado = cursor.fetchone()
+            if resultado:
+                id_carrito = resultado[0]
+                cursor.execute("DELETE FROM CONTENIDO_CARRITO WHERE id_carrito = %s", (id_carrito,))
 
             conexion.commit()
             return True
@@ -214,8 +222,9 @@ class Carrito:
 
         try:
             cursor.execute("SELECT saldo FROM CLIENTE WHERE id_usuario = %s", (id_usuario,))
-            if (saldo := cursor.fetchone()):
-                return int(saldo[0] // 30)
+            saldo_row = cursor.fetchone()
+            if saldo_row:
+                return int(saldo_row[0] // 30)
             return 0
         except Exception:
             return 0
@@ -251,7 +260,8 @@ class Carrito:
                                  AND cc.descuento_aplicado = 1
                                """, (id_usuario,))
 
-                if cursor.fetchone()[0] >= disponibles:
+                count_row = cursor.fetchone()
+                if count_row and count_row[0] >= disponibles:
                     return {"success": False, "error": "Límite de descuentos alcanzado"}
 
             cursor.execute("""
@@ -286,7 +296,8 @@ class Carrito:
                            WHERE c.id_usuario = %s
                              AND cc.descuento_aplicado = 1
                            """, (id_usuario,))
-            aplicados = cursor.fetchone()[0]
+            aplicados_row = cursor.fetchone()
+            aplicados = aplicados_row[0] if aplicados_row else 0
 
             cursor.execute("""
                            SELECT cc.id_contenido, c.nombre, c.precio

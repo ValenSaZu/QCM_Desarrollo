@@ -9,130 +9,59 @@ class ControladorContenidosAdquiridos:
     # CTRL-CONT-ADQ-001: Obtiene todos los contenidos adquiridos por un usuario tanto en compras como en regalos con información detallada
     def obtener_contenidos_adquiridos(self, id_usuario):
         try:
-            historial = Cliente.obtener_historial(id_usuario)
-
-            if not historial:
-                return []
-
-            contenidos = []
-            for item in historial:
-                contenido = Contenido.obtener_por_id(item['id_contenido'])
-                if contenido:
-                    fecha_descarga = datetime.strptime(item['fecha_descarga'], '%Y-%m-%d %H:%M:%S')
-                    es_reciente = (datetime.now() - fecha_descarga) < timedelta(days=7)
-
-                    tipo_contenido = self._determinar_tipo_contenido(contenido.formato.lower())
-
-                    es_regalo = item.get('tipo_adquisicion') == 'regalo'
-                    tipo_adquisicion = 'Regalo' if es_regalo else 'Compra'
-
-                    contenidos.append({
-                        'id_contenido': contenido.id_contenido,
-                        'nombre': contenido.nombre,
-                        'autor': contenido.autor,
-                        'descripcion': contenido.descripcion or 'Sin descripción',
-                        'fecha_descarga': fecha_descarga.strftime('%Y-%m-%d %H:%M:%S'),
-                        'formato': contenido.formato,
-                        'tipo_contenido': tipo_contenido,
-                        'es_reciente': es_reciente,
-                        'categoria': getattr(contenido, 'categoria', 'Sin categoría'),
-                        'valoracion': Valoracion.obtener_valoracion_usuario(id_usuario, contenido.id_contenido),
-                        'tipo_adquisicion': tipo_adquisicion,
-                        'es_regalo': es_regalo
-                    })
-
-            return contenidos
-
+            return Contenido.obtener_contenidos_adquiridos(id_usuario)
         except Exception as e:
             raise Exception(f"Error al obtener contenidos adquiridos: {str(e)}")
 
     # CTRL-CONT-ADQ-002: Determina el tipo de contenido (video, imagen, audio) basado en su formato
     def _determinar_tipo_contenido(self, formato):
-        if not formato or formato == 'desconocido':
-            return 'otro'
-
-        formato_lower = formato.lower().strip()
-
-        formatos_video = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm']
-        formatos_imagen = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'imagen']
-        formatos_audio = ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac']
-
-        if formato_lower in formatos_video:
-            return 'video'
-        elif formato_lower in formatos_imagen:
-            return 'imagen'
-        elif formato_lower in formatos_audio:
-            return 'audio'
-        return 'otro'
+        return Contenido._determinar_tipo_contenido(formato)
 
     # CTRL-CONT-ADQ-003: Permite a un usuario calificar un contenido adquirido (rango 1-10)
-    def calificar_contenido(self, id_usuario, id_contenido, puntuacion):
+    def calificar_contenido(self, id_usuario, id_contenido, puntuacion, id_descarga=None):
         try:
-            if not Valoracion.verificar_adquisicion_contenido(id_usuario, id_contenido):
-                return {
-                    'success': False,
-                    'error': 'No has adquirido este contenido o no existe.'
-                }
-
+            if not id_descarga:
+                return {'success': False, 'error': 'Falta id_descarga para valorar.'}
             if puntuacion < 1 or puntuacion > 10:
-                return {
-                    'success': False,
-                    'error': 'La puntuación debe estar entre 1 y 10.'
-                }
-
+                return {'success': False, 'error': 'La puntuación debe estar entre 1 y 10.'}
             puntuacion_normalizada = float(puntuacion) / 10.0
-
-            if Valoracion.existe_valoracion(id_usuario, id_contenido):
-                resultado = Valoracion.actualizar_valoracion(id_usuario, id_contenido, puntuacion_normalizada)
-            else:
-                resultado = Valoracion.crear_valoracion(id_usuario, id_contenido, puntuacion_normalizada)
-
+            resultado = Valoracion.crear_valoracion_por_descarga(id_usuario, id_contenido, id_descarga, puntuacion_normalizada)
             if resultado.get('success'):
-                return {
-                    'success': True,
-                    'message': '¡Gracias por tu valoración!',
-                    'puntuacion': puntuacion
-                }
+                return {'success': True, 'message': '¡Gracias por tu valoración!', 'puntuacion': puntuacion}
             else:
                 return resultado
-
         except Exception as e:
-            return {
-                'success': False,
-                'error': f'Error al guardar la valoración: {str(e)}'
-            }
+            return {'success': False, 'error': f'Error al guardar la valoración: {str(e)}'}
 
     # CTRL-CONT-ADQ-004: Gestiona el proceso de descarga de un contenido adquirido (una sola descarga permitida por compra)
     def descargar_contenido(self, id_usuario, id_contenido):
         try:
-            if not Valoracion.verificar_adquisicion_contenido(id_usuario, id_contenido):
+            # Verificar si el usuario ha adquirido el contenido
+            contenidos = Contenido.obtener_contenidos_adquiridos(id_usuario)
+            contenido_info = next((c for c in contenidos if c["id_contenido"] == id_contenido), None)
+            if not contenido_info or contenido_info["descargas_disponibles"] <= 0:
                 return {
                     'success': False,
-                    'error': 'No has adquirido este contenido o no existe.'
+                    'error': 'No tienes descargas disponibles para este contenido.'
                 }
-
             info_contenido = Contenido.obtener_info_descarga(id_contenido)
             if not info_contenido:
                 return {
                     'success': False,
                     'error': 'Contenido no encontrado.'
                 }
-
             descarga_registrada = Contenido.registrar_descarga(id_usuario, id_contenido)
-
             if not descarga_registrada:
                 return {
                     'success': False,
-                    'error': 'Ya has descargado este contenido. Solo puedes descargar una vez por compra.'
+                    'error': 'Ya has descargado este contenido el número máximo de veces permitido.'
                 }
-
             return {
                 'success': True,
                 'nombre': info_contenido['nombre'],
                 'archivo': info_contenido['archivo'],
                 'mime_type': self._obtener_mime_type(info_contenido['formato'])
             }
-
         except Exception as e:
             return {
                 'success': False,
@@ -186,18 +115,16 @@ class ControladorContenidosAdquiridos:
     def obtener_mis_contenidos(self, id_usuario):
         try:
             contenidos_adquiridos = Contenido.obtener_contenidos_adquiridos(id_usuario)
-
             for contenido in contenidos_adquiridos:
                 formato = contenido.get('formato', 'desconocido')
                 contenido['tipo_contenido'] = self._determinar_tipo_contenido(formato)
-
-                if 'tipo_adquisicion' not in contenido:
-                    contenido['tipo_adquisicion'] = 'Compra'
-                    contenido['es_regalo'] = False
-
             return {
                 "success": True,
                 "data": contenidos_adquiridos
             }
         except Exception as e:
             return {"success": False, "error": "No se pudieron cargar tus contenidos.", "data": []}
+
+    def obtener_descargas_no_valoradas(self, id_usuario, id_contenido):
+        descargas = Valoracion.obtener_descargas_no_valoradas(id_usuario, id_contenido)
+        return {"success": True, "data": [{"id_descarga": d[0], "fecha": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None} for d in descargas]}

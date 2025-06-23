@@ -137,8 +137,8 @@ class MyHandler(BaseHTTPRequestHandler):
     def servir_pagina_mis_contenidos(self):
         return InterfazMisContenidos.servir_pagina_mis_contenidos()
 
-    # HTTP-012: Sirve la página de promociones
-    def servir_pagina_promociones(self):
+    # HTTP-012: Sirve la página de ofertas (promociones para cliente)
+    def servir_pagina_ofertas(self):
         try:
             cookie = self.headers.get('Cookie', '')
             if not cookie or 'session_id=' not in cookie:
@@ -307,7 +307,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 '/cliente/carrito': self.servir_pagina_carrito,
                 '/cliente/perfil': self.servir_pagina_perfil,
                 '/cliente/mis-contenidos': self.servir_pagina_mis_contenidos,
-                '/ofertas': self.servir_pagina_promociones,
+                '/ofertas': self.servir_pagina_ofertas,
                 '/admin/categorias': self.servir_pagina_administrar_categorias,
                 '/admin/clientes': self.servir_pagina_administrar_clientes,
                 '/admin/contenidos': self.servir_pagina_administrar_contenidos,
@@ -420,6 +420,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 '/api/usuario/cambiar-contrasena': self.api_usuario_cambiar_contrasena_handler,
                 '/api/usuario/eliminar-cuenta': self.api_usuario_eliminar_cuenta_handler,
                 '/api/mis-contenidos/calificar': self.api_mis_contenidos_calificar_handler,
+                '/api/mis-contenidos/descargas-no-valoradas': self.api_mis_contenidos_descargas_no_valoradas_handler,
                 '/api/contenidos/eliminar': self.api_contenidos_eliminar_handler,
                 '/api/contenidos/editar': self.api_contenidos_editar_handler,
                 '/api/regalos/enviar': self.api_regalos_enviar_handler,
@@ -711,6 +712,10 @@ class MyHandler(BaseHTTPRequestHandler):
                     'success': False,
                     'message': 'Error del servidor'
                 }
+
+            if resultado.get('success'):
+                self.redirect_to('/login')
+                return
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -1970,11 +1975,9 @@ class MyHandler(BaseHTTPRequestHandler):
                 elif 'multipart/form-data' in content_type:
                     try:
                         datos_raw = post_data.decode('utf-8')
-
                         datos = {}
                         lines = datos_raw.split('\r\n')
                         current_field = None
-
                         for line in lines:
                             if line.startswith('Content-Disposition: form-data; name='):
                                 field_name = line.split('name="')[1].split('"')[0]
@@ -1987,6 +1990,11 @@ class MyHandler(BaseHTTPRequestHandler):
                                 else:
                                     datos[current_field] = line
                                 current_field = None
+                        if 'contenidos' in datos:
+                            if isinstance(datos['contenidos'], list):
+                                datos['contenidos'] = [int(x) for x in datos['contenidos'] if x]
+                            elif datos['contenidos']:
+                                datos['contenidos'] = [int(datos['contenidos'])]
                     except Exception as e:
                         return self.send_json_response({"error": f"Error al parsear multipart: {str(e)}"}, 400)
                 else:
@@ -2096,3 +2104,29 @@ class MyHandler(BaseHTTPRequestHandler):
 
         except Exception as e:
             return self.send_json_response({"error": str(e)}, 500)
+
+    def api_mis_contenidos_calificar_handler(self):
+        from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
+        user_id = self.get_user_id_from_session()
+        if not user_id:
+            self.send_json_response({'success': False, 'error': 'No autenticado'}, status=401)
+            return
+        data = self.get_json_body()
+        id_contenido = data.get('id_contenido')
+        puntuacion = data.get('puntuacion')
+        id_descarga = data.get('id_descarga')
+        ctrl = ControladorContenidosAdquiridos()
+        result = ctrl.calificar_contenido(user_id, id_contenido, puntuacion, id_descarga)
+        self.send_json_response(result)
+
+    def api_mis_contenidos_descargas_no_valoradas_handler(self):
+        from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
+        user_id = self.get_user_id_from_session()
+        if not user_id:
+            self.send_json_response({'success': False, 'error': 'No autenticado'}, status=401)
+            return
+        data = self.get_json_body()
+        id_contenido = data.get('id_contenido')
+        ctrl = ControladorContenidosAdquiridos()
+        result = ctrl.obtener_descargas_no_valoradas(user_id, id_contenido)
+        self.send_json_response(result)

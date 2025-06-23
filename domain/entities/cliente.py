@@ -183,10 +183,28 @@ class Cliente:
                            ORDER BY fecha_y_hora DESC LIMIT 20
                            """, (id_usuario, id_usuario))
 
-            columns = [col[0] for col in cursor.description]
-            return [dict(zip(columns, row)) for row in cursor.fetchall()] or []
+            columns = [col[0] for col in cursor.description] if cursor.description else []
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()] if columns else []
+
+            from domain.entities.valoracion import Valoracion
+            historial = []
+            for row in resultados:
+                calificacion = Valoracion.obtener_valoracion_usuario(id_usuario, row['id_contenido'])
+                historial.append({
+                    "id_compra": row['id_compra'],
+                    "nombre_contenido": row['nombre'] or 'Sin nombre',
+                    "autor": row['autor'] or 'Desconocido',
+                    "precio": float(row['precio']) if row['precio'] else 0.0,
+                    "categoria": row['categoria'] if row.get('categoria') is not None else 'N/A',
+                    "formato": row['formato'] or 'N/A',
+                    "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row[
+                        'fecha_y_hora'] else 'Sin fecha',
+                    "calificacion": int(calificacion) if calificacion > 0 else 0
+                })
+
+            return {"success": True, "data": historial}
         except Exception:
-            raise Exception("Error al obtener historial")
+            return {"success": False, "error": "Error al obtener historial"}
         finally:
             cursor.close()
             conexion.close()
@@ -311,8 +329,8 @@ class Cliente:
                                LIMIT %s
                            """, (id_usuario, limite))
 
-            columns = [col[0] for col in cursor.description]
-            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            columns = [col[0] for col in cursor.description] if cursor.description else []
+            resultados = [dict(zip(columns, row)) for row in cursor.fetchall()] if columns else []
 
             from domain.entities.valoracion import Valoracion
             historial = []
@@ -323,7 +341,7 @@ class Cliente:
                     "nombre_contenido": row['nombre'] or 'Sin nombre',
                     "autor": row['autor'] or 'Desconocido',
                     "precio": float(row['precio']) if row['precio'] else 0.0,
-                    "categoria": row['nombre_1'] or 'N/A',
+                    "categoria": row['categoria'] if row.get('categoria') is not None else 'N/A',
                     "formato": row['formato'] or 'N/A',
                     "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row[
                         'fecha_y_hora'] else 'Sin fecha',

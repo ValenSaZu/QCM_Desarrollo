@@ -122,6 +122,7 @@
 
                 const result = await response.json();
                 const clientes = result.success && Array.isArray(result.data) ? result.data : [];
+                clientesData = clientes;
                 actualizarTablaClientes(clientes);
             } catch (error) {
                 showError(error.message);
@@ -135,19 +136,18 @@
         function actualizarTablaClientes(clientes) {
             const tbody = document.getElementById('clientesTableBody');
 
-            if (!Array.isArray(clientes) {
+            if (!Array.isArray(clientes)) {
                 tbody.innerHTML = '<tr><td colspan="6" class="no-data">No se encontraron clientes</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = clientes.map(cliente => {
-                const id = cliente?.id_usuario?.toString()?.padStart(3, '0') || 'N/A';
-                const nombre = cliente?.nombre || 'Sin nombre';
-                const apellido = cliente?.apellido || '';
-                const username = cliente?.username || 'Sin usuario';
-                const saldo = typeof cliente?.saldo === 'number' ?
-                    `S/.${cliente.saldo.toFixed(2)}` : 'S/.0.00';
-                const excluido = cliente?.excliente ? 'disabled title="Cliente excluido"' : '';
+            tbody.innerHTML = clientes.map(function(cliente) {
+                const id = cliente.id_usuario ? cliente.id_usuario.toString().padStart(3, '0') : 'N/A';
+                const nombre = cliente.nombre || 'Sin nombre';
+                const apellido = cliente.apellido || '';
+                const username = cliente.username || 'Sin usuario';
+                const saldo = typeof cliente.saldo === 'number' ? `S/.${cliente.saldo.toFixed(2)}` : 'S/.0.00';
+                const excluido = cliente.excliente ? 'disabled title="Cliente excluido"' : '';
 
                 return `
                     <tr>
@@ -172,11 +172,11 @@
                 `;
             }).join('');
 
-            document.querySelectorAll('.gestionar-saldo:not([disabled])').forEach(btn => {
+            document.querySelectorAll('.gestionar-saldo:not([disabled])').forEach(function(btn) {
                 btn.addEventListener('click', abrirModalSaldo);
             });
 
-            document.querySelectorAll('.ver-historial').forEach(btn => {
+            document.querySelectorAll('.ver-historial').forEach(function(btn) {
                 btn.addEventListener('click', abrirModalHistorial);
             });
         }
@@ -279,14 +279,19 @@
             try {
                 showLoader();
                 const response = await fetch(`/api/clientes/buscar?termino=${encodeURIComponent(termino)}`);
-
                 if (!response.ok) {
                     const error = await response.text();
                     throw new Error(error || 'Error en búsqueda');
                 }
-
                 const resultados = await response.json();
-                actualizarTablaClientes(resultados);
+                let clientes = [];
+                if (Array.isArray(resultados.data)) {
+                    clientes = resultados.data;
+                } else if (Array.isArray(resultados)) {
+                    clientes = resultados;
+                }
+                clientesData = clientes;
+                actualizarTablaClientes(clientesData);
             } catch (error) {
                 showError('Error en búsqueda: ' + error.message);
             } finally {
