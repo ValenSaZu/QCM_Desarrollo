@@ -5,6 +5,15 @@
     <title>Administrar Clientes - QuickContentMedia</title>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        #historialModal .modal-content {
+            min-width: 900px;
+            max-width: 98vw;
+        }
+        #historialModal .table {
+            overflow-x: auto;
+        }
+    </style>
 </head>
 
 <body>
@@ -83,9 +92,10 @@
                 <tr>
                 <th>Nombre Contenido</th>
                 <th>Código Contenido</th>
+                <th>Calificación</th>
                 <th>Fecha</th>
                 <th>Precio</th>
-                    <th>Categoría</th>
+                <th>Categoría</th>
                 </tr>
             </thead>
             <tbody id="historialTableBody">
@@ -223,13 +233,23 @@
                 ? historial.map(item => `
                     <tr>
                         <td>${item.nombre_contenido || 'Sin nombre'}</td>
-                        <td>${item.id_contenido?.toString().padStart(3, '0') || 'N/A'}</td>
-                        <td>${item.fecha_descarga ? new Date(item.fecha_descarga).toLocaleDateString() : 'N/A'}</td>
+                        <td>${item.id_contenido != null ? item.id_contenido : 'N/A'}</td>
+                        <td>${renderCalificacion(item.calificacion)}</td>
+                        <td>${item.fecha_compra ? new Date(item.fecha_compra).toLocaleDateString() : 'N/A'}</td>
                         <td>S/.${item.precio?.toFixed(2) || '0.00'}</td>
                         <td>${item.categoria || 'Sin categoría'}</td>
                     </tr>
                 `).join('')
-                : `<tr><td colspan="5" class="no-data">No hay registros de descargas</td></tr>`;
+                : `<tr><td colspan="6" class="no-data">No hay registros de descargas</td></tr>`;
+        }
+
+        function renderCalificacion(calificacion) {
+            if (!calificacion || calificacion <= 0) return '<span style="color: #888">Sin calificar</span>';
+            let estrellas = '';
+            for (let i = 1; i <= 10; i++) {
+                estrellas += i <= calificacion ? '★' : '☆';
+            }
+            return `<span style="color: #1976d2; font-size: 1.1em; letter-spacing: 1px;">${estrellas}</span>`;
         }
 
         saldoForm.addEventListener('submit', async (e) => {

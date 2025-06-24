@@ -306,7 +306,6 @@ class Contenido:
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         try:
-            # Obtener compras
             cursor.execute("""
                 SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_comprado
                 FROM COMPRA co
@@ -318,7 +317,6 @@ class Contenido:
             """, (id_usuario,))
             compras = {row[0]: {"veces_comprado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
 
-            # Obtener regalos
             cursor.execute("""
                 SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_regalado
                 FROM REGALO r
@@ -331,7 +329,6 @@ class Contenido:
             """, (id_usuario,))
             regalos = {row[0]: {"veces_regalado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
 
-            # Unir compras y regalos
             contenidos = {}
             for id_contenido, data in compras.items():
                 contenidos[id_contenido] = {
@@ -349,7 +346,6 @@ class Contenido:
                         "veces_regalado": data["veces_regalado"]
                     }
 
-            # Obtener descargas
             cursor.execute("""
                 SELECT id_contenido, COUNT(*) as veces_descargado
                 FROM DESCARGA
@@ -358,7 +354,6 @@ class Contenido:
             """, (id_usuario,))
             descargas = {row[0]: row[1] for row in cursor.fetchall()}
 
-            # Preparar respuesta
             resultado = []
             for id_contenido, data in contenidos.items():
                 veces_comprado = data["veces_comprado"]
@@ -368,6 +363,52 @@ class Contenido:
                 from domain.entities.valoracion import Valoracion
                 calificacion_promedio = Valoracion.obtener_promedio_valoracion(id_contenido)
                 calificacion_usuario = Valoracion.obtener_valoracion_usuario(id_usuario, id_contenido)
+                ultima_valoracion = Valoracion.obtener_ultima_valoracion_usuario(id_usuario, id_contenido)
+                if ultima_valoracion is None or not isinstance(ultima_valoracion, dict):
+                    ultima_valoracion = {'puntuacion': None, 'fecha': None}
+                    resultado.append({
+                        "id_contenido": id_contenido,
+                        "nombre": data["nombre"],
+                        "autor": data["autor"],
+                        "descripcion": data["descripcion"],
+                        "formato": data["formato"] if data["formato"] else 'desconocido',
+                        "tipo_contenido": cls._determinar_tipo_contenido(data["formato"]) if data["formato"] else 'desconocido',
+                        "categoria": data["categoria"],
+                        "veces_comprado": veces_comprado,
+                        "veces_regalado": veces_regalado,
+                        "veces_adquirido": veces_adquirido,
+                        "veces_descargado": veces_descargado,
+                        "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
+                        "calificacion_promedio": round(calificacion_promedio, 1),
+                        "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
+                        "ultima_valoracion_usuario": ultima_valoracion
+                    })
+                    continue
+                if 'puntuacion' not in ultima_valoracion or 'fecha' not in ultima_valoracion:
+                    ultima_valoracion = {'puntuacion': None, 'fecha': None}
+                    resultado.append({
+                        "id_contenido": id_contenido,
+                        "nombre": data["nombre"],
+                        "autor": data["autor"],
+                        "descripcion": data["descripcion"],
+                        "formato": data["formato"] if data["formato"] else 'desconocido',
+                        "tipo_contenido": cls._determinar_tipo_contenido(data["formato"]) if data["formato"] else 'desconocido',
+                        "categoria": data["categoria"],
+                        "veces_comprado": veces_comprado,
+                        "veces_regalado": veces_regalado,
+                        "veces_adquirido": veces_adquirido,
+                        "veces_descargado": veces_descargado,
+                        "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
+                        "calificacion_promedio": round(calificacion_promedio, 1),
+                        "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
+                        "ultima_valoracion_usuario": ultima_valoracion
+                    })
+                    continue
+                if ultima_valoracion['fecha'] is not None:
+                    try:
+                        ultima_valoracion['fecha'] = ultima_valoracion['fecha'].strftime('%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        ultima_valoracion['fecha'] = str(ultima_valoracion['fecha'])
                 resultado.append({
                     "id_contenido": id_contenido,
                     "nombre": data["nombre"],
@@ -382,7 +423,8 @@ class Contenido:
                     "veces_descargado": veces_descargado,
                     "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
                     "calificacion_promedio": round(calificacion_promedio, 1),
-                    "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0
+                    "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
+                    "ultima_valoracion_usuario": ultima_valoracion
                 })
             return resultado
         except Exception as e:
@@ -442,13 +484,11 @@ class Contenido:
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         try:
-            # Contar compras y regalos
             cursor.execute("SELECT COUNT(*) FROM COMPRA WHERE id_usuario = %s AND id_contenido = %s", (id_usuario, id_contenido))
             compras = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM REGALO r WHERE r.id_usuario_recibe = %s AND r.id_contenido = %s", (id_usuario, id_contenido))
             regalos = cursor.fetchone()[0]
             total_adquirido = compras + regalos
-            # Contar descargas
             cursor.execute("SELECT COUNT(*) FROM DESCARGA WHERE id_usuario = %s AND id_contenido = %s", (id_usuario, id_contenido))
             descargas = cursor.fetchone()[0]
             if descargas >= total_adquirido or total_adquirido == 0:
@@ -482,6 +522,7 @@ class Contenido:
                     c.precio,
                     c.tamano_archivo as tamano,
                     ta.formato,
+                    ta.mime_type,
                     cat.nombre as categoria,
                     p.descuento,
                     COALESCE(AVG(v.puntuacion) * 10, 0) as calificacion
@@ -501,6 +542,7 @@ class Contenido:
                     c.precio,
                     c.tamano_archivo,
                     ta.formato,
+                    ta.mime_type,
                     cat.nombre,
                     p.descuento
                 ORDER BY c.nombre
@@ -519,9 +561,10 @@ class Contenido:
                     'precio': row[4],
                     'tamano': row[5],
                     'formato': row[6],
-                    'categoria': row[7],
-                    'descuento': row[8],
-                    'calificacion': float(row[9]) if row[9] is not None else 0.0
+                    'mime_type': row[7],
+                    'categoria': row[8],
+                    'descuento': row[9],
+                    'calificacion': float(row[10]) if row[10] is not None else 0.0
                 }
                 contenidos.append(contenido)
 

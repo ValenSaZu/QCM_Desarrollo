@@ -5,47 +5,15 @@
   <title>Promociones - QuickContentMedia</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        .promotion-badge {
-            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: bold;
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 2;
-        }
-
-        .discount-price {
-            color: #ff6b6b;
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-
-        .original-price {
-            text-decoration: line-through;
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .page-subtitle {
-            color: #666;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
     <div class="app-container">
         <div class="side-bar">
             <div class="name">QCM</div>
-            <div class="side-bar-options">
+            <div class="side-bar-options active">
                 <a href="/cliente"><i class="fa-solid fa-house"></i><span>Inicio</span></a>
             </div>
-            <div class="side-bar-options">
+            <div class="side-bar-options active">
                 <a href="/cliente/carrito"><i class="fa-solid fa-cart-shopping"></i><span>Carrito</span></a>
             </div>
             <div class="side-bar-options">
@@ -55,13 +23,14 @@
                 <a href="/cliente/ranking"><i class="fa-solid fa-trophy"></i><span>Ranking</span></a>
             </div>
             <div class="side-bar-options">
-                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-folder-open"></i><span>Mis Contenidos</span></a>
+                <a href="/cliente/mis-contenidos"><i class="fa-solid fa-box"></i><span>Mis Contenidos</span></a>
             </div>
             <div class="side-bar-options">
                 <a href="/cliente/perfil"><i class="fa-solid fa-user"></i><span>Perfil</span></a>
             </div>
             <div class="side-bar-options">
-                <a href="/logout" id="logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Cerrar Sesión</span></a>
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <a href="/logout" id="logout-link"><span>Cerrar Sesión</span></a>
             </div>
         </div>
 
@@ -75,59 +44,78 @@
                     </div>
                 </div>
 
+                <!-- Contenedor principal con tres columnas -->
                 <div class="content-layout">
+                    <!-- Columna de Videos -->
                     <div class="content-column">
                         <div class="column-header">
                             <i class="fas fa-video"></i>
                             <h3>Videos</h3>
                         </div>
-                        <div class="content-cards" id="videos-container"></div>
+                        <div class="content-cards" id="videos-container">
+                            <!-- Las tarjetas de video se cargarán dinámicamente -->
+                        </div>
                     </div>
+
+                    <!-- Columna de Imágenes -->
                     <div class="content-column">
                         <div class="column-header">
                             <i class="fas fa-image"></i>
                             <h3>Imágenes</h3>
                         </div>
-                        <div class="content-cards" id="images-container"></div>
+                        <div class="content-cards" id="images-container">
+                            <!-- Las tarjetas de imagen se cargarán dinámicamente -->
+                        </div>
                     </div>
+
+                    <!-- Columna de Audios -->
                     <div class="content-column">
                         <div class="column-header">
                             <i class="fas fa-music"></i>
                             <h3>Audios</h3>
                         </div>
-                        <div class="content-cards" id="audios-container"></div>
+                        <div class="content-cards" id="audios-container">
+                            <!-- Las tarjetas de audio se cargarán dinámicamente -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modalOverlay" class="modal-overlay"></div>
+    <!-- Modal para ver detalles del contenido -->
     <div id="contentDetailModal" class="modal">
         <div class="modal-content">
             <span class="close" id="closeContentModal">&times;</span>
             <div class="modal-grid">
                 <div class="left-grid">
-                    <div id="contentPreview" class="preview-area"></div>
+                    <div id="contentPreview" class="preview-area">
+                        <!-- Vista previa del contenido (imagen, video o audio) -->
+                    </div>
                 </div>
                 <div class="right-grid">
                     <h2 id="contentTitle" class="small-title"></h2>
                     <p id="contentAuthor" class="content-meta"><i class="fas fa-user"></i> <span></span></p>
                     <p id="contentCategory" class="content-meta"><i class="fas fa-tag"></i> <span></span></p>
                     <div class="rating-container">
-                        <div id="contentRating" class="rating"></div>
+                        <div id="contentRating" class="rating">
+                            <!-- Estrellas de calificación -->
+                        </div>
                         <span id="ratingValue" class="rating-text"></span>
                     </div>
                     <p id="contentDescription" class="content-description"></p>
+
                     <div class="file-info">
                         <div class="file-box" id="contentSize">Peso: -</div>
                         <div class="file-box" id="contentExtension">Extensión: -</div>
                         <div class="file-box" id="contentMime">MIME-Type: -</div>
                     </div>
+
                     <div class="price-container">
                         <span id="contentPrice" class="price"></span>
                         <span id="contentDiscountPrice" class="discount-price"></span>
                     </div>
+
                     <button id="addToCartBtn" class="button-full">
                         <i class="fas fa-cart-plus"></i> Añadir al carrito
                     </button>
@@ -137,88 +125,103 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Verificar sesión
-        fetch('/api/sesion', {
-            credentials: 'include'
-        })
-        .then(response => {
-            if (!response.ok) {
-                window.location.href = '/login';
-                return;
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (!data) {
-                window.location.href = '/login';
-            }
-            // Cargar contenidos
-            cargarContenidosPromocion();
-            // Manejar cierre de sesión
-            document.getElementById('logout-link').addEventListener('click', function(e) {
-                e.preventDefault();
-                fetch('/api/logout', {
-                    method: 'POST',
-                    credentials: 'include'
-                })
-                .then(() => {
-                    window.location.href = '/';
-                });
-            });
-        })
-        .catch(error => {
-            console.error('Error al cargar la sesión:', error);
-            window.location.href = '/login';
-        });
-    });
-
+        // Variables globales
         let allContents = [];
         let currentContent = null;
+
+        // Elementos del DOM
         const searchInput = document.getElementById('search-content');
+        const filterButtons = document.querySelectorAll('.filter-btn');
         const videosContainer = document.getElementById('videos-container');
         const imagesContainer = document.getElementById('images-container');
         const audiosContainer = document.getElementById('audios-container');
         const contentDetailModal = document.getElementById('contentDetailModal');
         const closeContentModal = document.getElementById('closeContentModal');
         const addToCartBtn = document.getElementById('addToCartBtn');
-    const modalOverlay = document.getElementById('modalOverlay');
 
-    async function cargarContenidosPromocion() {
+        // Cargar contenidos al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarContenidos();
+            cargarNotificacionesRegalos();
+        });
+
+        // Función para cargar contenidos desde la API
+        async function cargarContenidos() {
             try {
+                showLoader();
                 const response = await fetch('/api/promociones/contenidos');
-            if (!response.ok) throw new Error('Error al cargar contenidos en promoción');
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => null);
+                    throw new Error(error?.error || 'Error al cargar contenidos en promoción');
+                }
+
                 const result = await response.json();
-            allContents = Array.isArray(result) ? result : (result.success ? result.data : []);
+
+                // Asegurarse de que allContents sea un array
+                allContents = Array.isArray(result) ? result :
+                            (result.success ? result.data : []);
+
                 actualizarContenidos(allContents);
             } catch (error) {
+                console.error('Error:', error);
             videosContainer.innerHTML = imagesContainer.innerHTML = audiosContainer.innerHTML = '<div class="no-content">No se encontraron contenidos en promoción</div>';
+            } finally {
+                hideLoader();
         }
     }
 
+        // Función para actualizar las tarjetas de contenido
         function actualizarContenidos(contenidos) {
+            // Limpiar contenedores
             videosContainer.innerHTML = '';
             imagesContainer.innerHTML = '';
             audiosContainer.innerHTML = '';
+
+            // Verificar si contenidos es un array y tiene elementos
             if (!Array.isArray(contenidos) || contenidos.length === 0) {
             const noContentMsg = '<div class="no-content">No se encontraron contenidos en promoción</div>';
-            videosContainer.innerHTML = imagesContainer.innerHTML = audiosContainer.innerHTML = noContentMsg;
+                videosContainer.innerHTML = noContentMsg;
+                imagesContainer.innerHTML = noContentMsg;
+                audiosContainer.innerHTML = noContentMsg;
                 return;
             }
+
+            // Filtrar y mostrar contenidos por tipo
         const videos = contenidos.filter(c => c.tipo_contenido === 'video');
         const imagenes = contenidos.filter(c => c.tipo_contenido === 'imagen');
         const audios = contenidos.filter(c => c.tipo_contenido === 'audio');
-        if (videos.length > 0) videos.forEach(video => videosContainer.appendChild(crearTarjetaContenido(video)));
-        else videosContainer.innerHTML = '<div class="no-content">No hay videos en promoción</div>';
-        if (imagenes.length > 0) imagenes.forEach(imagen => imagesContainer.appendChild(crearTarjetaContenido(imagen)));
-        else imagesContainer.innerHTML = '<div class="no-content">No hay imágenes en promoción</div>';
-        if (audios.length > 0) audios.forEach(audio => audiosContainer.appendChild(crearTarjetaContenido(audio)));
-        else audiosContainer.innerHTML = '<div class="no-content">No hay audios en promoción</div>';
+
+            // Mostrar videos
+            if (videos.length > 0) {
+                videos.forEach(video => {
+                    videosContainer.appendChild(crearTarjetaContenido(video));
+                });
+            } else {
+                videosContainer.innerHTML = '<div class="no-content">No hay videos en promoción</div>';
+            }
+
+            // Mostrar imágenes
+            if (imagenes.length > 0) {
+                imagenes.forEach(imagen => {
+                    imagesContainer.appendChild(crearTarjetaContenido(imagen));
+                });
+            } else {
+                imagesContainer.innerHTML = '<div class="no-content">No hay imágenes en promoción</div>';
+            }
+
+            // Mostrar audios
+            if (audios.length > 0) {
+                audios.forEach(audio => {
+                    audiosContainer.appendChild(crearTarjetaContenido(audio));
+                });
+            } else {
+                audiosContainer.innerHTML = '<div class="no-content">No hay audios en promoción</div>';
     }
+        }
 
+        // Función para crear una tarjeta de contenido
         function crearTarjetaContenido(contenido) {
-            if (!contenido) return null;
-
             const card = document.createElement('div');
             card.className = 'content-card';
             card.dataset.id = contenido.id_contenido;
@@ -226,241 +229,455 @@
         card.dataset.author = contenido.autor?.toLowerCase() || '';
         card.dataset.category = contenido.categoria?.toLowerCase() || '';
 
-        const preview = document.createElement('div');
-        preview.className = 'content-thumbnail';
-        const img = document.createElement('img');
-        img.src = contenido.miniatura_url || '/placeholder-image.jpg';
-        img.alt = contenido.nombre || 'miniatura';
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-        img.onerror = function() {
-            this.style.display = 'none';
-            const fallback = document.createElement('div');
-            fallback.style.display = 'flex';
-            fallback.style.alignItems = 'center';
-            fallback.style.justifyContent = 'center';
-            fallback.style.height = '100%';
-            fallback.innerHTML = "<i class='fas fa-image' style='font-size:2em;color:#ccc;'></i>";
-            this.parentNode.appendChild(fallback);
-        };
-        preview.appendChild(img);
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'content-overlay';
-        const viewBtn = document.createElement('button');
-        viewBtn.className = 'view-content-btn';
-        viewBtn.dataset.id = contenido.id_contenido;
-        viewBtn.innerHTML = '<i class="fas fa-eye"></i> Ver';
-        overlay.appendChild(viewBtn);
-        preview.appendChild(overlay);
+            // Crear elemento de vista previa
+            let previewHTML = '';
+            if (contenido.tipo_contenido === 'video') {
+                previewHTML = `
+                    <div class="content-preview">
+                        <img src="${contenido.url_preview || '/placeholder-video.jpg'}" alt="${contenido.nombre || 'Video'}" class="preview-thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="video-placeholder" style="display: none;">
+                            <i class="fas fa-video video-icon"></i>
+                            <div class="play-icon"><i class="fas fa-play"></i></div>
+                    </div>
+                        <div class="content-overlay">
+                            <button class="view-content-btn" title="Ver video"><i class="fas fa-play play-icon"></i></button>
+                    </div>
+                    </div>`;
+            } else if (contenido.tipo_contenido === 'imagen') {
+                previewHTML = `
+                    <div class="content-preview">
+                        <img src="${contenido.url_preview || '/placeholder-image.jpg'}" alt="${contenido.nombre || 'Imagen'}" class="preview-thumbnail" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="image-placeholder" style="display: none;">
+                            <i class="fas fa-image image-icon"></i>
+                        </div>
+                        <div class="content-overlay">
+                            <button class="view-content-btn" title="Ver imagen"><i class="fas fa-eye"></i></button>
+                    </div>
+                    </div>`;
+            } else { // audio
+                previewHTML = `
+                    <div class="content-preview audio-gradient-bg">
+                        <i class="fas fa-music audio-icon" style="font-size: 3rem; color: #2196f3;"></i>
+                        <div class="audio-wave">
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                            <div class="wave-bar"></div>
+                        </div>
+                        <div class="content-overlay">
+                            <button class="view-content-btn" title="Escuchar audio"><i class="fas fa-play"></i></button>
+                        </div>
+                    </div>`;
+            }
 
-        const info = document.createElement('div');
-        info.className = 'content-info';
-        info.innerHTML = `
-                    <h4 class="content-title">${contenido.nombre || 'Sin título'}</h4>
-                    <div class="content-meta" style="margin: 8px 0;">
-                        <i class="fas fa-user" style="color: #666; margin-right: 5px;"></i>
-                        <span style="color: #333; font-weight: 500;">${contenido.autor || 'Autor desconocido'}</span>
+            // Crear elemento de información
+            const info = document.createElement('div');
+            info.className = 'content-info';
+
+            // Calificación con estrellas
+            const ratingStars = crearEstrellasCalificacion(contenido.calificacion || 0);
+
+            // Precio con posible descuento
+            let precioHTML = '';
+            if (typeof contenido.precio_descuento === 'number' && contenido.precio_descuento < contenido.precio_original) {
+                precioHTML = `
+                    <div class="price-row">
+                        <span class="original-price">S/.${contenido.precio_original.toFixed(2)}</span>
+                        <span class="discount-price">S/.${contenido.precio_descuento.toFixed(2)}</span>
+                        <span class="discount-badge">-${contenido.porcentaje_descuento}%</span>
                     </div>
-                    <div class="content-meta" style="margin: 8px 0;">
-                        <i class="fas fa-tag" style="color: #666; margin-right: 5px;"></i>
-                        <span style="color: #333;">${contenido.categoria || 'Sin categoría'}</span>
-                    </div>
-                    <div class="rating-container" style="margin: 12px 0; display: flex; align-items: center; gap: 8px;">
-                        <div class="rating-stars" style="display: flex; gap: 2px;">
-                    ${crearEstrellasCalificacion(contenido.calificacion || 0)}
-                        </div>
-                <span style="color: #666; font-size: 0.9em; font-weight: 500;">${(contenido.calificacion || 0).toFixed(1)}/10</span>
-                    </div>
-        `;
-        const priceContainer = document.createElement('div');
-        priceContainer.className = 'price-container';
-        priceContainer.style.marginTop = '12px';
-        priceContainer.style.padding = '10px';
-        priceContainer.style.background = 'linear-gradient(135deg, #f8f9fa, #e9ecef)';
-        priceContainer.style.borderRadius = '8px';
-        priceContainer.style.border = '1px solid #dee2e6';
-        priceContainer.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <span style="color: #666; font-size: 0.9em;">Precio original:</span>
-                <span class="original-price" style="text-decoration: line-through; color: #999; font-size: 1em;">S/.${(contenido.precio_original || 0).toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: #28a745; font-weight: bold; font-size: 0.9em;">Precio con descuento:</span>
-                <span class="discount-price" style="color: #ff6b6b; font-weight: bold; font-size: 1.2em;">S/.${(contenido.precio_descuento || contenido.precio_original || 0).toFixed(2)}${contenido.porcentaje_descuento > 0 ? ` <span style='font-size:0.9em; color:#ff6b6b;'>(-${contenido.porcentaje_descuento}% OFF)</span>` : ''}</span>
-                        </div>
-                        <div style="text-align: center; margin-top: 5px;">
-                            <span style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">
-                    ¡Ahorras S/.${((contenido.precio_original || 0) - (contenido.precio_descuento || 0)).toFixed(2)}!
+                `;
+            } else {
+                precioHTML = `<div class="price-row"><span class="discount-price">S/.${(contenido.precio_original || 0).toFixed(2)}</span></div>`;
+            }
+
+            info.innerHTML = `
+                <h4 class="content-name">${contenido.nombre || 'Sin nombre'}</h4>
+                <p class="content-description">${contenido.descripcion || 'Sin descripción'}</p>
+
+                <!-- Información del autor mejorada -->
+                <div class="content-meta" style="margin: 8px 0; display: flex; align-items: center; gap: 15px;">
+                    <span class="author" style="display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-user" style="color: #666; font-size: 0.9em;"></i>
+                        <span style="color: #333; font-weight: 500; font-size: 0.9em;">${contenido.autor || 'Anónimo'}</span>
+                    </span>
+                    <span class="category" style="display: flex; align-items: center; gap: 5px;">
+                        <i class="fas fa-tag" style="color: #666; font-size: 0.9em;"></i>
+                        <span style="color: #333; font-size: 0.9em;">${contenido.categoria || 'Sin categoría'}</span>
                             </span>
                 </div>
+
+                <!-- Calificación mejorada -->
+                <div class="content-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${ratingStars}
+                    </div>
+                    <button class="add-to-cart-btn" data-id="${contenido.id_contenido}" title="Añadir al carrito" style="background: linear-gradient(45deg, #007bff, #0056b3); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease;">
+                        <i class="fas fa-plus" style="font-size: 0.9em;"></i>
+                    </button>
+                </div>
+
+                <!-- Precios -->
+                ${precioHTML}
             `;
-        info.appendChild(priceContainer);
 
-        card.appendChild(preview);
-        card.appendChild(info);
+        card.innerHTML = `${previewHTML}${info.outerHTML}`;
 
-                viewBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
+            // Evento para abrir modal de detalles
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.add-to-cart-btn')) {
                     mostrarDetallesContenido(contenido);
+                }
+            });
+            // Evento para añadir al carrito desde la tarjeta
+            const addBtn = card.querySelector('.add-to-cart-btn');
+            if (addBtn) {
+                addBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    agregarAlCarrito(contenido.id_contenido);
                 });
+            }
 
             return card;
         }
 
+        // Función para crear estrellas de calificación
         function crearEstrellasCalificacion(calificacion) {
-            let html = '';
-            
+            if (!calificacion || calificacion <= 0) {
+                return '<div class="rating no-rating">Sin calificaciones</div>';
+            }
+            let html = '<div class="rating">';
+            const estrellasLlenas = Math.floor(calificacion);
+            const tieneMedia = calificacion % 1 >= 0.5;
             for (let i = 1; i <= 10; i++) {
-                if (i <= calificacion) {
-                    html += '<span style="color: #ffc107; font-size: 14px; margin-right: 1px;">★</span>';
-                } else if (i - 0.5 <= calificacion) {
-                    html += '<span style="color: #ffc107; font-size: 14px; margin-right: 1px;">☆</span>';
+                if (i <= estrellasLlenas) {
+                    html += '<i class="fas fa-star filled"></i>';
+                } else if (tieneMedia && i === estrellasLlenas + 1) {
+                    html += '<i class="fas fa-star-half-alt filled"></i>';
                 } else {
-                    html += '<span style="color: #ddd; font-size: 14px; margin-right: 1px;">☆</span>';
+                    html += '<i class="far fa-star"></i>';
                 }
             }
-            
+            html += `<span class="rating-value">${calificacion.toFixed(1)}</span>`;
+            html += '</div>';
             return html;
         }
 
+        // Función para mostrar detalles del contenido en el modal
         function mostrarDetallesContenido(contenido) {
             currentContent = contenido;
-            document.getElementById('contentTitle').textContent = contenido.nombre || 'Sin título';
-            document.getElementById('contentAuthor').querySelector('span').textContent = contenido.autor || 'Autor desconocido';
+
+            // Debug: mostrar los datos que llegan
+            console.log('Datos del contenido:', contenido);
+            console.log('tamanio_bytes:', contenido.tamanio_bytes);
+            console.log('extension:', contenido.extension);
+            console.log('mime_type:', contenido.mime_type);
+
+            // Actualizar título
+            document.getElementById('contentTitle').textContent = contenido.nombre || 'Sin nombre';
+
+            // Actualizar autor y categoría
+            document.getElementById('contentAuthor').querySelector('span').textContent = contenido.autor || 'Anónimo';
             document.getElementById('contentCategory').querySelector('span').textContent = contenido.categoria || 'Sin categoría';
+
+            // Actualizar descripción
             document.getElementById('contentDescription').textContent = contenido.descripcion || 'Sin descripción';
+
+            // Actualizar calificación
             const ratingContainer = document.getElementById('contentRating');
             ratingContainer.innerHTML = crearEstrellasCalificacion(contenido.calificacion || 0);
-            document.getElementById('ratingValue').textContent = `${contenido.calificacion || 0}/10`;
-            document.getElementById('contentSize').textContent = `Peso: ${formatearTamano(contenido.tamano)}`;
-            document.getElementById('contentExtension').textContent = `Extensión: ${contenido.formato || 'Desconocido'}`;
-            document.getElementById('contentMime').textContent = `MIME-Type: ${obtenerMimeType(contenido.formato)}`;
-        const precioOriginal = contenido.precio_original || 0;
-        const descuento = contenido.porcentaje_descuento || 0;
-        const precioConDescuento = contenido.precio_descuento || precioOriginal;
-            let preciosHTML = '';
-            if (descuento > 0) {
-                preciosHTML = `
-                    <div style="background: linear-gradient(135deg, #fff5f5, #ffe8e8); border: 2px solid #ff6b6b; border-radius: 12px; padding: 15px; margin: 15px 0;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="color: #666; font-size: 1em; font-weight: 500;">Precio original:</span>
-                            <span style="text-decoration: line-through; color: #999; font-size: 1.1em; font-weight: 500;">S/.${precioOriginal.toFixed(2)}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="color: #28a745; font-weight: bold; font-size: 1em;">Precio con descuento:</span>
-                            <span style="color: #ff6b6b; font-weight: bold; font-size: 1.4em;">S/.${precioConDescuento.toFixed(2)}</span>
-                        </div>
-                    <div style="text-align: center; margin-top: 5px;">
-                        <span style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.9em; font-weight: bold;">
-                            ¡Ahorras S/.${(precioOriginal - precioConDescuento).toFixed(2)}!
-                        </span>
-                    </div>
+            document.getElementById('ratingValue').textContent = contenido.calificacion ? contenido.calificacion.toFixed(1) : '0.0';
+
+            // Actualizar información del archivo con mejor manejo de valores nulos
+            const tamanio = contenido.tamanio_bytes || contenido.tamano || 0;
+            const extension = contenido.extension || contenido.formato || 'N/A';
+            const mimeType = contenido.mime_type || 'N/A';
+
+            document.getElementById('contentSize').textContent = `Peso: ${formatearTamano(tamanio)}`;
+            document.getElementById('contentExtension').textContent = `Extensión: ${extension}`;
+            document.getElementById('contentMime').textContent = `MIME-Type: ${mimeType}`;
+
+            // Actualizar vista previa
+            const previewContainer = document.getElementById('contentPreview');
+            previewContainer.innerHTML = '';
+
+            if (contenido.tipo_contenido === 'video') {
+                const video = document.createElement('video');
+                video.src = contenido.url_preview || '/placeholder-video.mp4';
+                video.controls = true;
+                video.className = 'preview-media modal-preview';
+                previewContainer.appendChild(video);
+            } else if (contenido.tipo_contenido === 'imagen') {
+                const img = document.createElement('img');
+                img.src = contenido.url_preview || '/placeholder-image.jpg';
+                img.alt = contenido.nombre || 'Imagen';
+                img.className = 'preview-media modal-preview';
+                previewContainer.appendChild(img);
+            } else { // audio
+                const audioContainer = document.createElement('div');
+                audioContainer.className = 'audio-preview modal-preview';
+                audioContainer.innerHTML = `
+                    <i class="fas fa-music audio-icon"></i>
+                    <audio src="${contenido.url_preview || '/placeholder-audio.mp3'}" controls></audio>
+                    <div class="audio-wave">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
                     </div>
                 `;
+                previewContainer.appendChild(audioContainer);
+        }
+
+            // Mostrar precio
+            let precio = 0;
+            if (typeof contenido.precio_descuento === 'number' && contenido.precio_descuento < contenido.precio_original) {
+                precio = contenido.precio_descuento;
+            } else if (typeof contenido.precio_original === 'number') {
+                precio = contenido.precio_original;
             } else {
-            preciosHTML = `<div style="margin: 15px 0; font-size: 1.2em; color: #333; font-weight: bold;">S/.${precioOriginal.toFixed(2)}</div>`;
-        }
-        document.getElementById('contentPrice').innerHTML = preciosHTML;
-        modalOverlay.style.display = 'block';
-        contentDetailModal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
+                precio = 0;
+            }
+            document.getElementById('contentPrice').innerHTML = `Precio: S/. ${precio.toFixed(2)}`;
+
+            // Mostrar modal
+            contentDetailModal.style.display = 'flex';
     }
 
-    function cerrarModal() {
-        modalOverlay.style.display = 'none';
-        contentDetailModal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-
+        // Función para formatear el tamaño del archivo
         function formatearTamano(bytes) {
-            if (!bytes) return 'Desconocido';
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(1024));
-            return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function obtenerMimeType(formato) {
-            if (!formato) return 'application/octet-stream';
-            
-            const mimeTypes = {
-                'mp4': 'video/mp4', 'avi': 'video/x-msvideo', 'mov': 'video/quicktime',
-                'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif',
-                'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg'
-            };
-            
-            return mimeTypes[formato.toLowerCase()] || 'application/octet-stream';
-        }
-
-    closeContentModal.addEventListener('click', cerrarModal);
-    modalOverlay.addEventListener('click', cerrarModal);
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && contentDetailModal.style.display === 'block') {
-            cerrarModal();
-        }
-    });
-
-        addToCartBtn.addEventListener('click', async () => {
-            if (!currentContent) return;
-
+        // Función para agregar contenido al carrito
+        async function agregarAlCarrito(contentId) {
             try {
+                showLoader();
+
                 const response = await fetch('/api/carrito/agregar', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        id_contenido: currentContent.id_contenido,
+                        contenido_id: contentId,
                         cantidad: 1
                     })
                 });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    showSuccess('¡Contenido añadido al carrito!');
-                    contentDetailModal.style.display = 'none';
-                } else {
-                    showError(result.error || 'Error al añadir al carrito');
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error?.error || 'Error al agregar al carrito');
                 }
+
+                const result = await response.json();
+                showSuccess(result.message || 'Contenido agregado al carrito');
             } catch (error) {
                 console.error('Error:', error);
-                showError('Error al añadir al carrito');
+                showError(error.message || 'Error al agregar al carrito');
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Evento para búsqueda
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.trim().toLowerCase();
+            filtrarContenidos(term);
+        });
+
+        // Evento para filtros
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                filtrarContenidos(searchInput.value.trim().toLowerCase(), button.dataset.filter);
+            });
+        });
+
+        // Función para filtrar contenidos
+        function filtrarContenidos(searchTerm = '', filterType = 'all') {
+            let filtered = allContents;
+
+            // Aplicar filtro de búsqueda
+            if (searchTerm) {
+                filtered = filtered.filter(content =>
+                    content.autor?.toLowerCase().includes(searchTerm) ||
+                    content.categoria?.toLowerCase().includes(searchTerm) ||
+                    content.nombre?.toLowerCase().includes(searchTerm)
+            );
+            }
+
+            // Aplicar filtro por tipo
+            if (filterType !== 'all') {
+                filtered = filtered.filter(content => content.tipo_contenido === filterType);
+            }
+
+            actualizarContenidos(filtered);
+        }
+
+        // Evento para añadir al carrito desde el modal
+        addToCartBtn.addEventListener('click', () => {
+            if (currentContent) {
+                agregarAlCarrito(currentContent.id_contenido);
             }
         });
 
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredContents = allContents.filter(contenido => 
-                contenido.nombre?.toLowerCase().includes(searchTerm) ||
-                contenido.autor?.toLowerCase().includes(searchTerm) ||
-                contenido.categoria?.toLowerCase().includes(searchTerm)
-            );
-            actualizarContenidos(filteredContents);
-        });
+        // Cerrar modal
+        closeContentModal.onclick = () => contentDetailModal.style.display = "none";
+        window.onclick = (event) => {
+            if (event.target == contentDetailModal) contentDetailModal.style.display = "none";
+        };
 
+        // Funciones de utilidad (similares a las de los otros archivos)
         function showLoader() {
-        const loader = document.getElementById('loader');
-        loader.style.display = 'flex';
-        loader.style.zIndex = '100';
-        document.body.style.overflow = 'hidden';
+            console.log("Loading...");
+            // Implementar lógica para mostrar spinner/loader
         }
 
         function hideLoader() {
-        const loader = document.getElementById('loader');
-        loader.style.display = 'none';
-        loader.style.zIndex = '100';
-        document.body.style.overflow = '';
-        }
-
-        function showSuccess(message) {
-        alert(message);
+            console.log("Loading complete");
+            // Implementar lógica para ocultar spinner/loader
         }
 
         function showError(message) {
-        alert('Error: ' + message);
+            alert("Error: " + message);
+        }
+
+        function showSuccess(message) {
+            alert("Éxito: " + message);
+        }
+
+        // Manejar cierre de sesión
+        document.getElementById('logout-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/';
+                } else {
+                    console.error('Error al cerrar sesión:', data.error);
+                    window.location.href = '/';
+                }
+            })
+            .catch(error => {
+                console.error('Error al cerrar sesión:', error);
+                window.location.href = '/';
+            });
+        });
+
+        // Función para cargar notificaciones de regalos
+        async function cargarNotificacionesRegalos() {
+            try {
+                const response = await fetch('/api/notificaciones/regalos', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Mostrar notificación elegante
+                        showGiftNotification(data.data.length, data.data);
+                    }
+                }
+            } catch (error) {
+                console.error('Error al cargar notificaciones de regalos:', error);
+            }
+        }
+
+        // Función para mostrar notificación elegante de regalos
+        function showGiftNotification(giftCount, regalos) {
+            // Crear contenedor de notificaciones si no existe
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'notification-container';
+                container.className = 'notification-container';
+                document.body.appendChild(container);
+            }
+
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <button class="notification-close" onclick="closeNotification(this, ${giftCount})">&times;</button>
+                <div class="notification-content">
+                    <div class="notification-title">¡Tienes regalos nuevos!</div>
+                    <div class="notification-message">Has recibido ${giftCount} regalo(s). Revisa tu sección de "Mis Contenidos" para verlos.</div>
+                    <div class="notification-actions">
+                        <button class="notification-btn primary" onclick="goToMyContents(${giftCount})">Ver Mis Contenidos</button>
+                        <button class="notification-btn" onclick="closeNotification(this, ${giftCount})">Cerrar</button>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-cerrar después de 10 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    closeNotification(notification.querySelector('.notification-close'), giftCount);
+                }
+            }, 10000);
+        }
+
+        // Función para cerrar notificación y marcar como leída
+        async function closeNotification(element, giftCount) {
+            const notification = element.closest('.notification');
+            if (notification) {
+                notification.classList.add('hiding');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+
+                // Marcar todas las notificaciones como leídas
+                await marcarNotificacionesLeidas();
+            }
+        }
+
+        // Función para marcar notificaciones como leídas
+        async function marcarNotificacionesLeidas() {
+            try {
+                const response = await fetch('/api/notificaciones/marcar-leida', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    console.log('Notificaciones marcadas como leídas');
+                }
+            } catch (error) {
+                console.error('Error al marcar notificaciones como leídas:', error);
+            }
+        }
+
+        // Función para ir a Mis Contenidos y marcar como leída
+        async function goToMyContents(giftCount) {
+            // Marcar notificaciones como leídas antes de redirigir
+            await marcarNotificacionesLeidas();
+
+            // Redirigir a la página correcta
+            window.location.href = '/cliente/mis-contenidos';
         }
     </script>
 </body>

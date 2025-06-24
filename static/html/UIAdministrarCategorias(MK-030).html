@@ -99,6 +99,16 @@
         </div>
     </div>
 
+    <div id="arbolModal" class="modal">
+        <div class="modal-content" style="min-width:900px;max-width:98vw;">
+            <span id="closeArbol" class="close">&times;</span>
+            <h2>Árbol de Categorías</h2>
+            <div id="arbolContainer"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
     <script>
         function showLoader() {
             const loader = document.createElement('div');
@@ -266,6 +276,7 @@
                                     data-id="${categoria.id_categoria}">
                                 Renombrar
                             </button>
+                            ${isMainCategory ? `<button class="button-full-gray small-btn ver-arbol" data-id="${categoria.id_categoria}">Ver árbol</button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -408,6 +419,70 @@
         window.onclick = (event) => {
             if (event.target == categoryModal) categoryModal.style.display = "none";
             if (event.target == subcategoriesModal) subcategoriesModal.style.display = "none";
+        };
+
+        document.addEventListener('click', async function(e) {
+            if (e.target.classList.contains('ver-arbol')) {
+                const id = e.target.getAttribute('data-id');
+                showLoader();
+                try {
+                    const response = await fetch(`/api/categorias/arbol/${id}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        const relaciones = result.data;
+                        let mermaidStr = 'graph TD;\n';
+                        
+                        if (relaciones.length === 0) {
+                            const categoriaPrincipal = categoriesData.find(c => c.id_categoria == id);
+                            mermaidStr += `    "${categoriaPrincipal.nombre.replace(/"/g, '\\"')}(${id})"\n`;
+                            mermaidStr += `    style "${categoriaPrincipal.nombre.replace(/"/g, '\\"')}(${id})" fill:#f9f,stroke:#333\n`;
+                        } else {
+                            const categoriasIncluidas = new Set();
+                            
+                            relaciones.forEach(([id_padre, id_hijo, nombre_padre, nombre_hijo]) => {
+                                if (!categoriasIncluidas.has(id_padre)) {
+                                    mermaidStr += `    ${id_padre}["${nombre_padre.replace(/"/g, '\\"')}"]\n`;
+                                    categoriasIncluidas.add(id_padre);
+                                }
+                                if (!categoriasIncluidas.has(id_hijo)) {
+                                    mermaidStr += `    ${id_hijo}["${nombre_hijo.replace(/"/g, '\\"')}"]\n`;
+                                    categoriasIncluidas.add(id_hijo);
+                                }
+                            });
+                            
+                            relaciones.forEach(([id_padre, id_hijo]) => {
+                                mermaidStr += `    ${id_padre} --> ${id_hijo}\n`;
+                            });
+                        }
+                        
+                        document.getElementById('arbolContainer').innerHTML = 
+                            `<div class="mermaid">${mermaidStr}</div>`;
+                        document.getElementById('arbolModal').style.display = 'flex';
+                        
+                        mermaid.initialize({ 
+                            startOnLoad: true,
+                            theme: 'default',
+                            flowchart: {
+                                useMaxWidth: true,
+                                htmlLabels: true,
+                                curve: 'basis'
+                            }
+                        });
+                        
+                        mermaid.init(undefined, document.querySelector('#arbolContainer .mermaid'));
+                    } else {
+                        showError('Error al obtener árbol: ' + (result.error || ''));
+                    }
+                } catch (err) {
+                    showError('Error al obtener árbol: ' + err.message);
+                } finally {
+                    hideLoader();
+                }
+            }
+        });
+
+        document.getElementById('closeArbol').onclick = () => {
+            document.getElementById('arbolModal').style.display = 'none';
         };
     </script>
 </body>

@@ -175,3 +175,12 @@ CREATE INDEX idx_descarga_contenido ON DESCARGA(id_contenido);
 CREATE INDEX idx_compra_usuario ON COMPRA(id_usuario);
 CREATE INDEX idx_regalo_usuario_recibe ON REGALO(id_usuario_recibe);
 CREATE INDEX idx_regalo_contenido ON REGALO(id_contenido);
+
+-- Agregar la columna id_descarga
+ALTER TABLE VALORACION ADD COLUMN id_descarga INT NOT NULL;
+
+-- Agregar la FK a DESCARGA
+ALTER TABLE VALORACION ADD CONSTRAINT fk_valoracion_descarga FOREIGN KEY (id_descarga) REFERENCES DESCARGA(id_descarga);
+
+-- Agregar la nueva restricción UNIQUE
+ALTER TABLE VALORACION ADD CONSTRAINT valoracion_unica UNIQUE (id_usuario, id_contenido, id_descarga);

@@ -323,7 +323,6 @@
                                 tbody.appendChild(tr);
                             });
 
-                            // Agregar estilo para el botón activo de paginación
                             const pagination = document.getElementById('promocionesPagination');
                             pagination.innerHTML += `
                                 <style>
@@ -448,25 +447,19 @@
                     });
             }
 
-            // Función para formatear fecha (solo fecha, sin hora)
             function formatearFecha(fechaString) {
                 if (!fechaString) return '';
 
-                // Si la fecha ya está en formato YYYY-MM-DD, procesarla directamente
                 if (/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) {
                     const [year, month, day] = fechaString.split('-');
                     return `${day}/${month}/${year}`;
                 }
 
-                // Para otros formatos, usar el método anterior
                 try {
-                    // Crear la fecha ajustando por la zona horaria
                     const fecha = new Date(fechaString + 'T00:00:00');
 
-                    // Si la fecha no es válida, devolver un valor por defecto
                     if (isNaN(fecha.getTime())) return 'Fecha inválida';
 
-                    // Obtener los componentes de la fecha usando UTC para evitar problemas de zona horaria
                     const dia = fecha.getUTCDate().toString().padStart(2, '0');
                     const mes = (fecha.getUTCMonth() + 1).toString().padStart(2, '0');
                     const anio = fecha.getUTCFullYear();

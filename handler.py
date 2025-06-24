@@ -384,6 +384,11 @@ class MyHandler(BaseHTTPRequestHandler):
                 self.api_promocion_contenidos_handler(promo_id)
                 return
 
+            arbol_match = re.match(r'/api/categorias/arbol/(\d+)', path)
+            if arbol_match:
+                id_categoria = int(arbol_match.group(1))
+                return self.api_categoria_arbol_mermaid_handler(id_categoria)
+
             if path in routes:
                 if path.startswith('/api/'):
                     routes[path]()
@@ -902,12 +907,13 @@ class MyHandler(BaseHTTPRequestHandler):
 
             if isinstance(historial, list):
                 for item in historial:
-                    if isinstance(item, dict) and 'fecha_descarga' in item:
-                        if hasattr(item['fecha_descarga'], 'strftime'):
-                            item['fecha_descarga'] = item['fecha_descarga'].strftime('%Y-%m-%d %H:%M:%S')
+                    if isinstance(item, dict):
+                        fecha = item.get('fecha_descarga')
+                        if isinstance(fecha, datetime):
+                            item['fecha_descarga'] = fecha.strftime('%Y-%m-%d %H:%M:%S')
                 return self.send_json_response({"success": True, "data": historial})
             elif isinstance(historial, dict):
-                return self.send_json_response({"success": True, "data": []})
+                return self.send_json_response({"success": True, "data": historial.get("data", [])})
             else:
                 return self.send_json_response({"success": True, "data": []})
 
@@ -936,8 +942,9 @@ class MyHandler(BaseHTTPRequestHandler):
             if isinstance(historial_compras, list):
                 for item in historial_compras:
                     if isinstance(item, dict) and 'fecha_y_hora' in item:
-                        if hasattr(item['fecha_y_hora'], 'strftime'):
-                            item['fecha_y_hora'] = item['fecha_y_hora'].strftime('%Y-%m-%d %H:%M:%S')
+                        fecha = item['fecha_y_hora']
+                        if isinstance(fecha, datetime):
+                            item['fecha_y_hora'] = fecha.strftime('%Y-%m-%d %H:%M:%S')
                 return self.send_json_response({"success": True, "data": historial_compras})
             elif isinstance(historial_compras, dict):
                 return self.send_json_response({"success": True, "data": []})
@@ -1313,37 +1320,18 @@ class MyHandler(BaseHTTPRequestHandler):
 
     # HTTP-058: Maneja la API para calificar contenido
     def api_mis_contenidos_calificar_handler(self):
-        try:
-            cookie = self.headers.get('Cookie', '')
-            if not cookie or 'session_id=' not in cookie:
-                return self.send_json_response({"error": "No autenticado"}, 401)
-
-            session_id = cookie.split('session_id=')[1].split(';')[0]
-            session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
-
-            if not session_data or not session_data.get('user_id'):
-                return self.send_json_response({"error": "Sesión inválida"}, 401)
-
-            user_id = session_data.get('user_id')
-
-            content_length = int(self.headers.get('Content-Length', 0))
-            if content_length > 0:
-                post_data = self.rfile.read(content_length)
-                datos = json.loads(post_data.decode('utf-8'))
-
-                id_contenido = datos.get('id_contenido')
-                puntuacion = datos.get('puntuacion', 0)
-
-                if not id_contenido:
-                    return self.send_json_response({"error": "ID de contenido requerido"}, 400)
-
-                resultado = controladorContenidosAdquiridos.calificar_contenido(user_id, id_contenido, puntuacion)
-                return self.send_json_response(resultado)
-            else:
-                return self.send_json_response({"error": "Datos no proporcionados"}, 400)
-
-        except Exception as e:
-            return self.send_json_response({"error": str(e)}, 500)
+        from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
+        user_id = self.get_user_id_from_session()
+        if not user_id:
+            self.send_json_response({'success': False, 'error': 'No autenticado'}, status_code=401)
+            return
+        data = self.get_json_body()
+        id_contenido = data.get('id_contenido')
+        puntuacion = data.get('puntuacion')
+        id_descarga = data.get('id_descarga')
+        ctrl = ControladorContenidosAdquiridos()
+        result = ctrl.calificar_contenido(user_id, id_contenido, puntuacion, id_descarga)
+        self.send_json_response(result)
 
     # HTTP-059: Maneja la API para obtener contenidos de promoción
     def api_promocion_contenidos_handler(self, promo_id):
@@ -1602,12 +1590,13 @@ class MyHandler(BaseHTTPRequestHandler):
 
             if isinstance(historial, list):
                 for item in historial:
-                    if isinstance(item, dict) and 'fecha_descarga' in item:
-                        if hasattr(item['fecha_descarga'], 'strftime'):
-                            item['fecha_descarga'] = item['fecha_descarga'].strftime('%Y-%m-%d %H:%M:%S')
+                    if isinstance(item, dict):
+                        fecha = item.get('fecha_descarga')
+                        if isinstance(fecha, datetime):
+                            item['fecha_descarga'] = fecha.strftime('%Y-%m-%d %H:%M:%S')
                 return self.send_json_response({"success": True, "data": historial})
             elif isinstance(historial, dict):
-                return self.send_json_response({"success": True, "data": []})
+                return self.send_json_response({"success": True, "data": historial.get("data", [])})
             else:
                 return self.send_json_response({"success": True, "data": []})
 
@@ -2105,28 +2094,43 @@ class MyHandler(BaseHTTPRequestHandler):
         except Exception as e:
             return self.send_json_response({"error": str(e)}, 500)
 
-    def api_mis_contenidos_calificar_handler(self):
-        from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
-        user_id = self.get_user_id_from_session()
-        if not user_id:
-            self.send_json_response({'success': False, 'error': 'No autenticado'}, status=401)
-            return
-        data = self.get_json_body()
-        id_contenido = data.get('id_contenido')
-        puntuacion = data.get('puntuacion')
-        id_descarga = data.get('id_descarga')
-        ctrl = ControladorContenidosAdquiridos()
-        result = ctrl.calificar_contenido(user_id, id_contenido, puntuacion, id_descarga)
-        self.send_json_response(result)
-
     def api_mis_contenidos_descargas_no_valoradas_handler(self):
         from app.controllers.controlador_contenidos_adquiridos import ControladorContenidosAdquiridos
         user_id = self.get_user_id_from_session()
         if not user_id:
-            self.send_json_response({'success': False, 'error': 'No autenticado'}, status=401)
+            self.send_json_response({'success': False, 'error': 'No autenticado'}, status_code=401)
             return
         data = self.get_json_body()
         id_contenido = data.get('id_contenido')
         ctrl = ControladorContenidosAdquiridos()
         result = ctrl.obtener_descargas_no_valoradas(user_id, id_contenido)
         self.send_json_response(result)
+
+    def get_user_id_from_session(self):
+        cookie = self.headers.get('Cookie', '')
+        if not cookie or 'session_id=' not in cookie:
+            return None
+        session_id = cookie.split('session_id=')[1].split(';')[0]
+        session_data = sessions.get(session_id) or sesiones_activas.get(session_id)
+        if not session_data or not session_data.get('user_id'):
+            return None
+        return session_data.get('user_id')
+
+    def get_json_body(self):
+        content_length = int(self.headers.get('Content-Length', 0))
+        if content_length > 0:
+            post_data = self.rfile.read(content_length)
+            try:
+                return json.loads(post_data.decode('utf-8'))
+            except Exception:
+                return {}
+        return {}
+
+    def api_categoria_arbol_mermaid_handler(self, id_categoria):
+        try:
+            from app.controllers.controlador_categoria import ControladorCategoria
+            ctrl = ControladorCategoria()
+            resultado = ctrl.obtener_arbol_mermaid(int(id_categoria))
+            return self.send_json_response(resultado)
+        except Exception as e:
+            return self.send_json_response({"success": False, "error": str(e)}, 500)

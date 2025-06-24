@@ -118,6 +118,11 @@
     .rating-summary p {
       margin: 5px 0;
     }
+
+    .price-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .original-price { text-decoration: line-through; color: #888; font-size: 0.95em; margin-right: 6px; }
+    .discount-price { color: #ff6b6b; font-size: 1.2em; font-weight: bold; }
+    .discount-badge { background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; border-radius: 8px; padding: 2px 8px; font-size: 0.9em; font-weight: bold; margin-left: 6px; }
   </style>
 </head>
 <body>
@@ -459,21 +464,21 @@
         }
 
         function generarEstrellas(puntuacion) {
-            const estrellasLlenas = Math.floor(puntuacion / 2);
-            const tieneMediaEstrella = puntuacion % 2 !== 0;
+            // Siempre mostrar 10 estrellas, con medias si corresponde
             let html = '';
-
-            for (let i = 0; i < 5; i++) {
-                if (i < estrellasLlenas) {
+            const estrellasLlenas = Math.floor(puntuacion);
+            const tieneMedia = puntuacion % 1 >= 0.5;
+            for (let i = 1; i <= 10; i++) {
+                if (i <= estrellasLlenas) {
                     html += '<i class="fas fa-star" style="color: #ffc107;"></i>';
-                } else if (i === estrellasLlenas && tieneMediaEstrella) {
+                } else if (tieneMedia && i === estrellasLlenas + 1) {
                     html += '<i class="fas fa-star-half-alt" style="color: #ffc107;"></i>';
-                            } else {
+                } else {
                     html += '<i class="far fa-star" style="color: #ddd;"></i>';
-                            }
+                }
             }
-
-            return html + ` <span style="margin-left: 5px; font-size: 0.9em; color: #666;">${puntuacion.toFixed(1)}/10</span>`;
+            html += ` <span style="margin-left: 5px; font-size: 0.9em; color: #666;">${puntuacion.toFixed(1)}/10</span>`;
+            return html;
         }
 
         async function verContenido(contentId) {
@@ -544,7 +549,6 @@
 
                 console.log('Vista previa actualizada');
 
-                // Consultar la última descarga no valorada
                 let ultimaDescargaNoValorada = null;
                 try {
                     const response = await fetch('/api/mis-contenidos/descargas-no-valoradas', {
@@ -556,21 +560,17 @@
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success && data.data && data.data.length > 0) {
-                            // Tomar la última descarga no valorada
                             ultimaDescargaNoValorada = data.data[data.data.length - 1];
                         }
                     }
                 } catch (e) { console.error('Error consultando descargas no valoradas', e); }
-                // Guardar en el objeto actual
                 currentViewedContent.ultimaDescargaNoValorada = ultimaDescargaNoValorada;
-                // Actualizar UI de calificación
                 actualizarCalificacionEnModal(currentViewedContent);
 
                 console.log('Mostrando modal...');
                 viewContentModal.classList.add('show');
                 console.log('Modal mostrado');
 
-                // Mostrar descargas disponibles
                 const descargasDisponibles = content.descargas_disponibles !== undefined ? content.descargas_disponibles : 0;
                 let downloadInfo = document.getElementById('downloadInfo');
                 if (!downloadInfo) {
@@ -581,13 +581,21 @@
                     downloadInfo.style.color = '#007bff';
                     downloadContentBtn.parentNode.insertBefore(downloadInfo, downloadContentBtn);
                 }
-                downloadInfo.textContent = `Descargas disponibles: ${descargasDisponibles}`;
-                // Deshabilitar botón si no quedan descargas
-                downloadContentBtn.disabled = descargasDisponibles <= 0;
-                if (descargasDisponibles <= 0) {
-                    downloadContentBtn.innerHTML = '<i class="fas fa-ban"></i> No puedes descargar más';
+
+                const downloadStatus = document.getElementById('downloadStatus');
+                if (currentViewedContent.ultimaDescargaNoValorada) {
+                    downloadContentBtn.style.display = descargasDisponibles > 0 ? 'inline-block' : 'none';
+                    downloadStatus.style.display = 'block';
+                    downloadStatus.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> <span>Contenido descargado - Ya puedes calificar</span>`;
+                    downloadInfo.textContent = `Descargas disponibles: ${descargasDisponibles}`;
+                } else if (descargasDisponibles === 0) {
+                    downloadContentBtn.style.display = 'none';
+                    downloadStatus.style.display = 'none';
+                    downloadInfo.textContent = '¿Quieres volver a disfrutar de este contenido? Cómpralo nuevamente para descargarlo y calificarlo';
                 } else {
-                    downloadContentBtn.innerHTML = '<i class="fas fa-download"></i> Descargar Contenido';
+                    downloadContentBtn.style.display = 'inline-block';
+                    downloadStatus.style.display = 'none';
+                    downloadInfo.textContent = 'Prueba el contenido antes de calificarlo. Presiona descargar.';
                 }
 
             } catch (error) {
@@ -603,19 +611,21 @@
             const ratingNote = document.getElementById('ratingNote');
 
             averageRating.textContent = (content.calificacion_promedio || 0).toFixed(1);
-                    
-            if (content.calificacion_usuario !== null && content.calificacion_usuario !== undefined) {
-                userRatingText.textContent = `${content.calificacion_usuario}/10`;
+
+            let ultimaCalificacion = 0;
+            if (content.ultima_valoracion_usuario && content.ultima_valoracion_usuario.puntuacion) {
+                ultimaCalificacion = content.ultima_valoracion_usuario.puntuacion;
+            }
+            if (ultimaCalificacion > 0) {
+                userRatingText.textContent = `${ultimaCalificacion}/10`;
                 ratingNote.style.display = 'none';
-                    } else {
+            } else {
                 userRatingText.textContent = 'No calificado';
                 ratingNote.style.display = 'block';
             }
-            
+
             userRatingStars.innerHTML = '';
-            const userRating = content.calificacion_usuario || 0;
-            
-            // Solo permitir calificar si hay una descarga no valorada
+            const userRating = ultimaCalificacion;
             const puedeValorar = !!content.ultimaDescargaNoValorada;
             for (let i = 1; i <= 10; i++) {
                 const star = document.createElement('span');
@@ -639,7 +649,7 @@
                 ratingNote.textContent = 'Solo puedes calificar después de descargar y si no has valorado todas tus descargas.';
                 ratingNote.style.color = '#dc3545';
             }
-            }
+        }
 
         async function calificarContenido(id_contenido, puntuacion, id_descarga) {
             try {
@@ -652,7 +662,6 @@
                 const data = await response.json();
                 if (data.success) {
                     showSuccess('¡Gracias por tu valoración!');
-                    // Refrescar la opción de valoración para permitir valorar la siguiente descarga no valorada
                     await verContenido(id_contenido);
                 } else {
                     showError(data.error || 'Error al calificar');
@@ -690,7 +699,6 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-                // Actualizar descargas disponibles
                 if (typeof currentViewedContent.descargas_disponibles === 'number') {
                     currentViewedContent.descargas_disponibles = Math.max(0, currentViewedContent.descargas_disponibles - 1);
                     let downloadInfo = document.getElementById('downloadInfo');
@@ -716,7 +724,6 @@
                 ratingNote.textContent = 'Haz clic en las estrellas para calificar';
                 ratingNote.style.color = '#666';
                 showSuccess('Contenido descargado exitosamente');
-                // Al descargar, refrescar la opción de valoración
                 await verContenido(currentViewedContent.id_contenido);
             } catch (error) {
                 console.error('Error al descargar:', error);

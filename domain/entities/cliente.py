@@ -147,38 +147,46 @@ class Cliente:
 
         try:
             cursor.execute("""
-                           SELECT u.nombre,
-                                  c.nombre,
+                           SELECT d.id_descarga,
+                                  NULL AS id_compra,
+                                  c.nombre AS nombre_contenido,
                                   c.autor,
                                   c.precio,
                                   c.tamano_archivo,
                                   d.fecha_y_hora,
-                                  cat.nombre,
+                                  cat.nombre AS categoria,
+                                  taf.formato,
                                   c.id_contenido,
                                   'descarga' AS tipo
                            FROM DESCARGA d
                                     JOIN USUARIO u ON d.id_usuario = u.id_usuario
                                     JOIN CONTENIDO c ON d.id_contenido = c.id_contenido
                                     JOIN CATEGORIA cat ON c.id_categoria = cat.id_categoria
+                                    LEFT JOIN TIPO_ARCHIVO taf ON c.id_tipo_archivo = taf.id_tipo_archivo
                            WHERE u.id_usuario = %s
+                             AND d.fecha_y_hora >= (CURRENT_DATE - INTERVAL '12 months')
 
                            UNION ALL
 
-                           SELECT u.nombre,
-                                  c.nombre,
+                           SELECT NULL AS id_descarga,
+                                  comp.id_compra,
+                                  c.nombre AS nombre_contenido,
                                   c.autor,
                                   c.precio,
                                   c.tamano_archivo,
                                   comp.fecha_y_hora,
-                                  cat.nombre,
+                                  cat.nombre AS categoria,
+                                  taf.formato,
                                   c.id_contenido,
                                   'regalo' AS tipo
                            FROM REGALO r
                                     JOIN COMPRA comp ON r.id_compra = comp.id_compra
                                     JOIN CONTENIDO c ON r.id_contenido = c.id_contenido
                                     JOIN CATEGORIA cat ON c.id_categoria = cat.id_categoria
+                                    LEFT JOIN TIPO_ARCHIVO taf ON c.id_tipo_archivo = taf.id_tipo_archivo
                                     JOIN USUARIO u ON r.id_usuario_envia = u.id_usuario
                            WHERE r.id_usuario_recibe = %s
+                             AND comp.fecha_y_hora >= (CURRENT_DATE - INTERVAL '12 months')
 
                            ORDER BY fecha_y_hora DESC LIMIT 20
                            """, (id_usuario, id_usuario))
@@ -189,16 +197,19 @@ class Cliente:
             from domain.entities.valoracion import Valoracion
             historial = []
             for row in resultados:
-                calificacion = Valoracion.obtener_valoracion_usuario(id_usuario, row['id_contenido'])
+                if row.get('id_descarga'):
+                    calificacion = Valoracion.obtener_valoracion_por_descarga(id_usuario, row['id_contenido'], row['id_descarga'])
+                else:
+                    calificacion = 0
                 historial.append({
                     "id_compra": row['id_compra'],
-                    "nombre_contenido": row['nombre'] or 'Sin nombre',
+                    "id_contenido": row['id_contenido'],
+                    "nombre_contenido": row['nombre_contenido'] or 'Sin nombre',
                     "autor": row['autor'] or 'Desconocido',
                     "precio": float(row['precio']) if row['precio'] else 0.0,
                     "categoria": row['categoria'] if row.get('categoria') is not None else 'N/A',
                     "formato": row['formato'] or 'N/A',
-                    "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row[
-                        'fecha_y_hora'] else 'Sin fecha',
+                    "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row['fecha_y_hora'] else 'Sin fecha',
                     "calificacion": int(calificacion) if calificacion > 0 else 0
                 })
 
@@ -338,13 +349,13 @@ class Cliente:
                 calificacion = Valoracion.obtener_valoracion_usuario(id_usuario, row['id_contenido'])
                 historial.append({
                     "id_compra": row['id_compra'],
+                    "id_contenido": row['id_contenido'],
                     "nombre_contenido": row['nombre'] or 'Sin nombre',
                     "autor": row['autor'] or 'Desconocido',
                     "precio": float(row['precio']) if row['precio'] else 0.0,
                     "categoria": row['categoria'] if row.get('categoria') is not None else 'N/A',
                     "formato": row['formato'] or 'N/A',
-                    "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row[
-                        'fecha_y_hora'] else 'Sin fecha',
+                    "fecha_compra": row['fecha_y_hora'].strftime("%Y-%m-%d %H:%M:%S") if row['fecha_y_hora'] else 'Sin fecha',
                     "calificacion": int(calificacion) if calificacion > 0 else 0
                 })
 

@@ -39,7 +39,8 @@ class ControladorPromocion:
                 "contenidos": [{
                     "id": c.get('id_contenido'),
                     "nombre": c.get('nombre', 'Sin nombre'),
-                    "precio": float(c.get('precio', 0.0))
+                    "precio": float(c.get('precio', 0.0)),
+                    "formato": c.get('formato', 'Desconocido')
                 } for c in (contenidos or []) if c],
                 "success": True
             }
@@ -85,7 +86,6 @@ class ControladorPromocion:
                 fecha_fin=fecha_fin
             )
 
-            # Desasociar todos los contenidos actuales de la promoción
             for c in Promocion.obtener_contenido_promocion(id_promocion) or []:
                 if c and c.get('id_contenido') not in (None, ''):
                     Promocion.eliminar_contenido_de_promocion(id_promocion, c.get('id_contenido'))
@@ -126,6 +126,7 @@ class ControladorPromocion:
                     "descripcion": c.get('descripcion', ''),
                     "tamano": c.get('tamano', 0),
                     "formato": c.get('formato', ''),
+                    "mime_type": c.get('mime_type', ''),
                     "calificacion": c.get('calificacion', 0.0),
                     "miniatura_url": f"/api/contenido/{c.get('id_contenido')}/miniatura"
                 } for c in (contenidos or [])] if contenidos else []

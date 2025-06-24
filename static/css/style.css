@@ -1743,3 +1743,15 @@ body .app-container {
     animation: slideOut 0.3s ease forwards;
 }
 
+.audio-gradient-bg {
+    background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+}
+
+.normal-price { color: var(--color-primary); font-size: 1.2em; font-weight: bold; }
+

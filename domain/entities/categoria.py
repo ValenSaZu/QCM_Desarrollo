@@ -99,3 +99,23 @@ class Categoria:
         finally:
             cursor.close()
             conexion.close()
+
+    @classmethod
+    def obtener_relaciones_arbol(cls, id_categoria_principal):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute("SELECT id_categoria, nombre, id_categoria_padre FROM CATEGORIA")
+            categorias = cursor.fetchall()
+            cat_map = {row[0]: {"nombre": row[1], "padre": row[2]} for row in categorias}
+            relaciones = []
+            def recorrer(cat_id):
+                for hijo_id, cat in cat_map.items():
+                    if cat["padre"] == cat_id:
+                        relaciones.append((cat_id, hijo_id, cat_map[cat_id]["nombre"], cat["nombre"]))
+                        recorrer(hijo_id)
+            recorrer(id_categoria_principal)
+            return relaciones
+        finally:
+            cursor.close()
+            conexion.close()

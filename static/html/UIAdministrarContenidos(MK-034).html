@@ -373,10 +373,9 @@
                                 <td>
                                     ${contenido.calificacion ? `
                                         <div class="rating" title="${contenido.calificacion.toFixed(1)}/5.0">
-                                            ${Array(5).fill().map((_, i) => `
-                                                <span class="star ${i < Math.floor(contenido.calificacion) ? 'filled' : ''}
-                                                    ${i === Math.floor(contenido.calificacion) && contenido.calificacion % 1 >= 0.5 ? 'half-filled' : ''}">
-                                                    ★
+                                            ${Array(10).fill().map((_, i) => `
+                                                <span class="star ${i < Math.floor(contenido.calificacion) ? 'filled' : ''}${(i === Math.floor(contenido.calificacion) && contenido.calificacion % 1 >= 0.5) ? ' half-filled' : ''}">
+                                                    ${i < Math.floor(contenido.calificacion) ? '★' : (i === Math.floor(contenido.calificacion) && contenido.calificacion % 1 >= 0.5 ? '<span style=\'position:relative;display:inline-block;width:50%;overflow:hidden;\'>★</span><span style=\'color:#ddd;position:relative;display:inline-block;width:50%;overflow:hidden;\'>★</span>' : '★')}
                                                 </span>
                                             `).join('')}
                                             <span class="rating-text">${contenido.calificacion.toFixed(1)}</span>

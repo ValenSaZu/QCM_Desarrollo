@@ -60,7 +60,6 @@ class Valoracion:
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         try:
-            # Solo puede valorar si ha descargado al menos una vez
             cursor.execute("""
                 SELECT 1 FROM DESCARGA WHERE id_usuario = %s AND id_contenido = %s
             """, (id_usuario, id_contenido))
@@ -147,7 +146,7 @@ class Valoracion:
             cursor.close()
             conexion.close()
 
-    # Obtiene las descargas de un usuario para un contenido
+    # ENT-VAL-007: Obtiene las descargas de un usuario para un contenido
     @classmethod
     def obtener_descargas_no_valoradas(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
@@ -160,14 +159,14 @@ class Valoracion:
                 WHERE d.id_usuario = %s AND d.id_contenido = %s AND v.id_valoracion IS NULL
                 ORDER BY d.fecha_y_hora
             ''', (id_usuario, id_contenido))
-            return cursor.fetchall()  # [(id_descarga, fecha_y_hora), ...]
+            return cursor.fetchall()
         except Exception:
             return []
         finally:
             cursor.close()
             conexion.close()
 
-    # Obtiene la cantidad de valoraciones hechas por descarga
+    # ENT-VAL-008:Obtiene la cantidad de valoraciones hechas por descarga
     @classmethod
     def obtener_valoraciones_por_descarga(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
@@ -180,14 +179,14 @@ class Valoracion:
                 WHERE d.id_usuario = %s AND d.id_contenido = %s
                 ORDER BY d.fecha_y_hora
             ''', (id_usuario, id_contenido))
-            return cursor.fetchall()  # [(id_descarga, puntuacion, fecha), ...]
+            return cursor.fetchall()
         except Exception:
             return []
         finally:
             cursor.close()
             conexion.close()
 
-    # Crea una valoración asociada a una descarga específica
+    # ENT-VAL-009: Crea una valoración asociada a una descarga específica
     @classmethod
     def crear_valoracion_por_descarga(cls, id_usuario, id_contenido, id_descarga, puntuacion_normalizada):
         conexion = obtener_conexion()
@@ -204,6 +203,48 @@ class Valoracion:
         except Exception as e:
             conexion.rollback()
             return {"success": False, "error": f"Error al crear valoración: {str(e)}"}
+        finally:
+            cursor.close()
+            conexion.close()
+
+    # ENT-VAL-010: Obtiene la última valoración (más reciente) de un usuario para un contenido
+    @classmethod
+    def obtener_ultima_valoracion_usuario(cls, id_usuario, id_contenido):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute('''
+                SELECT puntuacion, fecha
+                FROM VALORACION
+                WHERE id_usuario = %s AND id_contenido = %s
+                ORDER BY fecha DESC
+                LIMIT 1
+            ''', (id_usuario, id_contenido))
+            resultado = cursor.fetchone()
+            if resultado:
+                return {'puntuacion': int(resultado[0] * 10), 'fecha': resultado[1]}
+            return None
+        except Exception:
+            return None
+        finally:
+            cursor.close()
+            conexion.close()
+
+    # ENT-VAL-011: Obtiene la valoración de un usuario para una descarga específica
+    @classmethod
+    def obtener_valoracion_por_descarga(cls, id_usuario, id_contenido, id_descarga):
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            cursor.execute('''
+                SELECT puntuacion
+                FROM VALORACION
+                WHERE id_usuario = %s AND id_contenido = %s AND id_descarga = %s
+            ''', (id_usuario, id_contenido, id_descarga))
+            resultado = cursor.fetchone()
+            return int(resultado[0] * 10) if resultado and resultado[0] is not None else 0
+        except Exception:
+            return 0
         finally:
             cursor.close()
             conexion.close()

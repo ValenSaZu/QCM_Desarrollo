@@ -150,3 +150,7 @@ class ControladorCategoria:
             return {"success": True, "message": "Categoría eliminada correctamente"}
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def obtener_arbol_mermaid(self, id_categoria_principal):
+        relaciones = Categoria.obtener_relaciones_arbol(id_categoria_principal)
+        return {"success": True, "data": relaciones}
