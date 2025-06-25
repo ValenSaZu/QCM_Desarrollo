@@ -1,6 +1,10 @@
 from infrastructure.bd.conexion import obtener_conexion
 
-# BD-014: Entidad para gestionar tipos de archivo
+# BD-014: Entidad para gestionar tipos de archivo que incluye:
+# - Consulta de tipos de archivo por extensión
+# - Obtención de todos los formatos soportados
+# - Manejo de metadatos de formatos (MIME types, extensiones)
+# - Operaciones básicas de consulta
 class TipoArchivo:
     def __init__(self, id_tipo_archivo, extension, mime_type, formato):
         self.id_tipo_archivo = id_tipo_archivo
@@ -9,6 +13,15 @@ class TipoArchivo:
         self.formato = formato
 
     # ENT-TARCH-001: Obtiene un tipo de archivo por su extensión
+    # Parámetros:
+    #   extension (str): Extensión del archivo (ej. 'pdf', 'mp3')
+    # Retorna:
+    #   TipoArchivo: Objeto con los datos del tipo de archivo | None si no existe
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Búsqueda exacta por extensión
+    #   - Retorna objeto completo con todos los metadatos
     @classmethod
     def obtener_por_extension(cls, extension):
         conexion = obtener_conexion()
@@ -38,6 +51,13 @@ class TipoArchivo:
             conexion.close()
 
     # ENT-TARCH-002: Obtiene todos los tipos de archivo disponibles
+    # Retorna:
+    #   list[TipoArchivo]: Lista de todos los tipos de archivo registrados
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Ordena resultados alfabéticamente por extensión
+    #   - Retorna objetos completos con todos los metadatos
     @classmethod
     def obtener_todos(cls):
         conexion = obtener_conexion()

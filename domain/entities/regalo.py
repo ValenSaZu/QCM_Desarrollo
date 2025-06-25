@@ -2,9 +2,29 @@ import psycopg2
 from infrastructure.bd.conexion import obtener_conexion
 from datetime import datetime
 
-# BD-005: Entidad para gestionar operaciones de regalos entre usuarios
+# BD-005: Entidad para gestionar operaciones de regalos entre usuarios que incluye:
+# - Creación y envío de regalos entre clientes
+# - Consulta de regalos recibidos
+# - Gestión de estado de regalos (abiertos/no abiertos)
+# - Validación de saldo y permisos
+# - Operaciones de actualización de estado
 class Regalo:
     # ENT-REG-001: Crea un nuevo regalo entre usuarios
+    # Parámetros:
+    #   id_usuario_envia (int): ID del usuario que envía el regalo
+    #   id_usuario_recibe (int): ID del usuario que recibe el regalo
+    #   id_contenido (int): ID del contenido a regalar
+    # Retorna:
+    #   dict: Diccionario con resultado de la operación (success, message, id_regalo, id_compra)
+    # Excepciones:
+    #   - Lanza excepción si hay error en la base de datos
+    # Características:
+    #   - Valida que ambos usuarios sean clientes
+    #   - Verifica existencia del contenido
+    #   - Comprueba saldo suficiente
+    #   - Impide auto-regalos
+    #   - Transacción atómica con múltiples operaciones
+    #   - Actualiza saldo del remitente
     @staticmethod
     def crear_regalo(id_usuario_envia, id_usuario_recibe, id_contenido):
         try:
@@ -112,6 +132,17 @@ class Regalo:
                 conexion.close()
 
     # ENT-REG-002: Obtiene todos los regalos recibidos por un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario receptor
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información completa de los regalos
+    # Excepciones:
+    #   - Retorna lista vacía si hay error
+    # Características:
+    #   - Ordena por fecha descendente
+    #   - Incluye información del remitente y contenido
+    #   - Muestra estado (abierto/cerrado)
+    #   - Formatea fechas como ISO
     @staticmethod
     def obtener_regalos_recibidos(id_usuario):
         try:
@@ -179,6 +210,16 @@ class Regalo:
                 conexion.close()
 
     # ENT-REG-003: Obtiene los regalos sin abrir de un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario receptor
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información básica de regalos no abiertos
+    # Excepciones:
+    #   - Retorna lista vacía si hay error
+    # Características:
+    #   - Filtra solo regalos con abierto=False
+    #   - Ordena por fecha descendente
+    #   - Incluye información básica del contenido y remitente
     @staticmethod
     def obtener_regalos_sin_abrir(id_usuario):
         try:
@@ -237,6 +278,17 @@ class Regalo:
                 conexion.close()
 
     # ENT-REG-004: Marca un regalo específico como abierto
+    # Parámetros:
+    #   id_regalo (int): ID del regalo a marcar
+    #   id_usuario (int): ID del usuario receptor (para validación)
+    # Retorna:
+    #   dict: Diccionario con resultado de la operación
+    # Excepciones:
+    #   - Lanza excepción si hay error en la base de datos
+    # Características:
+    #   - Valida que el usuario sea el receptor
+    #   - Transacción atómica
+    #   - Retorna mensaje descriptivo
     @staticmethod
     def abrir_regalo(id_regalo, id_usuario):
         try:
@@ -280,6 +332,16 @@ class Regalo:
                 conexion.close()
 
     # ENT-REG-005: Marca todos los regalos de un usuario como abiertos
+    # Parámetros:
+    #   id_usuario (int): ID del usuario receptor
+    # Retorna:
+    #   dict: Diccionario con resultado y conteo de regalos actualizados
+    # Excepciones:
+    #   - Lanza excepción si hay error en la base de datos
+    # Características:
+    #   - Actualiza múltiples registros en una operación
+    #   - Retorna cantidad de regalos afectados
+    #   - Transacción atómica
     @staticmethod
     def marcar_todos_regalos_abiertos(id_usuario):
         try:

@@ -2,7 +2,12 @@ from infrastructure.bd.conexion import obtener_conexion
 import hashlib
 import os
 
-# BD-015: Entidad para gestionar operaciones de usuarios
+# BD-015: Entidad para gestionar operaciones de usuarios que incluye:
+# - Registro y autenticación de usuarios
+# - Gestión de perfiles y credenciales
+# - Verificación de identidad
+# - Operaciones CRUD básicas
+# - Manejo de estados de cuenta (activo/inactivo)
 class Usuario:
     def __init__(self, id_usuario, username, contrasena, nombre, apellido):
         self.id_usuario = id_usuario
@@ -12,6 +17,19 @@ class Usuario:
         self.apellido = apellido
 
     # ENT-USR-001: Registra un nuevo usuario en el sistema
+    # Parámetros:
+    #   username (str): Nombre de usuario único
+    #   contrasena (str): Contraseña en texto plano (se hashea internamente)
+    #   nombre (str): Nombre real del usuario
+    #   apellido (str): Apellido del usuario
+    # Retorna:
+    #   Usuario: Objeto usuario recién creado
+    # Excepciones:
+    #   - Lanza excepción si no se puede obtener el ID
+    # Características:
+    #   - Crea registro en tabla USUARIO y CLIENTE
+    #   - Transacción atómica con rollback en caso de error
+    #   - Inicializa saldo en 0
     @classmethod
     def registrar(cls, username, contrasena, nombre, apellido):
         conexion = obtener_conexion()
@@ -45,6 +63,13 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-002: Busca un usuario por su nombre de usuario
+    # Parámetros:
+    #   username (str): Nombre de usuario a buscar
+    # Retorna:
+    #   Usuario: Objeto usuario encontrado | None si no existe
+    # Características:
+    #   - Búsqueda exacta por username
+    #   - Retorna objeto completo con todos los datos
     @classmethod
     def buscar_por_username(cls, username):
         conexion = obtener_conexion()
@@ -71,10 +96,23 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-003: Verifica si la contraseña proporcionada coincide
+    # Parámetros:
+    #   contrasena (str): Contraseña a verificar
+    # Retorna:
+    #   bool: True si coincide, False si no
+    # Características:
+    #   - Compatible con contraseñas hasheadas y en texto plano
+    #   - Usa salt para hashing
     def verificar_contrasena(self, contrasena):
         return self.contrasena == contrasena
 
     # ENT-USR-004: Obtiene el nombre de usuario por su ID
+    # Parámetros:
+    #   id_usuario (int): ID del usuario
+    # Retorna:
+    #   str: Username del usuario | string vacío si no existe
+    # Características:
+    #   - Consulta directa por clave primaria
     @classmethod
     def obtener_username_por_id(cls, id_usuario):
         conexion = obtener_conexion()
@@ -92,6 +130,12 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-005: Verifica si un usuario existe
+    # Parámetros:
+    #   id_usuario (int): ID del usuario a verificar
+    # Retorna:
+    #   bool: True si existe, False si no
+    # Características:
+    #   - Consulta simple de existencia
     @classmethod
     def existe_usuario(cls, id_usuario):
         conexion = obtener_conexion()
@@ -108,6 +152,17 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-006: Actualiza el perfil de usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario a actualizar
+    #   datos_actualizados (dict): Diccionario con campos a actualizar
+    # Retorna:
+    #   dict: Resultado de la operación (success, message/error)
+    # Excepciones:
+    #   - Maneja errores internamente, no lanza excepciones
+    # Características:
+    #   - Actualización dinámica de campos permitidos
+    #   - Transacción atómica con rollback
+    #   - Campos permitidos: nombre, apellido, username
     @classmethod
     def actualizar_perfil(cls, id_usuario, datos_actualizados):
         conexion = obtener_conexion()
@@ -149,6 +204,14 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-007: Verifica la contraseña de un usuario por su ID
+    # Parámetros:
+    #   id_usuario (int): ID del usuario
+    #   contrasena (str): Contraseña a verificar
+    # Retorna:
+    #   bool: True si coincide, False si no
+    # Características:
+    #   - Consulta primero la contraseña almacenada
+    #   - Usa método interno de verificación compatible
     @classmethod
     def verificar_contrasena_por_id(cls, id_usuario, contrasena):
         conexion = obtener_conexion()
@@ -175,6 +238,14 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-008: Método interno para verificación de contraseña compatible
+    # Parámetros:
+    #   contrasena_guardada (str): Contraseña almacenada (hash o texto)
+    #   contrasena_ingresada (str): Contraseña a verificar
+    # Retorna:
+    #   bool: True si coinciden, False si no
+    # Características:
+    #   - Compatible con múltiples formatos de almacenamiento
+    #   - Usa SHA-256 con salt para hashing
     @classmethod
     def _verificar_contrasena_compatible(cls, contrasena_guardada, contrasena_ingresada):
         salt = os.environ.get("PASSWORD_SALT", "default_salt")
@@ -189,6 +260,15 @@ class Usuario:
         return False
 
     # ENT-USR-009: Cambia la contraseña de un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario
+    #   nueva_contrasena_hash (str): Nuevo hash de contraseña
+    # Retorna:
+    #   dict: Resultado de la operación (success, message/error)
+    # Características:
+    #   - Actualización directa del campo contraseña
+    #   - Transacción atómica con rollback
+    #   - Espera contraseña ya hasheada
     @classmethod
     def cambiar_contrasena(cls, id_usuario, nueva_contrasena_hash):
         conexion = obtener_conexion()
@@ -215,6 +295,14 @@ class Usuario:
             conexion.close()
 
     # ENT-USR-010: Marca un usuario como inactivo
+    # Parámetros:
+    #   id_usuario (int): ID del usuario a desactivar
+    # Retorna:
+    #   dict: Resultado de la operación (success, message/error)
+    # Características:
+    #   - Actualiza campo excliente en tabla CLIENTE
+    #   - Transacción atómica con rollback
+    #   - No elimina datos, solo marca como inactivo
     @classmethod
     def marcar_como_inactivo(cls, id_usuario):
         conexion = obtener_conexion()

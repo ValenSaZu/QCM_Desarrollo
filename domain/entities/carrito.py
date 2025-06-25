@@ -1,6 +1,9 @@
 from infrastructure.bd.conexion import obtener_conexion
 
-# G-013: Clase auxiliar para representar items del carrito
+# G-013: Clase auxiliar para representar items del carrito que incluye:
+# - Información detallada de cada contenido en el carrito
+# - Datos de precios originales y con descuento
+# - Cantidad y formato del contenido
 class CarritoItem:
     def __init__(self, id_contenido, nombre, autor, descripcion, precio_original, precio_con_descuento, cantidad,
                  formato):
@@ -13,10 +16,24 @@ class CarritoItem:
         self.cantidad = cantidad
         self.formato = formato
 
-# G-003: Entidad para gestionar operaciones del carrito de compras
+# G-003: Entidad para gestionar operaciones del carrito de compras que incluye:
+# - Obtención y modificación del estado del carrito
+# - Aplicación de descuentos y promociones
+# - Procesamiento de compras
+# - Manejo seguro de transacciones de base de datos
 class Carrito:
 
     # ENT-CARR-001: Obtiene el carrito completo de un usuario
+    # Parámetros:
+    #   id_usuario (int): Identificador único del usuario
+    # Retorna:
+    #   tuple: (list[CarritoItem], int) - (items del carrito, descuento aplicado)
+    # Excepciones:
+    #   - Captura y relanza excepciones de base de datos
+    # Características:
+    #   - Consulta JOIN entre múltiples tablas
+    #   - Calcula precios con descuentos aplicables
+    #   - Manejo seguro de conexiones con try-finally
     @classmethod
     def obtener_carrito_por_usuario(cls, id_usuario):
         conexion = obtener_conexion()
@@ -74,6 +91,14 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-002: Vacía el carrito de un usuario
+    # Parámetros:
+    #   id_usuario (int): Identificador único del usuario
+    # Excepciones:
+    #   - Maneja rollback en caso de error
+    # Características:
+    #   - Elimina todos los items del carrito
+    #   - Resetea los descuentos aplicados
+    #   - Transacción atómica
     @classmethod
     def vaciar_carrito(cls, id_usuario):
         conexion = obtener_conexion()
@@ -100,6 +125,16 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-003: Agrega un contenido al carrito
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    #   id_contenido (int): Identificador del contenido
+    #   cantidad (int): Cantidad a agregar (default: 1)
+    # Retorna:
+    #   bool: True si la operación fue exitosa
+    # Características:
+    #   - Crea carrito si no existe
+    #   - Incrementa cantidad si el item ya existe
+    #   - Transacción atómica
     @classmethod
     def agregar_contenido(cls, id_usuario, id_contenido, cantidad=1):
         conexion = obtener_conexion()
@@ -152,6 +187,16 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-004: Procesa la compra y vacía el carrito
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    #   items_comprados (list[CarritoItem]): Items a comprar
+    #   total_compra (float): Total de la compra
+    # Retorna:
+    #   bool: True si la compra fue exitosa
+    # Características:
+    #   - Verifica saldo suficiente
+    #   - Registra cada item comprado
+    #   - Transacción atómica con bloqueo de fila
     @classmethod
     def registrar_compra_y_vaciar_carrito(cls, id_usuario, items_comprados, total_compra):
         conexion = obtener_conexion()
@@ -192,6 +237,13 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-005: Elimina un contenido específico del carrito
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    #   id_contenido (int): Identificador del contenido
+    # Retorna:
+    #   bool: True si la eliminación fue exitosa
+    # Características:
+    #   - Transacción atómica
     @classmethod
     def eliminar_contenido(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
@@ -215,6 +267,12 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-006: Calcula descuentos disponibles basados en saldo
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    # Retorna:
+    #   int: Número de descuentos disponibles
+    # Características:
+    #   - Calcula descuentos como saldo//30
     @classmethod
     def calcular_descuentos_disponibles(cls, id_usuario):
         conexion = obtener_conexion()
@@ -233,6 +291,15 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-007: Aplica o remueve descuento de un contenido
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    #   id_contenido (int): Identificador del contenido
+    #   aplicar (bool): True para aplicar, False para remover
+    # Retorna:
+    #   dict: {'success': bool, 'error/message': str}
+    # Características:
+    #   - Verifica límite de descuentos
+    #   - Transacción atómica
     @classmethod
     def aplicar_descuento_contenido(cls, id_usuario, id_contenido, aplicar=True):
         conexion = obtener_conexion()
@@ -281,6 +348,12 @@ class Carrito:
             conexion.close()
 
     # ENT-CARR-008: Obtiene información sobre descuentos aplicados
+    # Parámetros:
+    #   id_usuario (int): Identificador del usuario
+    # Retorna:
+    #   dict: Información detallada de descuentos
+    # Características:
+    #   - Incluye contadores y lista de items con descuento
     @classmethod
     def obtener_descuentos_aplicados(cls, id_usuario):
         conexion = obtener_conexion()

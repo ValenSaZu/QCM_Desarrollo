@@ -1,6 +1,11 @@
 from infrastructure.bd.conexion import obtener_conexion
 
-# BD-007: Entidad para gestionar operaciones de promociones
+# BD-007: Entidad para gestionar operaciones de promociones que incluye:
+# - Gestión de promociones (creación, actualización, eliminación)
+# - Asociación de contenidos a promociones
+# - Consulta de promociones vigentes y sus contenidos
+# - Manejo de fechas y descuentos
+# - Operaciones CRUD para promociones
 class Promocion:
     def __init__(self, id_promocion, nombre, descuento, fecha_inicio, fecha_fin):
         self.id_promocion = id_promocion
@@ -10,6 +15,15 @@ class Promocion:
         self.fecha_fin = fecha_fin
 
     # ENT-PROM-001: Obtiene una promoción específica por su ID
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción a buscar
+    # Retorna:
+    #   Promocion: Objeto promoción encontrado | None si no existe
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Consulta directa por clave primaria
+    #   - Convierte descuento a float
     @classmethod
     def obtener_promocion_por_id(cls, id_promocion):
         conexion = obtener_conexion()
@@ -34,6 +48,13 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-002: Obtiene todas las promociones ordenadas por fecha de fin
+    # Retorna:
+    #   list[Promocion]: Lista de todas las promociones ordenadas por fecha_fin DESC
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Ordenamiento descendente por fecha de finalización
+    #   - Convierte descuentos a float
     @classmethod
     def obtener_todas_promociones(cls):
         conexion = obtener_conexion()
@@ -60,6 +81,16 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-003: Obtiene los contenidos asociados a una promoción
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información básica de contenidos
+    # Excepciones:
+    #   - Lanza excepción si la promoción no existe
+    # Características:
+    #   - Verifica existencia de la promoción primero
+    #   - Incluye formato y precio de los contenidos
+    #   - Ordena alfabéticamente por nombre de contenido
     @classmethod
     def obtener_contenido_promocion(cls, id_promocion):
         conexion = obtener_conexion()
@@ -93,6 +124,19 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-004: Agrega una nueva promoción al sistema
+    # Parámetros:
+    #   nombre (str): Nombre descriptivo de la promoción
+    #   descuento (float): Porcentaje de descuento (0-100)
+    #   fecha_inicio (date): Fecha de inicio de vigencia
+    #   fecha_fin (date): Fecha de fin de vigencia
+    # Retorna:
+    #   int: ID de la promoción recién creada
+    # Excepciones:
+    #   - Lanza excepción si no se puede obtener el ID
+    # Características:
+    #   - Transacción atómica
+    #   - Convierte descuento a float
+    #   - Retorna el ID generado
     @classmethod
     def agregar_promocion(cls, nombre, descuento, fecha_inicio, fecha_fin):
         conexion = obtener_conexion()
@@ -119,6 +163,19 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-005: Actualiza los datos de una promoción existente
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción a actualizar
+    #   nombre (str): Nuevo nombre
+    #   descuento (float): Nuevo porcentaje de descuento
+    #   fecha_inicio (date): Nueva fecha de inicio
+    #   fecha_fin (date): Nueva fecha de fin
+    # Retorna:
+    #   None
+    # Excepciones:
+    #   - Lanza excepción si la promoción no existe
+    # Características:
+    #   - Transacción atómica
+    #   - Actualización completa de todos los campos
     @classmethod
     def actualizar_promocion(cls, id_promocion, nombre, descuento, fecha_inicio, fecha_fin):
         conexion = obtener_conexion()
@@ -145,6 +202,15 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-006: Elimina una promoción del sistema
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción a eliminar
+    # Retorna:
+    #   None
+    # Excepciones:
+    #   - Lanza excepción si la promoción no existe
+    # Características:
+    #   - Limpia referencias en contenidos asociados primero
+    #   - Transacción atómica con múltiples operaciones
     @classmethod
     def eliminar_promocion(cls, id_promocion):
         conexion = obtener_conexion()
@@ -173,6 +239,16 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-007: Asocia un contenido a una promoción
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción
+    #   id_contenido (int): ID del contenido a asociar
+    # Retorna:
+    #   None
+    # Excepciones:
+    #   - Lanza excepción si promoción o contenido no existen
+    # Características:
+    #   - Verifica existencia de ambos IDs primero
+    #   - Transacción atómica
     @classmethod
     def agregar_contenido_a_promocion(cls, id_promocion, id_contenido):
         conexion = obtener_conexion()
@@ -200,6 +276,16 @@ class Promocion:
             conexion.close()
 
     # ENT-PROM-008: Elimina un contenido de una promoción
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción
+    #   id_contenido (int): ID del contenido a desasociar
+    # Retorna:
+    #   None
+    # Excepciones:
+    #   - Lanza excepción si el contenido no pertenece a la promoción
+    # Características:
+    #   - Verifica pertenencia antes de desasociar
+    #   - Transacción atómica
     @classmethod
     def eliminar_contenido_de_promocion(cls, id_promocion, id_contenido):
         conexion = obtener_conexion()

@@ -2,10 +2,26 @@ from domain.entities.promocion import Promocion
 from datetime import datetime
 from domain.entities.contenido import Contenido
 
-# G-008: Controlador para gestionar todas las operaciones de promociones
+# G-008: Controlador para gestión de promociones que incluye:
+# - CRUD de promociones (creación, lectura, actualización, eliminación)
+# - Asociación/desasociación de contenidos
+# - Consulta de promociones activas
+# - Cálculo de precios con descuento
+# - Clasificación de contenidos en promoción
 class ControladorPromocion:
 
-    # CTRL-PROM-001: Obtiene todas las promociones activas del sistema
+    # CTRL-PROM-001: Obtiene todas las promociones registradas en el sistema
+    # Retorna:
+    #   list[dict]: Lista de promociones con estructura:
+    #       {
+    #           "id": int,
+    #           "nombre": str,
+    #           "porcentaje": float (0-100),
+    #           "fecha_inicio": str (ISO format),
+    #           "fecha_fin": str (ISO format)
+    #       }
+    # Excepciones:
+    #   Exception: Si falla la consulta a la base de datos
     def obtener_todas_promociones(self):
         try:
             promociones = Promocion.obtener_todas_promociones()
@@ -20,6 +36,22 @@ class ControladorPromocion:
             raise Exception("Error al obtener promociones")
 
     # CTRL-PROM-002: Obtiene los detalles completos de una promoción específica
+    # Parámetros:
+    #   id_promocion (int): ID de la promoción a consultar
+    # Retorna:
+    #   dict: {
+    #       "success": bool,
+    #       "id": int,
+    #       "nombre": str,
+    #       "porcentaje": float,
+    #       "fecha_inicio": str (ISO),
+    #       "fecha_fin": str (ISO),
+    #       "contenidos": list[dict] (detalle de contenidos asociados),
+    #       "error": str (si success=False)
+    #   }
+    # Validaciones:
+    #   - ID de promoción requerido
+    #   - Promoción debe existir
     def obtener_promocion_por_id(self, id_promocion):
         try:
             if not id_promocion:
@@ -48,6 +80,24 @@ class ControladorPromocion:
             return {"error": "Error al obtener promoción", "success": False}
 
     # CTRL-PROM-003: Crea una nueva promoción con sus contenidos asociados
+    # Parámetros:
+    #   form_data (dict): {
+    #       "nombre": str (requerido),
+    #       "porcentaje": float (requerido, 0-100),
+    #       "fecha_inicio": str (formato YYYY-MM-DD),
+    #       "fecha_fin": str (formato YYYY-MM-DD),
+    #       "contenidos": list[int] (IDs de contenidos)
+    #   }
+    # Retorna:
+    #   dict: {
+    #       "success": bool,
+    #       "message": str,
+    #       "id_promocion": int | None,
+    #       "error": str (si success=False)
+    #   }
+    # Proceso:
+    #   1. Crea registro de promoción
+    #   2. Asocia todos los contenidos proporcionados
     def agregar_promocion(self, form_data):
         try:
             nombre = form_data.get('nombre')
@@ -70,7 +120,20 @@ class ControladorPromocion:
         except Exception:
             return {"success": False, "error": "Error al crear promoción"}
 
-    # CTRL-PROM-004: Actualiza los datos de una promoción existente
+    # CTRL-PROM-004: Actualiza una promoción existente y sus contenidos
+    # Parámetros:
+    #   id_promocion (int): ID de promoción a actualizar
+    #   promocion_data (dict): Igual estructura que form_data en agregar_promocion
+    # Retorna:
+    #   dict: {
+    #       "success": bool,
+    #       "message": str,
+    #       "error": str (si success=False)
+    #   }
+    # Proceso:
+    #   1. Actualiza datos básicos de promoción
+    #   2. Elimina todas asociaciones anteriores
+    #   3. Crea nuevas asociaciones con contenidos
     def editar_promocion(self, id_promocion, promocion_data):
         try:
             nombre = promocion_data['nombre']
@@ -101,6 +164,15 @@ class ControladorPromocion:
             return {"success": False, "error": "Error al actualizar promoción"}
 
     # CTRL-PROM-005: Elimina permanentemente una promoción
+    # Parámetros:
+    #   id_promocion (int): ID de promoción a eliminar
+    # Retorna:
+    #   dict: {
+    #       "success": bool,
+    #       "message": str,
+    #       "error": str (si success=False)
+    #   }
+    # Nota: Elimina también todas las asociaciones con contenidos
     def eliminar_promocion(self, id_promocion):
         try:
             Promocion.eliminar_promocion(id_promocion)
@@ -108,7 +180,19 @@ class ControladorPromocion:
         except Exception:
             return {"success": False, "error": "Error al eliminar promoción"}
 
-    # CTRL-PROM-006: Obtiene los contenidos con promociones activas
+    # CTRL-PROM-006: Obtiene contenidos con promociones activas
+    # Retorna:
+    #   dict: {
+    #       "success": bool,
+    #       "data": list[dict] | [],
+    #       "error": str (si success=False)
+    #   }
+    # Campos en data:
+    #   - Detalles completos del contenido
+    #   - Precio original y con descuento
+    #   - Metadatos técnicos (formato, tamaño, tipo MIME)
+    #   - URLs de acceso
+    #   - Información de categoría/autor
     def obtener_contenidos_con_promociones(self):
         try:
             contenidos = Contenido.obtener_contenidos_con_promociones()
@@ -134,7 +218,12 @@ class ControladorPromocion:
         except Exception:
             return {"success": False, "error": "Error al obtener contenidos", "data": []}
 
-    # CTRL-PROM-007: Determina el tipo de contenido basado en su formato
+    # CTRL-PROM-007: Determina el tipo de contenido (video/imagen/audio/otro)
+    # Parámetros:
+    #   formato (str): Extensión o tipo de archivo
+    # Retorna:
+    #   str: 'video', 'imagen', 'audio' o 'otro'
+    # Nota: Método interno para clasificación de contenidos
     def _determinar_tipo_contenido(self, formato):
         if not formato:
             return 'otro'

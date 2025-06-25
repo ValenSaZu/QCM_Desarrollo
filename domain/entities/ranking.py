@@ -1,9 +1,23 @@
 from infrastructure.bd.conexion import obtener_conexion
 from datetime import datetime, timedelta
 
-# BD-010: Entidad para gestionar operaciones de rankings y estadísticas
+# BD-010: Entidad para gestionar operaciones de rankings y estadísticas que incluye:
+# - Generación de rankings de contenidos más descargados
+# - Generación de rankings de contenidos mejor calificados
+# - Generación de rankings de clientes más activos
+# - Consulta de posiciones anteriores en rankings
+# - Manejo de periodos temporales para estadísticas
 class Ranking:
     # ENT-RANK-001: Obtiene ranking de los contenidos más descargados
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información de contenidos y sus descargas
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Limita resultados a top 10
+    #   - Incluye posición anterior en el ranking
+    #   - Ordena por total de descargas descendente
+    #   - Muestra formato del contenido
     @classmethod
     def ranking_contenidos_mas_descargados(cls):
         conexion = obtener_conexion()
@@ -41,6 +55,16 @@ class Ranking:
             conexion.close()
 
     # ENT-RANK-002: Obtiene ranking de los contenidos mejor calificados
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información de contenidos y sus calificaciones
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Limita resultados a top 10
+    #   - Incluye posición anterior en el ranking
+    #   - Ordena por promedio de calificación descendente
+    #   - Requiere al menos 1 valoración
+    #   - Muestra formato del contenido
     @classmethod
     def ranking_contenidos_mejor_calificados(cls):
         conexion = obtener_conexion()
@@ -79,6 +103,14 @@ class Ranking:
             conexion.close()
 
     # ENT-RANK-003: Obtiene ranking de clientes por cantidad de descargas
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información de clientes y sus descargas
+    # Excepciones:
+    #   - Lanza excepción si hay error en la consulta
+    # Características:
+    #   - Considera solo descargas de los últimos 6 meses
+    #   - Ordena por total de descargas descendente
+    #   - Incluye información básica del cliente
     @classmethod
     def ranking_clientes_por_descargas(cls):
         conexion = obtener_conexion()

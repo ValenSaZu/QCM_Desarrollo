@@ -1,6 +1,10 @@
 from infrastructure.bd.conexion import obtener_conexion
 
-# BD-009: Entidad para gestionar operaciones de categorías
+# BD-009: Entidad para gestionar operaciones de categorías que incluye:
+# - Obtención y búsqueda de categorías
+# - Creación y actualización de categorías
+# - Manejo de jerarquías y relaciones entre categorías
+# - Operaciones seguras de base de datos
 class Categoria:
     def __init__(self, id_categoria, nombre, id_categoria_padre=None):
         self.id_categoria = id_categoria
@@ -8,6 +12,13 @@ class Categoria:
         self.id_categoria_padre = id_categoria_padre
 
     # ENT-CAT-001: Obtiene todas las categorías del sistema
+    # Retorna:
+    #   list[Categoria]: Lista de todas las categorías existentes
+    # Excepciones:
+    #   - Captura y relanza excepciones de base de datos
+    # Características:
+    #   - Consulta simple de todos los registros
+    #   - Manejo seguro de conexiones
     @classmethod
     def obtener_todas_categorias(cls):
         conexion = obtener_conexion()
@@ -26,6 +37,13 @@ class Categoria:
             conexion.close()
 
     # ENT-CAT-002: Busca categorías por término de búsqueda
+    # Parámetros:
+    #   termino (str): Texto a buscar en nombres de categorías
+    # Retorna:
+    #   list[Categoria]: Lista de categorías que coinciden con la búsqueda
+    # Características:
+    #   - Búsqueda case-insensitive
+    #   - Usa LIKE para coincidencias parciales
     @classmethod
     def buscar_categorias(cls, termino):
         conexion = obtener_conexion()
@@ -50,6 +68,14 @@ class Categoria:
             conexion.close()
 
     # ENT-CAT-003: Crea una nueva categoría
+    # Parámetros:
+    #   nombre (str): Nombre de la nueva categoría
+    #   id_categoria_padre (int|None): ID de categoría padre (opcional)
+    # Retorna:
+    #   Categoria: Objeto de la categoría creada
+    # Características:
+    #   - Transacción atómica
+    #   - Maneja categorías con/sin padre
     @classmethod
     def crear_categoria(cls, nombre, id_categoria_padre=None):
         conexion = obtener_conexion()
@@ -76,6 +102,14 @@ class Categoria:
             conexion.close()
 
     # ENT-CAT-004: Actualiza una categoría existente
+    # Parámetros:
+    #   id_categoria (int): ID de la categoría a actualizar
+    #   nombre (str): Nuevo nombre para la categoría
+    # Retorna:
+    #   Categoria: Objeto de la categoría actualizada
+    # Características:
+    #   - Transacción atómica
+    #   - Verifica existencia de la categoría
     @classmethod
     def actualizar_categoria(cls, id_categoria, nombre):
         conexion = obtener_conexion()
@@ -100,6 +134,14 @@ class Categoria:
             cursor.close()
             conexion.close()
 
+    # ENT-CAT-005: Obtiene relaciones jerárquicas de categorías
+    # Parámetros:
+    #   id_categoria_principal (int): ID de la categoría raíz
+    # Retorna:
+    #   list[tuple]: Relaciones padre-hijo (id_padre, id_hijo, nombre_padre, nombre_hijo)
+    # Características:
+    #   - Recorrido recursivo del árbol de categorías
+    #   - Retorna estructura plana de relaciones
     @classmethod
     def obtener_relaciones_arbol(cls, id_categoria_principal):
         conexion = obtener_conexion()

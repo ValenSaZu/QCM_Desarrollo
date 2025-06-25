@@ -2,10 +2,39 @@ from domain.entities.contenido import Contenido
 from domain.entities.categoria import Categoria
 from infrastructure.utils.archivos import procesar_archivo, determinar_tipo_archivo
 
-# G-005: Controlador para gestionar todas las operaciones relacionadas con contenidos digitales
+# G-005: Controlador para gestión de contenidos digitales que incluye:
+# - CRUD de contenidos (creación, lectura, actualización, eliminación)
+# - Validación de metadatos y archivos
+# - Gestión de categorías asociadas
+# - Procesamiento de archivos multimedia
+# - Manejo de promociones y descuentos
 class ControladorContenido:
 
-    # CTRL-CONT-001: Procesa y guarda un nuevo contenido digital con sus metadatos y archivo asociado
+    # CTRL-CONT-001: Crea un nuevo contenido digital con validación completa
+    # Parámetros:
+    #   contenido_data (dict): {
+    #       'nombre': str (requerido),
+    #       'autor': str (requerido),
+    #       'precio': float (requerido, >=0),
+    #       'descripcion': str (requerido),
+    #       'id_categoria': int (requerido, debe existir),
+    #       'archivo': dict (requerido) {
+    #           'filename': str,
+    #           'file_content': bytes
+    #       }
+    #   }
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'message': str,
+    #       'contenido': dict (con ID y nombre) | None,
+    #       'error': str (si success=False)
+    #   }
+    # Validaciones:
+    #   - Campos requeridos presentes
+    #   - Tipo de archivo soportado
+    #   - Categoría existente
+    #   - Precio válido no negativo
     def agregar_contenido(self, contenido_data):
         try:
             campos_requeridos = ['nombre', 'autor', 'precio', 'descripcion', 'id_categoria']
@@ -62,7 +91,22 @@ class ControladorContenido:
         except Exception as e:
             return {"success": False, "error": "Ocurrió un error al procesar la solicitud."}
 
-    # CTRL-CONT-002: Actualiza la información y archivo de un contenido existente
+    # CTRL-CONT-002: Actualiza un contenido existente con validaciones
+    # Parámetros:
+    #   contenido_data (dict): {
+    #       'id_contenido': int (requerido),
+    #       ... (otros campos opcionales igual que agregar_contenido)
+    #   }
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'message': str,
+    #       'error': str (si success=False)
+    #   }
+    # Validaciones:
+    #   - Contenido debe existir
+    #   - Categoría debe existir (si se proporciona)
+    #   - Archivo debe ser válido (si se proporciona)
     def actualizar_contenido(self, contenido_data):
         try:
             id_contenido = contenido_data.get("id_contenido")
@@ -108,7 +152,11 @@ class ControladorContenido:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    # CTRL-CONT-003: Verifica si una categoría existe en el sistema
+    # CTRL-CONT-003: Valida existencia de una categoría
+    # Parámetros:
+    #   id_categoria (int): ID de categoría a validar
+    # Retorna:
+    #   bool: True si existe, False si no existe o hay error
     def validar_categoria_existe(self, id_categoria):
         try:
             categorias = Categoria.obtener_todas_categorias()
@@ -116,7 +164,20 @@ class ControladorContenido:
         except:
             return False
 
-    # CTRL-CONT-004: Obtiene todos los contenidos disponibles con sus metadatos
+    # CTRL-CONT-004: Obtiene todos los contenidos con metadatos completos
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'data': list[dict] | [],
+    #       'error': str (si success=False)
+    #   }
+    # Campos por contenido:
+    #   - Detalles básicos (nombre, autor, precio)
+    #   - Información de descuentos (si aplica)
+    #   - Metadatos técnicos (tamaño, formato, tipo MIME)
+    #   - Información de categoría
+    #   - Calificación promedio
+    #   - URLs para acceso
     def obtener_contenidos(self):
         try:
             contenidos = Contenido.obtener_todos()
@@ -202,7 +263,16 @@ class ControladorContenido:
         except Exception as e:
             return {"success": False, "error": str(e), "data": []}
 
-    # CTRL-CONT-005: Obtiene una lista simplificada de todos los contenidos
+    # CTRL-CONT-005: Obtiene lista simplificada de contenidos
+    # Retorna:
+    #   list[dict]: Lista con campos básicos de cada contenido:
+    #       - id_contenido
+    #       - nombre
+    #       - autor
+    #       - formato
+    #       - categoría
+    #       - precio
+    #       - descripción
     def obtener_todos_contenidos(self):
         contenidos = Contenido.obtener_todos()
         return [{
@@ -215,7 +285,19 @@ class ControladorContenido:
             "descripcion": contenido.descripcion
         } for contenido in contenidos]
 
-    # CTRL-CONT-006: Obtiene los detalles de un contenido específico por su ID
+    # CTRL-CONT-006: Obtiene detalles completos de un contenido específico
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a consultar
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'contenido': dict | None,
+    #       'error': str (si success=False)
+    #   }
+    # Campos del contenido:
+    #   - Todos los metadatos básicos
+    #   - Código formateado (ej: '001')
+    #   - Indicador de si tiene archivo asociado
     def obtener_contenido(self, id_contenido):
         try:
             contenido = Contenido.obtener_por_id(id_contenido)
@@ -224,6 +306,7 @@ class ControladorContenido:
                     "success": True,
                     "contenido": {
                         "id_contenido": contenido.id_contenido,
+                        "codigo": str(contenido.id_contenido).zfill(3),  # Formato: 001, 002, etc.
                         "nombre": contenido.nombre,
                         "descripcion": contenido.descripcion,
                         "autor": contenido.autor,
@@ -238,7 +321,19 @@ class ControladorContenido:
         except Exception as e:
             return {"success": False, "error": f"Error al obtener contenido: {str(e)}"}
 
-    # CTRL-CONT-007: Elimina un contenido del sistema por su ID
+    # CTRL-CONT-007: Elimina un contenido del sistema
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a eliminar
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'message': str,
+    #       'deleted_id': int | None,
+    #       'error': str (si success=False)
+    #   }
+    # Validaciones:
+    #   - ID debe ser válido (>0)
+    #   - Contenido debe existir
     def eliminar_contenido(self, id_contenido):
         try:
             if not id_contenido:

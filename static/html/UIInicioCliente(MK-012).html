@@ -414,6 +414,24 @@
             document.getElementById('contentExtension').textContent = `Extensión: ${extension}`;
             document.getElementById('contentMime').textContent = `MIME-Type: ${mimeType}`;
 
+            // Actualizar precio con manejo de descuentos
+            const precioOriginal = parseFloat(contenido.precio) || 0;
+            const precioDescuento = parseFloat(contenido.precio_descuento) || 0;
+            const porcentajeDescuento = parseFloat(contenido.porcentaje_descuento) || 0;
+            
+            const contentPrice = document.getElementById('contentPrice');
+            const contentDiscountPrice = document.getElementById('contentDiscountPrice');
+            
+            if (precioDescuento > 0 && precioDescuento < precioOriginal) {
+                // Mostrar precio con descuento
+                contentPrice.innerHTML = `<span style="text-decoration: line-through; color: #888; font-size: 0.9em;">S/. ${precioOriginal.toFixed(2)}</span>`;
+                contentDiscountPrice.innerHTML = `<span style="color: #ff6b6b; font-size: 1.2em; font-weight: bold;">S/. ${precioDescuento.toFixed(2)}</span> <span style="background: linear-gradient(45deg, #ff6b6b, #ff8e53); color: white; border-radius: 8px; padding: 2px 8px; font-size: 0.9em; font-weight: bold; margin-left: 6px;">-${porcentajeDescuento}%</span>`;
+            } else {
+                // Mostrar precio normal
+                contentPrice.innerHTML = `<span style="color: #333; font-size: 1.2em; font-weight: bold;">S/. ${precioOriginal.toFixed(2)}</span>`;
+                contentDiscountPrice.innerHTML = '';
+            }
+
             // Actualizar vista previa
             const previewContainer = document.getElementById('contentPreview');
             previewContainer.innerHTML = '';

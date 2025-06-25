@@ -1,7 +1,21 @@
-# UI-PROM-001: Clase para manejar la interfaz de administración de promociones, incluyendo gestión de descuentos y ofertas especiales
+# UI-PROM-001: Clase para la interfaz de administración de promociones que incluye:
+# - Visualización de la interfaz principal de gestión de promociones
+# - Manejo de descuentos y ofertas especiales
+# - Carga segura de plantillas HTML estáticas
 class InterfazAdministrarPromocion:
 
-    # FUNC-UI-PROM-001: Sirve el archivo HTML de la página de administración de promociones
+    # FUNC-UI-PROM-001: Sirve la página de administración de promociones
+    # Retorna:
+    #   str: Contenido HTML completo | None si hay error
+    # Excepciones:
+    #   - Captura y registra errores de lectura de archivos
+    # Características:
+    #   - Usa archivo HTML estático con ruta específica
+    #   - Codificación UTF-8 para soporte multilingüe
+    #   - Manejo seguro de recursos con context manager
+    #   - Registra errores en consola para diagnóstico
+    # Dependencias:
+    #   - Requiere archivo HTML en ruta 'static/html/UIAdministrarPromocion(MK-025).html's
     @staticmethod
     def servir_pagina_admin_promociones():
         try:

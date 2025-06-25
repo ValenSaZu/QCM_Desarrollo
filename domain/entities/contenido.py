@@ -2,7 +2,12 @@ from infrastructure.bd.conexion import obtener_conexion
 from decimal import Decimal
 from datetime import datetime
 
-# BD-008: Entidad para gestionar operaciones de contenido digital
+# BD-008: Entidad para gestionar operaciones de contenido digital que incluye:
+# - Gestión de metadatos de contenido (nombre, autor, formato, etc.)
+# - Manejo de precios y promociones
+# - Consulta de valoraciones y descargas
+# - Operaciones CRUD para contenido
+# - Gestión de descargas y adquisiciones
 class Contenido:
     def __init__(self, id_contenido, formato, autor, archivo, nombre, precio, tamano_archivo, descripcion,
                  id_tipo_archivo, id_promocion, id_categoria, categoria=None, extension=None, mime_type=None, promedio_valoracion=None):
@@ -23,6 +28,13 @@ class Contenido:
         self.promedio_valoracion = promedio_valoracion
 
     # ENT-CONT-001: Obtiene el promedio de valoración de un contenido
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a consultar
+    # Retorna:
+    #   float: Promedio de valoración (0-10) o 0 si no hay valoraciones
+    # Características:
+    #   - Escala el promedio de 1-5 a 0-10
+    #   - Maneja casos donde no hay valoraciones
     @classmethod
     def obtener_promedio_valoracion(cls, id_contenido):
         conexion = obtener_conexion()
@@ -44,6 +56,12 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-002: Obtiene todos los contenidos disponibles
+    # Retorna:
+    #   list[Contenido]: Lista completa de contenidos ordenados por nombre
+    # Características:
+    #   - Consulta JOIN entre CONTENIDO, TIPO_ARCHIVO y CATEGORIA
+    #   - Incluye promedio de valoraciones
+    #   - Ordenamiento alfabético por nombre
     @classmethod
     def obtener_todos(cls):
         conexion = obtener_conexion()
@@ -118,6 +136,13 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-003: Obtiene un contenido específico por su ID
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a buscar
+    # Retorna:
+    #   Contenido: Objeto con todos los datos del contenido | None si no existe
+    # Características:
+    #   - Consulta JOIN similar a ENT-CONT-002 pero filtrada por ID
+    #   - Incluye metadatos completos y valoración promedio
     @classmethod
     def obtener_por_id(cls, id_contenido):
         conexion = obtener_conexion()
@@ -190,6 +215,23 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-004: Agrega un nuevo contenido al sistema
+    # Parámetros:
+    #   nombre (str): Nombre del contenido
+    #   autor (str): Autor/Creador
+    #   precio (float): Precio base
+    #   descripcion (str): Descripción detallada
+    #   archivo (bin): Archivo binario del contenido
+    #   tamano_archivo (int): Tamaño en bytes
+    #   id_tipo_archivo (int): FK a tipo de archivo
+    #   id_categoria (int): FK a categoría
+    #   id_promocion (int|None): FK a promoción (opcional)
+    # Retorna:
+    #   Contenido: Objeto del contenido recién creado
+    # Excepciones:
+    #   - Lanza excepción si falla la inserción
+    # Características:
+    #   - Transacción atómica
+    #   - Retorna el objeto completo con todos los datos
     @classmethod
     def agregar_contenido(cls, nombre, autor, precio, descripcion, archivo, tamano_archivo,
                           id_tipo_archivo, id_categoria, id_promocion=None):
@@ -225,6 +267,17 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-005: Actualiza la información de un contenido existente
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a actualizar
+    #   **kwargs: Campos a actualizar (nombre, autor, precio, etc.)
+    # Retorna:
+    #   bool: True si la actualización fue exitosa
+    # Excepciones:
+    #   - Lanza excepción si no se encuentran campos válidos
+    #   - Lanza excepción si el contenido no existe
+    # Características:
+    #   - Actualización dinámica de campos
+    #   - Transacción atómica
     @classmethod
     def actualizar_contenido(cls, id_contenido, **kwargs):
         conexion = obtener_conexion()
@@ -270,6 +323,15 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-006: Elimina un contenido del sistema
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a eliminar
+    # Retorna:
+    #   bool: True si la eliminación fue exitosa
+    # Excepciones:
+    #   - Lanza excepción si el contenido no existe
+    # Características:
+    #   - Elimina registros relacionados en tablas dependientes
+    #   - Transacción atómica con múltiples operaciones
     @classmethod
     def eliminar(cls, id_contenido):
         conexion = obtener_conexion()
@@ -301,13 +363,21 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-007: Obtiene los contenidos adquiridos por un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario/cliente
+    # Retorna:
+    #   list[dict]: Lista de diccionarios con información detallada de cada contenido
+    # Características:
+    #   - Combina datos de compras, regalos y descargas
+    #   - Incluye estadísticas de uso y valoraciones
+    #   - Calcula descargas disponibles
     @classmethod
     def obtener_contenidos_adquiridos(cls, id_usuario):
         conexion = obtener_conexion()
         cursor = conexion.cursor()
         try:
             cursor.execute("""
-                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_comprado
+                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_comprado, MAX(co.fecha_y_hora) as fecha_compra_mas_reciente
                 FROM COMPRA co
                 JOIN CONTENIDO c ON co.id_contenido = c.id_contenido
                 LEFT JOIN TIPO_ARCHIVO t ON c.id_tipo_archivo = t.id_tipo_archivo
@@ -315,10 +385,10 @@ class Contenido:
                 WHERE co.id_usuario = %s
                 GROUP BY c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato, cat.nombre
             """, (id_usuario,))
-            compras = {row[0]: {"veces_comprado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
+            compras = {row[0]: {"veces_comprado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5], "fecha_compra": row[7]} for row in cursor.fetchall()}
 
             cursor.execute("""
-                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_regalado
+                SELECT c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato AS tipo_formato, cat.nombre AS categoria, COUNT(*) as veces_regalado, MAX(comp.fecha_y_hora) as fecha_regalo_mas_reciente
                 FROM REGALO r
                 JOIN COMPRA comp ON r.id_compra = comp.id_compra
                 JOIN CONTENIDO c ON r.id_contenido = c.id_contenido
@@ -327,23 +397,28 @@ class Contenido:
                 WHERE r.id_usuario_recibe = %s
                 GROUP BY c.id_contenido, c.nombre, c.autor, c.descripcion, t.formato, cat.nombre
             """, (id_usuario,))
-            regalos = {row[0]: {"veces_regalado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5]} for row in cursor.fetchall()}
+            regalos = {row[0]: {"veces_regalado": row[6], "nombre": row[1], "autor": row[2], "descripcion": row[3], "formato": row[4], "categoria": row[5], "fecha_regalo": row[7]} for row in cursor.fetchall()}
 
             contenidos = {}
             for id_contenido, data in compras.items():
                 contenidos[id_contenido] = {
                     **data,
                     "veces_comprado": data["veces_comprado"],
-                    "veces_regalado": 0
+                    "veces_regalado": 0,
+                    "fecha_compra": data["fecha_compra"],
+                    "fecha_regalo": None
                 }
             for id_contenido, data in regalos.items():
                 if id_contenido in contenidos:
                     contenidos[id_contenido]["veces_regalado"] = data["veces_regalado"]
+                    contenidos[id_contenido]["fecha_regalo"] = data["fecha_regalo"]
                 else:
                     contenidos[id_contenido] = {
                         **data,
                         "veces_comprado": 0,
-                        "veces_regalado": data["veces_regalado"]
+                        "veces_regalado": data["veces_regalado"],
+                        "fecha_compra": None,
+                        "fecha_regalo": data["fecha_regalo"]
                     }
 
             cursor.execute("""
@@ -360,6 +435,27 @@ class Contenido:
                 veces_regalado = data["veces_regalado"]
                 veces_adquirido = veces_comprado + veces_regalado
                 veces_descargado = descargas.get(id_contenido, 0)
+                
+                # Determinar la fecha de adquisición más reciente
+                fecha_compra = data.get("fecha_compra")
+                fecha_regalo = data.get("fecha_regalo")
+                fecha_adquisicion = None
+                
+                if fecha_compra and fecha_regalo:
+                    # Si tiene tanto compras como regalos, tomar la fecha más reciente
+                    fecha_adquisicion = max(fecha_compra, fecha_regalo)
+                elif fecha_compra:
+                    fecha_adquisicion = fecha_compra
+                elif fecha_regalo:
+                    fecha_adquisicion = fecha_regalo
+                
+                # Formatear la fecha si existe
+                if fecha_adquisicion:
+                    try:
+                        fecha_adquisicion = fecha_adquisicion.strftime('%Y-%m-%d %H:%M:%S')
+                    except Exception:
+                        fecha_adquisicion = str(fecha_adquisicion)
+                
                 from domain.entities.valoracion import Valoracion
                 calificacion_promedio = Valoracion.obtener_promedio_valoracion(id_contenido)
                 calificacion_usuario = Valoracion.obtener_valoracion_usuario(id_usuario, id_contenido)
@@ -381,7 +477,8 @@ class Contenido:
                         "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
                         "calificacion_promedio": round(calificacion_promedio, 1),
                         "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
-                        "ultima_valoracion_usuario": ultima_valoracion
+                        "ultima_valoracion_usuario": ultima_valoracion,
+                        "fecha_adquisicion": fecha_adquisicion
                     })
                     continue
                 if 'puntuacion' not in ultima_valoracion or 'fecha' not in ultima_valoracion:
@@ -401,7 +498,8 @@ class Contenido:
                         "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
                         "calificacion_promedio": round(calificacion_promedio, 1),
                         "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
-                        "ultima_valoracion_usuario": ultima_valoracion
+                        "ultima_valoracion_usuario": ultima_valoracion,
+                        "fecha_adquisicion": fecha_adquisicion
                     })
                     continue
                 if ultima_valoracion['fecha'] is not None:
@@ -424,7 +522,8 @@ class Contenido:
                     "descargas_disponibles": max(0, veces_adquirido - veces_descargado),
                     "calificacion_promedio": round(calificacion_promedio, 1),
                     "calificacion_usuario": int(calificacion_usuario) if calificacion_usuario > 0 else 0,
-                    "ultima_valoracion_usuario": ultima_valoracion
+                    "ultima_valoracion_usuario": ultima_valoracion,
+                    "fecha_adquisicion": fecha_adquisicion
                 })
             return resultado
         except Exception as e:
@@ -447,6 +546,13 @@ class Contenido:
         return 'otro'
 
     # ENT-CONT-008: Obtiene información necesaria para descargar un contenido
+    # Parámetros:
+    #   id_contenido (int): ID del contenido a descargar
+    # Retorna:
+    #   dict: {'nombre': str, 'archivo': bin, 'formato': str} | None si no existe
+    # Características:
+    #   - Proporciona datos listos para generar respuesta de descarga
+    #   - Incluye nombre formateado con extensión
     @classmethod
     def obtener_info_descarga(cls, id_contenido):
         conexion = obtener_conexion()
@@ -479,6 +585,14 @@ class Contenido:
             conexion.close()
 
     # ENT-CONT-009: Registra una descarga de contenido por un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario que descarga
+    #   id_contenido (int): ID del contenido descargado
+    # Retorna:
+    #   bool: True si el registro fue exitoso, False si no tiene descargas disponibles
+    # Características:
+    #   - Verifica límites de descargas según compras/regalos
+    #   - Transacción atómica
     @classmethod
     def registrar_descarga(cls, id_usuario, id_contenido):
         conexion = obtener_conexion()
@@ -503,7 +617,13 @@ class Contenido:
             cursor.close()
             conexion.close()
 
-    # ENT-CONT-010: Obtiene contenidos que tienen promociones activas
+    # ENT-CONT-010: Obtiene contenidos con promociones activas
+    # Retorna:
+    #   list[dict]: Lista de contenidos con promoción vigente
+    # Características:
+    #   - Filtra por fechas de promoción válidas
+    #   - Incluye información de descuento
+    #   - Ordena alfabéticamente
     @classmethod
     def obtener_contenidos_con_promociones(cls):
         conexion = None

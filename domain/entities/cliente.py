@@ -1,6 +1,10 @@
 from infrastructure.bd.conexion import obtener_conexion
 
-# BD-001: Entidad para gestionar operaciones de clientes
+# BD-001: Entidad para gestionar operaciones de clientes que incluye:
+# - Gestión de información básica de clientes (activos e inactivos)
+# - Manejo de saldos y transacciones
+# - Consulta de historial de compras/descargas
+# - Operaciones CRUD para clientes
 class Cliente:
     def __init__(self, id_usuario, username, nombre, apellido, saldo, excliente):
         self.id_usuario = id_usuario
@@ -10,7 +14,14 @@ class Cliente:
         self.saldo = saldo
         self.excliente = excliente
 
-    # ENT-CLI-001: Obtiene todos los clientes (activos e inactivos)
+    # ENT-CLI-001: Obtiene todos los clientes registrados (activos e inactivos)
+    # Retorna:
+    #   list[Cliente]: Lista completa de clientes ordenados por ID
+    # Excepciones:
+    #   - Captura y relanza excepciones de base de datos
+    # Características:
+    #   - Consulta JOIN entre tablas USUARIO y CLIENTE
+    #   - Ordenamiento por ID de usuario
     @classmethod
     def obtener_todos(cls):
         conexion = obtener_conexion()
@@ -30,7 +41,12 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-002: Obtiene solo clientes activos
+    # ENT-CLI-002: Obtiene solo clientes activos (excliente = False)
+    # Retorna:
+    #   list[Cliente]: Lista de clientes activos ordenados por ID
+    # Características:
+    #   - Filtra por campo excliente = FALSE
+    #   - Mismo formato de retorno que ENT-CLI-001
     @classmethod
     def obtener_clientes_activos(cls):
         conexion = obtener_conexion()
@@ -51,7 +67,12 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-003: Obtiene solo exclientes
+    # ENT-CLI-003: Obtiene solo exclientes (excliente = True)
+    # Retorna:
+    #   list[Cliente]: Lista de exclientes ordenados por ID
+    # Características:
+    #   - Filtra por campo excliente = TRUE
+    #   - Mismo formato de retorno que ENT-CLI-001
     @classmethod
     def obtener_exclientes(cls):
         conexion = obtener_conexion()
@@ -72,7 +93,14 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-004: Busca clientes por término (nombre, apellido o username)
+    # ENT-CLI-004: Busca clientes por término en nombre, apellido o username
+    # Parámetros:
+    #   termino (str): Texto a buscar (case-insensitive)
+    # Retorna:
+    #   list[Cliente]: Lista de clientes que coinciden con el término
+    # Características:
+    #   - Búsqueda con LIKE y LOWER para coincidencias parciales
+    #   - Busca en múltiples campos
     @classmethod
     def buscar_por_termino(cls, termino):
         conexion = obtener_conexion()
@@ -97,6 +125,12 @@ class Cliente:
             conexion.close()
 
     # ENT-CLI-005: Busca solo clientes activos por término
+    # Parámetros:
+    #   termino (str): Texto a buscar (case-insensitive)
+    # Retorna:
+    #   list[Cliente]: Lista de clientes activos que coinciden
+    # Características:
+    #   - Combina filtro de activos con búsqueda por término
     @classmethod
     def buscar_clientes_activos_por_termino(cls, termino):
         conexion = obtener_conexion()
@@ -119,7 +153,13 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-006: Obtiene un cliente por ID
+    # ENT-CLI-006: Obtiene un cliente específico por ID
+    # Parámetros:
+    #   id_usuario (int): ID del cliente a buscar
+    # Retorna:
+    #   Cliente: Objeto cliente encontrado | None si no existe
+    # Características:
+    #   - Consulta directa por clave primaria
     @classmethod
     def obtener_por_id(cls, id_usuario):
         conexion = obtener_conexion()
@@ -139,7 +179,15 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-007: Obtiene el historial de compras/descargas de un cliente
+    # ENT-CLI-007: Obtiene historial combinado de compras/descargas
+    # Parámetros:
+    #   id_usuario (int): ID del cliente
+    # Retorna:
+    #   dict: {success: bool, data/historial: list}
+    # Características:
+    #   - Consulta UNION de tablas DESCARGA y REGALO
+    #   - Limita a últimos 12 meses
+    #   - Incluye valoraciones de contenido
     @classmethod
     def obtener_historial(cls, id_usuario):
         conexion = obtener_conexion()
@@ -221,6 +269,14 @@ class Cliente:
             conexion.close()
 
     # ENT-CLI-008: Actualiza el saldo de un cliente
+    # Parámetros:
+    #   id_usuario (int): ID del cliente
+    #   nuevo_saldo (float): Nuevo valor de saldo
+    # Retorna:
+    #   float: Saldo actualizado
+    # Características:
+    #   - Transacción atómica
+    #   - Verifica existencia del cliente
     @classmethod
     def actualizar_saldo(cls, id_usuario, nuevo_saldo):
         conexion = obtener_conexion()
@@ -244,7 +300,15 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-009: Marca/desmarca un cliente como ex-cliente
+    # ENT-CLI-009: Marca/desmarca cliente como ex-cliente
+    # Parámetros:
+    #   id_usuario (int): ID del cliente
+    #   excliente (bool): True para marcar como ex-cliente
+    # Retorna:
+    #   bool: Nuevo estado (True=excliente)
+    # Características:
+    #   - Transacción atómica
+    #   - Verifica existencia del cliente
     @classmethod
     def marcar_como_excliente(cls, id_usuario, excliente=True):
         conexion = obtener_conexion()
@@ -268,7 +332,13 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-010: Verifica si un cliente existe
+    # ENT-CLI-010: Verifica existencia de cliente
+    # Parámetros:
+    #   id_usuario (int): ID a verificar
+    # Retorna:
+    #   bool: True si existe, False si no
+    # Características:
+    #   - Consulta simple por ID
     @classmethod
     def existe_cliente(cls, id_usuario):
         conexion = obtener_conexion()
@@ -281,7 +351,15 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-011: Recarga saldo a un cliente
+    # ENT-CLI-011: Recarga saldo a cliente
+    # Parámetros:
+    #   id_usuario (int): ID del cliente
+    #   monto (float): Cantidad a recargar
+    # Retorna:
+    #   dict: {success, message, nuevo_saldo}
+    # Características:
+    #   - Transacción atómica con registro
+    #   - Actualiza saldo y crea registro en TRANSACCION
     @classmethod
     def recargar_saldo(cls, id_usuario, monto):
         conexion = obtener_conexion()
@@ -315,7 +393,16 @@ class Cliente:
             cursor.close()
             conexion.close()
 
-    # ENT-CLI-012: Obtiene el historial de compras de un cliente
+    # ENT-CLI-012: Obtiene historial de compras específico
+    # Parámetros:
+    #   id_usuario (int): ID del cliente
+    #   limite (int): Límite de registros (default: 10)
+    # Retorna:
+    #   dict: {success, data/error}
+    # Características:
+    #   - Consulta específica a tabla COMPRA
+    #   - Incluye valoraciones de contenido
+    #   - Ordenado por fecha descendente
     @classmethod
     def obtener_historial_compras(cls, id_usuario, limite=10):
         conexion = obtener_conexion()
@@ -329,7 +416,7 @@ class Cliente:
                                   co.nombre,
                                   co.autor,
                                   co.precio,
-                                  cat.nombre,
+                                  cat.nombre AS categoria,
                                   taf.formato
                            FROM COMPRA c
                                     JOIN CONTENIDO co ON c.id_contenido = co.id_contenido

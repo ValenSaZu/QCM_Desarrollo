@@ -3,21 +3,58 @@ from domain.entities.cliente import Cliente
 from domain.entities.valoracion import Valoracion
 from datetime import datetime, timedelta
 
-# G-010: Controlador para gestionar todas las operaciones relacionadas con contenidos adquiridos por usuarios
+# G-010: Controlador para gestión de contenidos adquiridos por usuarios que incluye:
+# - Consulta de contenidos comprados/regalados
+# - Proceso de descarga con control de límites
+# - Sistema de valoración de contenidos
+# - Gestión de tipos MIME para descargas
+# - Formateo de datos para API
 class ControladorContenidosAdquiridos:
 
-    # CTRL-CONT-ADQ-001: Obtiene todos los contenidos adquiridos por un usuario tanto en compras como en regalos con información detallada
+    # CTRL-CONT-ADQ-001: Obtiene todos los contenidos adquiridos por un usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario a consultar
+    # Retorna:
+    #   list[dict]: Lista de contenidos con estructura:
+    #       - id_contenido
+    #       - nombre
+    #       - tipo_adquisicion (compra/regalo)
+    #       - fecha_adquisicion
+    #       - descargas_disponibles
+    # Excepciones:
+    #   Exception: Si falla la consulta a la base de datos
     def obtener_contenidos_adquiridos(self, id_usuario):
         try:
             return Contenido.obtener_contenidos_adquiridos(id_usuario)
         except Exception as e:
             raise Exception(f"Error al obtener contenidos adquiridos: {str(e)}")
 
-    # CTRL-CONT-ADQ-002: Determina el tipo de contenido (video, imagen, audio) basado en su formato
+    # CTRL-CONT-ADQ-002: Determina el tipo de contenido (video/imagen/audio)
+    # Parámetros:
+    #   formato (str): Extensión o tipo de archivo
+    # Retorna:
+    #   str: 'video', 'imagen' o 'audio' (default: 'imagen')
+    # Nota: Método interno usado para clasificación
     def _determinar_tipo_contenido(self, formato):
         return Contenido._determinar_tipo_contenido(formato)
 
-    # CTRL-CONT-ADQ-003: Permite a un usuario calificar un contenido adquirido (rango 1-10)
+    # CTRL-CONT-ADQ-003: Permite valorar un contenido adquirido (escala 1-10)
+    # Parámetros:
+    #   id_usuario (int): ID del usuario que valora
+    #   id_contenido (int): ID del contenido a valorar
+    #   puntuacion (int): Valor entre 1 y 10
+    #   id_descarga (int): ID de descarga asociada (requerido)
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'message': str,
+    #       'puntuacion': int | None,
+    #       'error': str (si success=False)
+    #   }
+    # Validaciones:
+    #   - Puntuación entre 1-10
+    #   - ID de descarga requerido
+    #   - Usuario debe haber descargado el contenido
     def calificar_contenido(self, id_usuario, id_contenido, puntuacion, id_descarga=None):
         try:
             if not id_descarga:
@@ -33,10 +70,24 @@ class ControladorContenidosAdquiridos:
         except Exception as e:
             return {'success': False, 'error': f'Error al guardar la valoración: {str(e)}'}
 
-    # CTRL-CONT-ADQ-004: Gestiona el proceso de descarga de un contenido adquirido (una sola descarga permitida por compra)
+    # CTRL-CONT-ADQ-004: Gestiona el proceso de descarga de un contenido
+    # Parámetros:
+    #   id_usuario (int): ID del usuario solicitante
+    #   id_contenido (int): ID del contenido a descargar
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'nombre': str | None,
+    #       'archivo': bytes | None,
+    #       'mime_type': str | None,
+    #       'error': str (si success=False)
+    #   }
+    # Validaciones:
+    #   - Usuario debe tener derechos de descarga
+    #   - Límite de descargas no excedido
+    #   - Contenido debe existir
     def descargar_contenido(self, id_usuario, id_contenido):
         try:
-            # Verificar si el usuario ha adquirido el contenido
             contenidos = Contenido.obtener_contenidos_adquiridos(id_usuario)
             contenido_info = next((c for c in contenidos if c["id_contenido"] == id_contenido), None)
             if not contenido_info or contenido_info["descargas_disponibles"] <= 0:
@@ -68,7 +119,12 @@ class ControladorContenidosAdquiridos:
                 'error': f'Error al procesar la descarga: {str(e)}'
             }
 
-    # CTRL-CONT-ADQ-005: Devuelve el MIME type correspondiente a un formato de archivo
+    # CTRL-CONT-ADQ-005: Obtiene el tipo MIME correspondiente a un formato de archivo
+    # Parámetros:
+    #   formato (str): Extensión del archivo (ej: 'mp4', 'pdf')
+    # Retorna:
+    #   str: Tipo MIME correspondiente o 'application/octet-stream' por defecto
+    # Nota: Método interno usado para descargas
     def _obtener_mime_type(self, formato):
         mime_types = {
             'mp4': 'video/mp4',
@@ -111,7 +167,18 @@ class ControladorContenidosAdquiridos:
 
         return mime_types.get(formato.lower(), 'application/octet-stream')
 
-    # CTRL-CONT-ADQ-006: Obtiene y formatea los contenidos adquiridos para ser enviados a la API
+    # CTRL-CONT-ADQ-006: Obtiene contenidos adquiridos formateados para API
+    # Parámetros:
+    #   id_usuario (int): ID del usuario a consultar
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'data': list[dict] | [],
+    #       'error': str (si success=False)
+    #   }
+    # Campos adicionales en data:
+    #   - tipo_contenido: Clasificación multimedia
+    #   - info_formato: Metadatos técnicos
     def obtener_mis_contenidos(self, id_usuario):
         try:
             contenidos_adquiridos = Contenido.obtener_contenidos_adquiridos(id_usuario)
@@ -125,6 +192,18 @@ class ControladorContenidosAdquiridos:
         except Exception as e:
             return {"success": False, "error": "No se pudieron cargar tus contenidos.", "data": []}
 
+    # CTRL-CONT-ADQ-007: Obtiene descargas no valoradas por usuario
+    # Parámetros:
+    #   id_usuario (int): ID del usuario
+    #   id_contenido (int): ID del contenido (opcional)
+    # Retorna:
+    #   dict: {
+    #       'success': bool,
+    #       'data': list[dict] | []
+    #   }
+    # Campos en data:
+    #   - id_descarga: Identificador único
+    #   - fecha: Fecha de descarga formateada
     def obtener_descargas_no_valoradas(self, id_usuario, id_contenido):
         descargas = Valoracion.obtener_descargas_no_valoradas(id_usuario, id_contenido)
         return {"success": True, "data": [{"id_descarga": d[0], "fecha": d[1].strftime('%Y-%m-%d %H:%M:%S') if d[1] else None} for d in descargas]}
