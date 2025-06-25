@@ -31,6 +31,7 @@ from app.interfaces.interfaz_carrito import InterfazCarrito
 from app.interfaces.interfaz_inicio import InterfazInicio
 from app.interfaces.interfaz_mis_contenidos import InterfazMisContenidos
 from app.interfaces.interfaz_ranking import InterfazRanking
+from app.interfaces.interfaz_promociones import InterfazPromociones
 
 # Diccionario para almacenar sesiones activas
 sesiones_activas = {}
@@ -58,6 +59,7 @@ interfazCarrito = InterfazCarrito()
 interfazInicioCliente = InterfazInicio()
 interfazMisContenidos = InterfazMisContenidos()
 interfazRanking = InterfazRanking()
+interfazPromociones = InterfazPromociones()
 
 
 # HTTP-002: Clase principal para manejar todas las peticiones HTTP
@@ -152,8 +154,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 self.redirect_to('/login')
                 return None
 
-            with open('static/html/UIPromociones(MK-004).html', 'r', encoding='utf-8') as file:
-                return file.read()
+            return InterfazPromociones.servir_pagina_promociones()
 
         except Exception:
             self.redirect_to('/login')

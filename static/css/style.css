@@ -348,17 +348,6 @@ body .app-container {
     background-color: var(--color-gray-light);
 }
 
-.modal-overlay {
-    display: none;
-    position: fixed;
-    z-index: 9998;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0,0,0,0.7);
-}
-
 .modal {
     display: none;
     position: fixed;
@@ -368,6 +357,11 @@ body .app-container {
     width: 100%;
     height: 100%;
     overflow-y: auto;
+    background-color: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    box-sizing: border-box;
 }
 
 .modal.show {
@@ -376,9 +370,16 @@ body .app-container {
     justify-content: center;
 }
 
+/* Cuando el modal está activo (display: block), usar flexbox para centrarse */
+.modal[style*="display: block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
 .modal-content {
     background-color: var(--color-background);
-    margin: auto;
+    margin: 0;
     padding: 1.5rem;
     border-radius: 0.5rem;
     width: 90%;
@@ -1755,3 +1756,242 @@ body .app-container {
 
 .normal-price { color: var(--color-primary); font-size: 1.2em; font-weight: bold; }
 
+.modal-content .modal-grid {
+    max-width: 900px;
+}
+
+#agregarContenidoModal .modal-content,
+#editarContenidoModal .modal-content,
+#agregarPromocionModal .modal-content,
+#editarPromocionModal .modal-content,
+#seleccionarCategoria .modal-content,
+#verContenidosPromocionModal .modal-content,
+#eliminarContenidoModal .modal-content,
+#eliminarPromocionModal .modal-content,
+#arbolModal .modal-content,
+#saldoModal .modal-content,
+#historialModal .modal-content,
+#modalContenidosNuevo .modal-content {
+    max-width: 95%;
+    width: 95%;
+    margin: 0 auto;
+    min-width: auto;
+}
+
+#arbolModal .modal-content {
+    max-width: 1200px !important;
+    width: 98% !important;
+    min-width: 900px !important;
+    margin: 0 auto !important;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.input-group input,
+.input-group select {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #DDE1E6;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+    background-color: var(--color-background);
+    transition: border-color 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.input-group .edit-icon {
+    color: var(--color-gray-dark);
+    font-size: 1rem;
+    min-width: 1rem;
+}
+
+.input-group .button-full-gray {
+    margin-top: 0;
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.price-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.price-input {
+    flex: 1;
+    min-width: 150px;
+}
+
+.upload-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: var(--color-primary);
+    color: white;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.upload-icon:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.file-info {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.file-box {
+    background-color: var(--color-gray-light);
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--color-gray-dark);
+    border: 1px solid #DDE1E6;
+}
+
+.preview-area {
+    width: 100%;
+    height: 300px;
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.preview-text {
+    color: var(--color-gray-dark);
+    font-style: italic;
+    text-align: center;
+}
+
+@media (max-width: 1024px) {
+    .modal {
+        padding: 1rem;
+    }
+    
+    #agregarContenidoModal .modal-content,
+    #editarContenidoModal .modal-content,
+    #agregarPromocionModal .modal-content,
+    #editarPromocionModal .modal-content,
+    #seleccionarCategoria .modal-content,
+    #verContenidosPromocionModal .modal-content,
+    #eliminarContenidoModal .modal-content,
+    #eliminarPromocionModal .modal-content,
+    #saldoModal .modal-content,
+    #historialModal .modal-content,
+    #modalContenidosNuevo .modal-content {
+        max-width: 95%;
+        width: 95%;
+        margin: 0 auto;
+        min-width: auto;
+    }
+    
+    #arbolModal .modal-content {
+        max-width: 95% !important;
+        width: 95% !important;
+        min-width: auto !important;
+        margin: 0 auto !important;
+    }
+    
+    .modal-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .input-group .button-full-gray {
+        align-self: flex-start;
+    }
+    
+    .price-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .file-info {
+        flex-direction: column;
+    }
+}
+
+.modal-content .table {
+    margin-top: 1rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.modal-content .table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.modal-content .table th,
+.modal-content .table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-content .table th {
+    background-color: var(--color-gray-light);
+    font-weight: 600;
+    color: var(--color-gray-dark);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-content .table tr:hover {
+    background-color: var(--color-gray-light);
+}
+
+#tablaContenidosPromocion,
+#editTablaContenidosPromocion {
+    font-size: 0.85rem;
+}
+
+#tablaContenidosPromocion th,
+#tablaContenidosPromocion td,
+#editTablaContenidosPromocion th,
+#editTablaContenidosPromocion td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.modal-content .content-wrapper,
+.modal-content .modal-grid {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 0 2rem 0;
+    box-shadow: none;
+}
