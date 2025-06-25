@@ -100,7 +100,7 @@
             <div class="modal-content">
                 <span class="close" onclick="closeModal('agregarContenidoModal')">&times;</span>
                 <h2 class="small-title">Agregar Contenido</h2>
-                <form id="agregarContenidoForm" action="/api/contenidos/agregar_contenido" method="POST" enctype="multipart/form-data">
+                <form id="agregarContenidoForm" class="admin-modal-form" action="/api/contenidos/agregar_contenido" method="POST" enctype="multipart/form-data">
                     <div class="modal-grid">
                         <div class="left-grid">
                             <select id="tipoContenido" name="tipo_contenido" required>
@@ -157,7 +157,7 @@
             <div class="modal-content">
                 <span class="close" onclick="closeModal('editarContenidoModal')">&times;</span>
                 <h2 class="small-title">Editar Contenido</h2>
-                <form id="editarContenidoForm" method="POST" enctype="multipart/form-data">
+                <form id="editarContenidoForm" class="admin-modal-form" method="POST" enctype="multipart/form-data">
                     <input type="hidden" id="editContenidoId" name="contenido_id">
                     <div class="modal-grid">
                         <div class="left-grid">

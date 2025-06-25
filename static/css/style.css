@@ -61,7 +61,7 @@ form {
     background-color: var(--color-background);
     text-align: center;
     padding: 3rem;
-    width: 90%;
+    width: 100%;
     max-width: 30rem;
     box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.1);
 }
@@ -1768,14 +1768,14 @@ body .app-container {
 #verContenidosPromocionModal .modal-content,
 #eliminarContenidoModal .modal-content,
 #eliminarPromocionModal .modal-content,
-#arbolModal .modal-content,
 #saldoModal .modal-content,
 #historialModal .modal-content,
 #modalContenidosNuevo .modal-content {
-    max-width: 95%;
-    width: 95%;
+    width: auto;
+    max-width: 98vw;
+    min-width: 320px;
     margin: 0 auto;
-    min-width: auto;
+    padding: 0;
 }
 
 #arbolModal .modal-content {
@@ -1994,4 +1994,16 @@ body .app-container {
     margin: 0;
     padding: 0 0 2rem 0;
     box-shadow: none;
+}
+
+.admin-modal-form {
+    width: auto;
+    max-width: 100%;
+    min-width: 280px;
+    padding: 2rem 1.5rem 2.5rem 1.5rem;
+    box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.08);
+    background: var(--color-background);
+    margin: 0 auto;
+    border-radius: 0.5rem;
+    text-align: left;
 }
